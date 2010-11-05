@@ -1,0 +1,13 @@
+Name:           Twig
+Version:        0.0
+Cabal-Version:  >= 1.2
+License:        BSD3
+Author:         Geoff Hulette
+Synopsis:       Term-reWriting Interface Generator
+Build-Type:     Simple
+
+Executable twig
+  Main-Is:        Main.hs
+  Hs-Source-Dirs: src
+  Build-Depends:	base >= 4,array
+  GHC-Options:    -O2 -Wall

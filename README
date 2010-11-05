@@ -1,0 +1,4 @@
+TODO:
+* Side effects (e.g. malloc/free)
+* Disambiguation via "universal" type mappings
+* Simple language/parser for creating typemaps
