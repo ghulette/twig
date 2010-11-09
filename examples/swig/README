@@ -1,0 +1,5 @@
+Build with build.sh.  To try it, run python and do something like
+
+>>> import routines
+>>> routines.foo(4,5)
+20

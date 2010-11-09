@@ -1,44 +1,36 @@
-import Data.Monoid
-
-type Code = [String]
+import Code
+import TypeMap
 
 data CType = CInt 
            | CFloat 
            | CChar 
            | CPtr CType
+           | CVoid
            deriving (Eq,Show)
 
-data Conversion m a = Converted m a
-                    | Fail
-                    deriving (Eq,Show)
+data CIO = CIO CType
+  deriving (Eq,Show)
 
-instance Monoid m => Functor (Conversion m) where
-  fmap f (Converted m x) = Converted m (f x)
-  fmap _ Fail = Fail
+malloc :: Int -> TypeMap Code CType CType
+malloc n x = Convert ["malloc"] (CPtr x)
 
-instance Monoid m => Monad (Conversion m) where
-  (Converted m1 x1) >>= f = case f x1 of
-    Converted m2 x2 -> Converted (m1 `mappend` m2) x2
-    Fail -> Fail
-  Fail >>= _ = Fail
-  return = Converted mempty
+free :: TypeMap Code CType CType
+free (CPtr _) = Convert ["free"] CVoid
 
-type TypeMap = CType -> Conversion Code CType
-
-toFloat :: TypeMap
-toFloat CInt         = Converted ["float"] CFloat
-toFloat CChar        = Converted ["float"] CFloat
-toFloat CFloat       = Converted ["id"] CFloat
-toFloat (CPtr CChar) = Converted ["atoi"] CFloat
+toFloat :: TypeMap Code CType CType
+toFloat CInt         = Convert ["float"] CFloat
+toFloat CChar        = Convert ["float"] CFloat
+toFloat CFloat       = Convert ["id"] CFloat
+toFloat (CPtr CChar) = Convert ["atoi"] CFloat
 toFloat _            = Fail
 
-deref :: TypeMap
-deref (CPtr x)       = Converted ["*"] x
+deref :: TypeMap Code CType CType
+deref (CPtr x)       = Convert ["*"] x
 deref _              = Fail
 
-refer :: TypeMap
-refer x              = Converted ["&"] (CPtr x)
+refer :: TypeMap Code CType CType
+refer x              = Convert ["&"] (CPtr x)
 
 main :: IO ()
 main = do
-  print $ return CInt >>= toFloat >>= refer
+  print $ return CInt >>= toFloat >>= refer >>= deref
