@@ -1,5 +1,6 @@
 import Code
 import Typemap
+import Control.Monad
 
 data CType = CInt 
            | CFloat 
@@ -8,29 +9,47 @@ data CType = CInt
            | CVoid
            deriving (Eq,Show)
 
-data CIO = CIO CType
-  deriving (Eq,Show)
+data Alloc a = Alloc a deriving (Eq,Show)
 
-malloc :: Int -> Typemap Code CType CType
-malloc n x = Convert ["malloc"] (CPtr x)
+instance Functor Alloc where
+  fmap f (Alloc x) = Alloc (f x)
+  
+instance Monad Alloc where
+  return = Alloc
+  Alloc x >>= f = f x
 
-free :: Typemap Code CType CType
-free (CPtr _) = Convert ["free"] CVoid
+malloc :: Int -> Typemap Code CType (Alloc CType)
+malloc n x = Convert ["malloc"] (Alloc (CPtr x))
+
+free :: Typemap Code (Alloc CType) CType
+free (Alloc (CPtr _)) = Convert ["free"] CVoid
 
 toFloat :: Typemap Code CType CType
-toFloat CInt         = Convert ["float"] CFloat
-toFloat CChar        = Convert ["float"] CFloat
-toFloat CFloat       = Convert ["id"] CFloat
-toFloat (CPtr CChar) = Convert ["atoi"] CFloat
-toFloat _            = Fail
+toFloat CInt          = Convert ["float"] CFloat
+toFloat CChar         = Convert ["float"] CFloat
+toFloat CFloat        = Convert ["id"] CFloat
+toFloat (CPtr CChar)  = Convert ["atoi"] CFloat
+toFloat _             = Fail
 
 deref :: Typemap Code CType CType
-deref (CPtr x)       = Convert ["*"] x
-deref _              = Fail
+deref (CPtr x)        = Convert ["*"] x
+deref _               = Fail
 
 refer :: Typemap Code CType CType
-refer x              = Convert ["&"] (CPtr x)
+refer x               = Convert ["&"] (CPtr x)
+
+convert :: Typemap Code CType CType
+convert x = do
+  y <- toFloat x
+  z <- refer y
+  deref z
+
+convert2 :: Typemap Code CType CType
+convert2 x = do
+  y <- malloc 10 x
+  free y
 
 main :: IO ()
 main = do
-  print $ return CInt >>= toFloat >>= refer >>= deref
+  print $ return CInt >>= convert
+  print $ return CFloat >>= convert2
