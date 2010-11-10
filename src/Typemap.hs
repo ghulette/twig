@@ -1,6 +1,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
-module TypeMap where
+module Typemap where
 
 import Data.Monoid
 
@@ -19,37 +19,37 @@ instance Monoid m => Monad (Conversion m) where
   Fail >>= _ = Fail
   return = Convert mempty
 
-type TypeMap m a b = a -> Conversion m b
+type Typemap m a b = a -> Conversion m b
 
-success :: Monoid m => TypeMap m a a
+success :: Monoid m => Typemap m a a
 success = return
 
-failure :: Monoid m => TypeMap m a b
+failure :: Monoid m => Typemap m a b
 failure _ = Fail
 
-test :: Monoid m => TypeMap m a b -> TypeMap m a a
+test :: Monoid m => Typemap m a b -> Typemap m a a
 test f x = case f x of
   Convert _ _ -> return x
   Fail -> Fail
 
-neg :: Monoid m => TypeMap m a b -> TypeMap m a a
+neg :: Monoid m => Typemap m a b -> Typemap m a a
 neg f x = case f x of
   Convert _ _ -> Fail
   Fail -> return x
 
-(|||) :: TypeMap m a b -> TypeMap m a b -> TypeMap m a b
+(|||) :: Typemap m a b -> Typemap m a b -> Typemap m a b
 (|||) f1 f2 x = case f1 x of
   Convert m x' -> Convert m x'
   Fail -> f2 x
 
-branch :: Monoid m => TypeMap m a b -> TypeMap m a c -> TypeMap m a (b,c)
+branch :: Monoid m => Typemap m a b -> Typemap m a c -> Typemap m a (b,c)
 branch f1 f2 a = case f1 a of
   Convert m1 b -> case f2 a of
     Convert m2 c -> Convert (m1 `mappend` m2) (b,c)
     Fail -> Fail
   Fail -> Fail
 
-congr :: Monoid m => TypeMap m a b -> TypeMap m c d -> TypeMap m (a,c) (b,d)
+congr :: Monoid m => Typemap m a b -> Typemap m c d -> Typemap m (a,c) (b,d)
 congr f1 f2 (a,b) = case (f1 a,f2 b) of
   (Convert m1 c,Convert m2 d) -> Convert (m1 `mappend` m2) (c,d)
   otherwise -> Fail

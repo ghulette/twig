@@ -1,5 +1,5 @@
 import Code
-import TypeMap
+import Typemap
 
 data CType = CInt 
            | CFloat 
@@ -11,24 +11,24 @@ data CType = CInt
 data CIO = CIO CType
   deriving (Eq,Show)
 
-malloc :: Int -> TypeMap Code CType CType
+malloc :: Int -> Typemap Code CType CType
 malloc n x = Convert ["malloc"] (CPtr x)
 
-free :: TypeMap Code CType CType
+free :: Typemap Code CType CType
 free (CPtr _) = Convert ["free"] CVoid
 
-toFloat :: TypeMap Code CType CType
+toFloat :: Typemap Code CType CType
 toFloat CInt         = Convert ["float"] CFloat
 toFloat CChar        = Convert ["float"] CFloat
 toFloat CFloat       = Convert ["id"] CFloat
 toFloat (CPtr CChar) = Convert ["atoi"] CFloat
 toFloat _            = Fail
 
-deref :: TypeMap Code CType CType
+deref :: Typemap Code CType CType
 deref (CPtr x)       = Convert ["*"] x
 deref _              = Fail
 
-refer :: TypeMap Code CType CType
+refer :: Typemap Code CType CType
 refer x              = Convert ["&"] (CPtr x)
 
 main :: IO ()
