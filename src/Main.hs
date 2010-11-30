@@ -19,10 +19,11 @@ instance Monad Alloc where
   Alloc x >>= f = f x
 
 malloc :: Int -> Typemap Code CType (Alloc CType)
-malloc n x = Convert ["malloc"] (Alloc (CPtr x))
+malloc _ x = Convert ["malloc"] (Alloc (CPtr x))
 
 free :: Typemap Code (Alloc CType) CType
 free (Alloc (CPtr _)) = Convert ["free"] CVoid
+free _ = Fail
 
 toFloat :: Typemap Code CType CType
 toFloat CInt          = Convert ["float"] CFloat
