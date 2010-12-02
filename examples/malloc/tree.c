@@ -68,6 +68,9 @@ int contains(int x, Node *nd) {
   }
 }
 
+// Wrap using Python's ctypes
+// http://docs.python.org/release/2.6.6/library/ctypes.html
+
 int main() {
   Node *root = new_node(0);
   int i;
