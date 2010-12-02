@@ -12,20 +12,20 @@ extend x t e = (x,t) : e
 
 rewrite :: Rule -> Term -> Maybe Term
 rewrite (Rule p q) x = do
-  e <- match p x empty
+  e <- x `match` p
   subst e q
 
 -- LHS should not contain variables, maybe enforce this in the types?
-match :: Term -> Term -> Env -> Maybe Env
-match t (Var x) e = Just $ extend x t e
-match (Const x1 ts1) (Const x2 ts2) e | x1 == x2 = matchList ts1 ts2 e
-match _ _ _ = Nothing
+match :: Term -> Term -> Maybe Env
+match (Const x1 ts1) (Const x2 ts2) | x1 == x2 = matchList ts1 ts2
+match t (Var x) = Just [(x,t)]
+match _ _ = Nothing
 
-matchList :: [Term] -> [Term] -> Env -> Maybe Env
-matchList [] [] env = Just env
-matchList ts1 ts2 _ | length ts1 /= length ts2 = Nothing
-matchList ts1 ts2 env = do
-  envs' <- mapM (\(t1,t2) -> match t1 t2 env) (zip ts1 ts2)
+matchList :: [Term] -> [Term] -> Maybe Env
+matchList [] [] = Just []
+matchList ts1 ts2 | length ts1 /= length ts2 = Nothing
+matchList ts1 ts2 = do
+  envs' <- mapM (\(t1,t2) -> match t1 t2) (zip ts1 ts2)
   return $ concat envs'
 
 subst :: Env -> Term -> Maybe Term
