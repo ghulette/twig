@@ -1,14 +1,20 @@
 module Rewriting.Reduce where
 
 import Rewriting.Term
+import Rewriting.Environment
 
-type Env = [(String,Term)]
+fixMaybe :: (a -> Maybe a) -> a -> a
+fixMaybe f x = case f x of Just x' -> fixMaybe f x'
+                           Nothing -> x
 
-empty :: Env
-empty = []
+reduceOnce :: [Rule] -> Term -> Maybe Term
+reduceOnce [] t = Nothing
+reduceOnce (r:rs) t = 
+  case rewrite r t of Just t' -> Just t'
+                      Nothing -> reduceOnce rs t
 
-extend :: String -> Term -> Env -> Env
-extend x t e = (x,t) : e
+reduce :: [Rule] -> Term -> Term
+reduce rs t = fixMaybe (reduceOnce rs) t
 
 rewrite :: Rule -> Term -> Maybe Term
 rewrite (Rule p q) x = do
@@ -25,11 +31,12 @@ matchList :: [Term] -> [Term] -> Maybe Env
 matchList [] [] = Just []
 matchList ts1 ts2 | length ts1 /= length ts2 = Nothing
 matchList ts1 ts2 = do
-  envs' <- mapM (\(t1,t2) -> match t1 t2) (zip ts1 ts2)
-  return $ concat envs'
+  bindings <- mapM (\(t1,t2) -> match t1 t2) (zip ts1 ts2)
+  let env = concat bindings
+  return env
 
 subst :: Env -> Term -> Maybe Term
-subst e (Var x) = lookup x e
+subst e (Var x) = fetch x e
 subst e (Const x ts) = do
   ts' <- mapM (subst e) ts
   return $ Const x ts'
