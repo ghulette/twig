@@ -10,6 +10,7 @@ data Rule = Rule Term Term deriving Eq
 
 instance Show Term where
   show (Var x) = "\'" ++ x
+  show (Const k []) = k
   show (Const k ts) = k ++ "(" ++ (intercalate "," tss) ++ ")"
     where tss = map show ts
 

@@ -8,7 +8,7 @@ main = do
     Left err -> print err
     Right rs -> do
       mapM_ print rs
-      let Right t = parseTerm "lt(s(zero),s(s(zero)))"
+      let Right t = parseTerm "ack(s(zero),s(zero))"
       putStrLn "---"
       print t
       print $ reduce rs t
