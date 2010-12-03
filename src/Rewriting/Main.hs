@@ -19,4 +19,9 @@ main = do
   let Right t = parseTerm "n(n( s(s(zero)) , s(zero) ), s(s(zero)) )"
   print r
   print t
-  print $ rep (applyTopDown r) t
+  let Just t1 = applyTopDown r t
+  let Just t2 = applyTopDown r t1
+  let Just t3 = applyTopDown r t2
+  print t1
+  print t2
+  print t3

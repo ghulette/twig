@@ -52,7 +52,7 @@ branch f1 f2 a = case f1 a of
 congr :: Monoid m => Typemap m a b -> Typemap m c d -> Typemap m (a,c) (b,d)
 congr f1 f2 (a,b) = case (f1 a,f2 b) of
   (Convert m1 c,Convert m2 d) -> Convert (m1 `mappend` m2) (c,d)
-  otherwise -> Fail
+  (_,_) -> Fail
 
 -- val map : 'a t -> 'a t
 -- val filter : 'a t list -> 'a t

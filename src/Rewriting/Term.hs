@@ -2,6 +2,7 @@ module Rewriting.Term where
 
 import Control.Monad
 import Data.List (intercalate)
+import Data.Maybe (fromMaybe)
 
 -- Terms
 
@@ -19,12 +20,14 @@ children :: Term -> [Term]
 children (Var _) = undefined
 children (Const _ ts) = ts
 
+
 -- Rules
 
 data Rule = Rule Term Term deriving Eq
 
 instance Show Rule where
   show (Rule t1 t2) = (show t1) ++ " -> " ++ (show t2)
+
 
 -- Environment
 
@@ -39,36 +42,40 @@ extend x t e = (x,t) : e
 fetch :: String -> Env -> Maybe Term
 fetch = lookup
 
+
+-- Utility functions
+
+repeatMaybe :: (a -> Maybe a) -> a -> Maybe a
+repeatMaybe f x = case f x of Just x' -> repeatMaybe f x'
+                              Nothing -> Just x
+
+catMaybeList :: a -> Maybe [a] -> Maybe [a]
+catMaybeList _ Nothing = Nothing
+catMaybeList x (Just xs) = Just (x:xs)
+
+-- This is very ineffcient, rewrite
+changeOne :: (a -> Maybe a) -> [a] -> Maybe [a]
+changeOne _ [] = Nothing
+changeOne f (x:xs) = 
+  case f x of Just x' -> Just (x':xs)
+              Nothing -> x `catMaybeList` (changeOne f xs)
+
+-- This is very ineffcient, rewrite
+changeSome :: (a -> Maybe a) -> [a] -> Maybe [a]
+changeSome f xs = 
+  let
+    def = map fromMaybe xs
+    xs' = map f xs
+  in
+    if length xs' > 0 
+      then Just (zipWith ($) def xs') 
+      else Nothing
+
+
 -- Rule application
 
-rep :: (Term -> Maybe Term) -> Term -> Maybe Term
-rep s t = case s t of Just t' -> rep s t'
-                      Nothing -> Just t
-
 applyTopDown :: Rule -> Term -> Maybe Term
-applyTopDown r t = apply r t `mplus` branchOne (applyTopDown r) t
-
-branchAll :: (Term -> Maybe Term) -> Term -> Maybe Term
-branchAll _ (Var _) = undefined
-branchAll _ (Const x []) = Just (Const x []) -- always succeeds for const
-branchAll s (Const x ts) = 
-  case mapM s ts of Just ts' -> Just (Const x ts')
-                    Nothing -> Nothing
-
-branchOne :: (Term -> Maybe Term) -> Term -> Maybe Term
-branchOne _ (Var _) = undefined
-branchOne _ (Const _ []) = Nothing -- always fail for const
-branchOne s (Const x ts) = 
-  case one s ts of Just ts' -> Just (Const x ts')
-                   Nothing -> Nothing
-
-one :: (a -> Maybe a) -> [a] -> Maybe [a]
-one _ [] = Nothing
-one f (x:xs) = 
-  case f x of Just x' -> Just (x':xs)
-              Nothing -> x `plus` (one f xs)
-  where h `plus` (Just t) = Just (h:t)
-        _ `plus` Nothing   = Nothing
+applyTopDown r = choice (apply r) (branchOne (applyTopDown r))
 
 -- Match against outermost term and rewrite
 apply :: Rule -> Term -> Maybe Term
@@ -96,6 +103,7 @@ subst e (Const x ts) = do
   ts' <- mapM (subst e) ts
   return $ Const x ts'
 
+
 -- Rule combinators
 
 success :: Term -> Maybe Term
@@ -118,3 +126,23 @@ seqn = (>=>)
 choice :: (Term -> Maybe Term) -> (Term -> Maybe Term) -> Term -> Maybe Term
 choice s1 s2 x = s1 x `mplus` s2 x
 
+branchAll :: (Term -> Maybe Term) -> Term -> Maybe Term
+branchAll _ (Var _) = undefined
+branchAll _ (Const x []) = Just (Const x []) -- always succeeds for leaf
+branchAll s (Const x ts) = 
+  case mapM s ts of Just ts' -> Just (Const x ts')
+                    Nothing -> Nothing
+
+branchOne :: (Term -> Maybe Term) -> Term -> Maybe Term
+branchOne _ (Var _) = undefined
+branchOne _ (Const _ []) = Nothing -- always fail for leaf
+branchOne s (Const x ts) = 
+  case changeOne s ts of Just ts' -> Just (Const x ts')
+                         Nothing -> Nothing
+
+branchSome :: (Term -> Maybe Term) -> Term -> Maybe Term
+branchSome _ (Var _) = undefined
+branchSome _ (Const _ []) = Nothing -- always fail for leaf
+branchSome s (Const x ts) = 
+  case changeSome s ts of Just ts' -> Just (Const x ts')
+                          Nothing -> Nothing
