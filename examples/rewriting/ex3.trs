@@ -1,0 +1,4 @@
+r1 = [s(X) -> X] | r2 | r3
+r2 = [or(true,X) -> true]
+r3 = [or(X,true) -> true]
+r4 = r1;r2;r3
