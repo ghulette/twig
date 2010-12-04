@@ -16,9 +16,10 @@ instance Show Term where
   show (Const k ts) = k ++ "(" ++ (intercalate "," tss) ++ ")"
     where tss = map show ts
 
-children :: Term -> [Term]
-children (Var _) = undefined
-children (Const _ ts) = ts
+isConst :: Term -> Bool
+isConst (Var _) = False
+isConst (Const _ []) = True
+isConst (Const _ ts) = any isConst ts
 
 
 -- Rules

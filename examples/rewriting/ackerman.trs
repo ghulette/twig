@@ -1,3 +1,3 @@
-ack(zero,N) -> s(N)
-ack(s(M),zero) -> ack(M,s(zero))
-ack(s(M),s(N)) -> ack(M,ack(s(M),N))
+a1 = {ack(zero,N) -> s(N)}
+a2 = {ack(s(M),zero) -> ack(M,s(zero))}
+a3 = {ack(s(M),s(N)) -> ack(M,ack(s(M),N))}

@@ -1,4 +1,8 @@
-r1 = [s(X) -> X] | r2 | r3
-r2 = [or(true,X) -> true]
-r3 = [or(X,true) -> true]
-r4 = r1;r2;r3
+lt1 = lt(zero, s(X)) -> true
+lt2 = lt(s(X), zero) -> false
+lt3 = lt(s(X), s(Y)) -> lt(X, Y)
+lessthan = lt1;lt2;lt3
+
+lessthan : 
+lt(s(s(s(z))),s(z))
+lt(z,s(z))

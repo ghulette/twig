@@ -1,0 +1,4 @@
+lt1 = {lt(zero, s(X)) -> true}
+lt2 = {lt(X, zero) -> false}
+lt3 = {lt(s(X), s(Y)) -> lt(X, Y)}
+lt = lt1 | lt2 | (lt3;lt)
