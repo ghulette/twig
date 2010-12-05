@@ -1,4 +1,8 @@
-module Rewriting.Parser where
+module Rewriting.Parser 
+(RuleExpr(..)
+,parseRules
+,parseTerm
+)where
 
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
@@ -46,9 +50,10 @@ data RuleExpr = RuleVar String
               | Neg RuleExpr
               | Seq RuleExpr RuleExpr
               | Choice RuleExpr RuleExpr
-              -- | BranchAll RuleExpr
-              -- | BranchOne RuleExpr
-              -- | BranchSome RuleExpr
+              | BranchAll RuleExpr
+              | BranchOne RuleExpr
+              | BranchSome RuleExpr
+              | Path Integer
               deriving (Eq,Show)
 
 ruleId :: Parser String
@@ -74,16 +79,26 @@ ruleFailure = do
   reserved "F"
   return Failure
 
+rulePath :: Parser RuleExpr
+rulePath = do
+  reservedOp "#"
+  i <- natural
+  return (Path i)
+
 ruleExpr :: Parser RuleExpr
 ruleExpr = buildExpressionParser table factor
   where prefixOp x f = Prefix (reservedOp x >> return f)
         infixOp x f = Infix (reservedOp x >> return f)
-        table = [[prefixOp "?" Test,prefixOp "~" Neg],
+        table = [[prefixOp "?" Test,prefixOp "~" Neg,
+                  prefixOp "one" BranchOne,
+                  prefixOp "some" BranchSome,
+                  prefixOp "all" BranchAll],
                  [infixOp ";" Seq AssocLeft],
                  [infixOp "|" Choice AssocLeft]]
         factor =  parens ruleExpr
               <|> ruleVar
               <|> ruleLit 
+              <|> rulePath
               <|> ruleSuccess 
               <|> ruleFailure
               <?> "factor"

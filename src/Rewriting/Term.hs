@@ -147,3 +147,12 @@ branchSome _ (Const _ []) = Nothing -- always fail for leaf
 branchSome s (Const x ts) = 
   case changeSome s ts of Just ts' -> Just (Const x ts')
                           Nothing -> Nothing
+
+-- Path of 0 returns the original term, path of 1 returns the first child,
+-- and so on.
+path :: Int -> Term -> Maybe Term
+path _ (Var _) = undefined
+path 0 t = Just t
+path i (Const _ ts) | i > 0 && i <= length ts = Just (ts !! (i-1))
+path _ (Const _ _) = Nothing
+  

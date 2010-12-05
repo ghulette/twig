@@ -11,13 +11,10 @@ eval (Test t) env = test (eval t env)
 eval (Neg t) env = neg (eval t env)
 eval (Seq t1 t2) env = seqn (eval t1 env) (eval t2 env)
 eval (Choice t1 t2) env = choice (eval t1 env) (eval t2 env)
-
--- main :: IO ()
--- main = do
---   input <- getContents
---   case parseRule input of
---     Left err -> print err
---     Right r -> print r
+eval (BranchAll t) env = branchAll (eval t env)
+eval (BranchOne t) env = branchOne (eval t env)
+eval (BranchSome t) env = branchSome (eval t env)
+eval (Path i) _ = path (fromInteger i)
 
 main :: IO ()
 main = do
@@ -36,18 +33,3 @@ main = do
       print $ s t2
       print t3
       print $ s t3
-      
-
--- main :: IO ()
--- main = do
---   let Right ([(x,r)]) = parseRules "r1 = s(X) -> X"
---   let Right t = parseTerm "n(n( s(s(zero)) , s(zero) ), s(s(zero)) )"
---   print x
---   print r
---   print t
---   let Just t1 = applyTopDown r t
---   let Just t2 = applyTopDown r t1
---   let Just t3 = applyTopDown r t2
---   print t1
---   print t2
---   print t3
