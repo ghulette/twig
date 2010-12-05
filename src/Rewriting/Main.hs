@@ -12,6 +12,13 @@ eval (Neg t) env = neg (eval t env)
 eval (Seq t1 t2) env = seqn (eval t1 env) (eval t2 env)
 eval (Choice t1 t2) env = choice (eval t1 env) (eval t2 env)
 
+-- main :: IO ()
+-- main = do
+--   input <- getContents
+--   case parseRule input of
+--     Left err -> print err
+--     Right r -> print r
+
 main :: IO ()
 main = do
   input <- getContents

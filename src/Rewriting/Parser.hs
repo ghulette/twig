@@ -3,43 +3,61 @@ module Rewriting.Parser where
 import Rewriting.Term
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
+import qualified Text.ParserCombinators.Parsec.Token as Tok
+import Text.ParserCombinators.Parsec.Language (haskellStyle)
+
+lexer :: Tok.TokenParser ()
+lexer = Tok.makeTokenParser style
+  where ops = [";","|","?","~","->","="]
+        ids = ["T","F"]
+        style = haskellStyle {Tok.reservedOpNames = ops,
+                              Tok.reservedNames = ids}
+
+whiteSpace = Tok.whiteSpace lexer
+lexeme     = Tok.lexeme lexer
+symbol     = Tok.symbol lexer
+natural    = Tok.natural lexer
+parens     = Tok.parens lexer
+brackets   = Tok.brackets lexer
+semi       = Tok.semi lexer
+comma      = Tok.comma lexer
+identifier = Tok.identifier lexer
+reserved   = Tok.reserved lexer
+reservedOp = Tok.reservedOp lexer
+
 
 -- Parsing terms and rule literals
 
 variable :: Parser Term
-variable = do
+variable = lexeme $ do
   x <- upper
   xs <- many alphaNum
-  spaces
   return $ Var (x:xs)
 
 constant :: Parser Term
 constant = do
-  x <- lower
-  xs <- many alphaNum
-  spaces
+  x <- constId
   ts <- option [] termList
-  return $ Const (x:xs) ts
+  return $ Const x ts
+  where constId = lexeme $ do x <- lower
+                              xs <- many alphaNum
+                              return (x:xs)
 
 term :: Parser Term
 term = variable <|> constant <?> "term"
 
 termList :: Parser [Term]
-termList = between lparen rparen (term `sepBy` comma)
-  where comma = char ',' >> spaces
-        lparen = char '(' >> spaces
-        rparen = char ')' >> spaces
+termList = parens (term `sepBy` comma)
 
 rule :: Parser Rule
 rule = do 
   t1 <- term
-  rightArrow
+  reservedOp "->"
   t2 <- term
   return $ Rule t1 t2
-  where rightArrow = string "->" >> spaces
 
 
--- Parsing rules with combinators
+-- Parsing rule expressions
 
 data RuleExpr = RuleVar String
               | RuleLit Rule
@@ -54,77 +72,62 @@ data RuleExpr = RuleVar String
               -- | BranchSome RuleExpr
               deriving (Eq,Show)
 
-ruleId :: Parser String
-ruleId = do
-  x <- lower
-  xs <- many alphaNum
-  spaces
-  return (x:xs)
-
 ruleVar :: Parser RuleExpr
 ruleVar = do
-  x <- ruleId
+  x <- identifier
   return (RuleVar x)
 
 ruleLit :: Parser RuleExpr
 ruleLit = do
-  r <- between lbrace rbrace rule
+  r <- brackets rule
   return (RuleLit r)
-  where lbrace = char '{' >> spaces
-        rbrace = char '}' >> spaces
 
 ruleSuccess :: Parser RuleExpr
 ruleSuccess = do
-  _ <- char 'T'
-  spaces
+  reserved "T"
   return Success
 
 ruleFailure :: Parser RuleExpr
 ruleFailure = do
-  _ <- char 'F'
-  spaces
+  reserved "F"
   return Failure
-
-prefixOp :: Char -> (a -> a) -> Operator Char st a 
-prefixOp c f = Prefix (char c >> spaces >> return f)
-
-infixOp :: Char -> (a -> a -> a) -> Assoc -> Operator Char st a 
-infixOp c f assoc = Infix (char c >> spaces >> return f) assoc
 
 ruleExpr :: Parser RuleExpr
 ruleExpr = buildExpressionParser table factor
-  where table = [[prefixOp '?' Test,prefixOp '~' Neg],
-                 [infixOp ';' Seq AssocLeft],
-                 [infixOp '|' Choice AssocLeft]]
-        factor =  between lparen rparen ruleExpr
+  where prefixOp x f = Prefix (reservedOp x >> return f)
+        infixOp x f = Infix (reservedOp x >> return f)
+        table = [[prefixOp "?" Test,prefixOp "~" Neg],
+                 [infixOp ";" Seq AssocLeft],
+                 [infixOp "|" Choice AssocLeft]]
+        factor =  parens ruleExpr
               <|> ruleVar
               <|> ruleLit 
               <|> ruleSuccess 
               <|> ruleFailure
               <?> "factor"
-        lparen = char '(' >> spaces
-        rparen = char ')' >> spaces
 
 ruleAssign :: Parser (String,RuleExpr)
 ruleAssign = do
-  x <- ruleId
-  equals
+  x <- identifier
+  reservedOp "="
   r <- ruleExpr
   return (x,r)
-  where equals = char '=' >> spaces
 
-ruleAssigns :: Parser [(String,RuleExpr)]
-ruleAssigns = do
-  spaces
-  rs <- many ruleAssign
+allOf :: GenParser Char () a -> GenParser Char () a
+allOf p = do
+  whiteSpace
+  r <- p
   eof
-  return rs
+  return r
 
 
 -- Wrappers
 
 parseRules :: String -> Either ParseError [(String,RuleExpr)]
-parseRules = parse ruleAssigns "Rules"
+parseRules = parse (allOf (many ruleAssign)) "Rules"
+
+parseRule :: String -> Either ParseError Rule
+parseRule = parse (allOf rule) "Rule"
 
 parseTerm :: String -> Either ParseError Term
 parseTerm = parse term "Term"
