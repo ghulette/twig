@@ -1,6 +1,0 @@
-ackin(zero,X) -> ackout(s(X))
-ackin(s(X),zero) -> u11(ackin(X,s(zero)))
-u11(ackout(X)) -> ackout(X)
-ackin(s(X), s(Y)) -> u21(ackin(s(X), Y), X)
-u21(ackout(X),Y) -> u22(ackin(Y,X))
-u22(ackout(X)) -> ackout(X)

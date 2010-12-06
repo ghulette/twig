@@ -1,0 +1,4 @@
+cmp(z,z)
+cmp(s(z),s(z))
+cmp(s(s(s(z))),s(s(z)))
+cmp(s(s(s(z))),s(s(s(s(s(s(z)))))))
