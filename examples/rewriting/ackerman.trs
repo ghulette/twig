@@ -1,3 +1,0 @@
-a1 = {ack(zero,N) -> s(N)}
-a2 = {ack(s(M),zero) -> ack(M,s(zero))}
-a3 = {ack(s(M),s(N)) -> ack(M,ack(s(M),N))}

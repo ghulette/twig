@@ -1,0 +1,4 @@
+a1 = [ack(z,N) -> s(N)]
+a2 = [ack(s(M),z) -> ack(M,s(z))]
+a3 = [ack(s(M),s(N)) -> ack(M,ack(s(M),N))]
+ack = (a3 | a2 | a1) ; (some ack) ; (ack | T)
