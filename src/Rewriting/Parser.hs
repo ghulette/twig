@@ -1,7 +1,7 @@
 module Rewriting.Parser 
 (RuleExpr(..)
 ,parseRules
-,parseTerm
+,parseTerms
 )where
 
 import Text.ParserCombinators.Parsec
@@ -10,6 +10,12 @@ import Rewriting.Term
 import Rewriting.Lexer
 
 -- Terms and rule literals
+
+constId :: Parser String
+constId = do 
+  x <- lower
+  xs <- many alphaNum
+  return (x:xs)
 
 variable :: Parser Term
 variable = lexeme $ do
@@ -22,9 +28,6 @@ constant = do
   x <- lexeme constId
   ts <- option [] termList
   return $ Const x ts
-  where constId = do x <- lower
-                     xs <- many alphaNum
-                     return (x:xs)
 
 term :: Parser Term
 term = variable <|> constant <?> "term"
@@ -38,6 +41,18 @@ rule = do
   reservedOp "->"
   t2 <- term
   return $ Rule t1 t2
+
+
+-- ConstTerms (no variables)
+
+constTerm :: Parser Term
+constTerm = do
+  x <- lexeme constId
+  ts <- option [] constTermList
+  return $ Const x ts
+
+constTermList :: Parser [Term]
+constTermList = parens (constTerm `sepBy` comma)
 
 
 -- Expressions
@@ -130,5 +145,5 @@ ruleAssign = do
 parseRules :: String -> Either ParseError [(String,RuleExpr)]
 parseRules = parse (allOf (many ruleAssign)) "Rules"
 
-parseTerm :: String -> Either ParseError Term
-parseTerm = parse term "Term"
+parseTerms :: String -> Either ParseError [Term]
+parseTerms = parse (allOf (many constTerm)) "Terms"

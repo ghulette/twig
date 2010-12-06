@@ -1,3 +1,4 @@
+import System.Environment (getArgs)
 import Rewriting.Parser
 import Rewriting.Term
 
@@ -18,20 +19,22 @@ eval (Congruence ts) env = congruence (map (\t -> eval t env) ts)
 eval (Path i) _ = path (fromInteger i)
 eval (Root x) _ = root x
 
+run :: [(String,RuleExpr)] -> Term -> Maybe Term
+run = run' . reverse
+  where run' [] = Just
+        run' rs@((x,_):_) = eval (RuleVar x) rs
+
 main :: IO ()
 main = do
-  input <- getContents
-  case parseRules input of
+  [rulesFile] <- getArgs
+  rulesInput <- readFile rulesFile
+  case parseRules rulesInput of
     Left err -> print err
     Right defs -> do
       mapM_ print defs
-      let s = eval (RuleVar "main") defs
-      let Right t1 = parseTerm "lt(s(s(zero)), s(zero))"
-      let Right t2 = parseTerm "lt(s(s(zero)), s(s(s(zero))))"
-      let Right t3 = parseTerm "lt(s(s(zero)), s(s(zero))))"
-      print t1
-      print $ s t1
-      print t2
-      print $ s t2
-      print t3
-      print $ s t3
+      let p = run defs
+      termsInput <- getContents
+      case parseTerms termsInput of
+        Left err' -> print err'
+        Right ts -> do
+          mapM_ (print . p) ts
