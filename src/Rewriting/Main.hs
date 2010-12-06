@@ -14,7 +14,9 @@ eval (Choice t1 t2) env = choice (eval t1 env) (eval t2 env)
 eval (BranchAll t) env = branchAll (eval t env)
 eval (BranchOne t) env = branchOne (eval t env)
 eval (BranchSome t) env = branchSome (eval t env)
+eval (Congruence ts) env = congruence (map (\t -> eval t env) ts)
 eval (Path i) _ = path (fromInteger i)
+eval (Root x) _ = root x
 
 main :: IO ()
 main = do
@@ -23,7 +25,7 @@ main = do
     Left err -> print err
     Right defs -> do
       mapM_ print defs
-      let s = eval (RuleVar "lt") defs
+      let s = eval (RuleVar "main") defs
       let Right t1 = parseTerm "lt(s(s(zero)), s(zero))"
       let Right t2 = parseTerm "lt(s(s(zero)), s(s(s(zero))))"
       let Right t3 = parseTerm "lt(s(s(zero)), s(s(zero))))"

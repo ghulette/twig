@@ -114,12 +114,14 @@ failure :: Term -> Maybe Term
 failure _ = Nothing
 
 test :: (Term -> Maybe Term) -> Term -> Maybe Term
-test s x = case s x of Just _ -> Just x
-                       Nothing -> Nothing
+test s x = 
+  case s x of Just _ -> Just x
+              Nothing -> Nothing
 
 neg :: (Term -> Maybe Term) -> Term -> Maybe Term
-neg s x = case s x of Just _ -> Nothing
-                      Nothing -> Just x
+neg s x = 
+  case s x of Just _ -> Nothing
+              Nothing -> Just x
 
 seqn :: (Term -> Maybe Term) -> (Term -> Maybe Term) -> Term -> Maybe Term
 seqn = (>=>)
@@ -131,28 +133,44 @@ branchAll :: (Term -> Maybe Term) -> Term -> Maybe Term
 branchAll _ (Var _) = undefined
 branchAll _ (Const x []) = Just (Const x []) -- always succeeds for leaf
 branchAll s (Const x ts) = 
-  case mapM s ts of Just ts' -> Just (Const x ts')
-                    Nothing -> Nothing
+  case mapM s ts of 
+    Just ts' -> Just (Const x ts')
+    Nothing -> Nothing
 
 branchOne :: (Term -> Maybe Term) -> Term -> Maybe Term
 branchOne _ (Var _) = undefined
 branchOne _ (Const _ []) = Nothing -- always fail for leaf
 branchOne s (Const x ts) = 
-  case changeOne s ts of Just ts' -> Just (Const x ts')
-                         Nothing -> Nothing
+  case changeOne s ts of 
+    Just ts' -> Just (Const x ts')
+    Nothing -> Nothing
 
 branchSome :: (Term -> Maybe Term) -> Term -> Maybe Term
 branchSome _ (Var _) = undefined
 branchSome _ (Const _ []) = Nothing -- always fail for leaf
 branchSome s (Const x ts) = 
-  case changeSome s ts of Just ts' -> Just (Const x ts')
-                          Nothing -> Nothing
+  case changeSome s ts of 
+    Just ts' -> Just (Const x ts')
+    Nothing -> Nothing
 
--- Path of 0 returns the original term, path of 1 returns the first child,
--- and so on.
+congruence :: [Term -> Maybe Term] -> Term -> Maybe Term
+congruence _ (Var _) = undefined
+congruence rs (Const _ ts) | length rs /= length ts = Nothing
+congruence rs (Const x ts) = 
+  case sequence (zipWith ($) rs ts) of
+    Just ts' -> Just (Const x ts')
+    Nothing -> Nothing
+
+-- Path of 0 returns original term.  Path of 1 returns the first child, path
+-- of 2 returns the second, and so on.  Path fails if the index exceeds the
+-- number of children.
 path :: Int -> Term -> Maybe Term
 path _ (Var _) = undefined
 path 0 t = Just t
 path i (Const _ ts) | i > 0 && i <= length ts = Just (ts !! (i-1))
 path _ (Const _ _) = Nothing
-  
+
+root :: String -> Term -> Maybe Term
+root _ (Var _) = undefined
+root x (Const y ts) | x == y = Just (Const y ts)
+root _ _ = Nothing

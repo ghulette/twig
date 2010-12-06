@@ -28,6 +28,9 @@ comma = Tok.comma lexer >> return ()
 brackets :: Parser a -> Parser a
 brackets = Tok.brackets lexer
 
+braces :: Parser a -> Parser a
+braces = Tok.braces lexer
+
 reserved :: String -> Parser ()
 reserved = Tok.reserved lexer
 

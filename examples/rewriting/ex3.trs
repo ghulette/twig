@@ -1,1 +1,6 @@
-r1 = ? T | F
+snd = #2
+hd = [cons(X,Y) -> X]
+tl = [cons(X,Y) -> Y]
+rd = [s(X) -> X]
+ex = [X -> s(X)]
+main = [lt];{rd,ex}

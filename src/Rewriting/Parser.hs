@@ -53,7 +53,9 @@ data RuleExpr = RuleVar String
               | BranchAll RuleExpr
               | BranchOne RuleExpr
               | BranchSome RuleExpr
+              | Congruence [RuleExpr]
               | Path Integer
+              | Root String
               deriving (Eq,Show)
 
 ruleId :: Parser String
@@ -85,6 +87,16 @@ rulePath = do
   i <- natural
   return (Path i)
 
+ruleRoot :: Parser RuleExpr
+ruleRoot = do
+  x <- brackets ruleId
+  return (Root x)
+
+ruleCongruence :: Parser RuleExpr
+ruleCongruence = do
+  xs <- braces (ruleExpr `sepBy` comma)
+  return (Congruence xs)
+
 ruleExpr :: Parser RuleExpr
 ruleExpr = buildExpressionParser table factor
   where prefixOp x f = Prefix (reservedOp x >> return f)
@@ -97,10 +109,12 @@ ruleExpr = buildExpressionParser table factor
                  [infixOp "|" Choice AssocLeft]]
         factor =  parens ruleExpr
               <|> ruleVar
-              <|> ruleLit 
+              <|> try(ruleLit)
+              <|> try(ruleRoot)
               <|> rulePath
               <|> ruleSuccess 
               <|> ruleFailure
+              <|> ruleCongruence
               <?> "factor"
 
 ruleAssign :: Parser (String,RuleExpr)
