@@ -1,5 +1,6 @@
 module Rewriting.Parser 
 (RuleExpr(..)
+,RuleDef(..)
 ,parseRules
 ,parseTerms
 )where
@@ -73,6 +74,8 @@ data RuleExpr = RuleVar String
               | Root String
               deriving (Eq,Show)
 
+data RuleDef = RuleDef String RuleExpr deriving (Eq,Show)
+
 ruleId :: Parser String
 ruleId = identifier
 
@@ -132,18 +135,22 @@ ruleExpr = buildExpressionParser table factor
               <|> ruleCongruence
               <?> "factor"
 
-ruleAssign :: Parser (String,RuleExpr)
-ruleAssign = do
+ruleDef :: Parser RuleDef
+ruleDef = do
   x <- ruleId
   reservedOp "="
   r <- ruleExpr
-  return (x,r)
+  return (RuleDef x r)
 
+ruleDefs :: Parser [RuleDef]
+ruleDefs = do
+  ds <- many ruleDef
+  return (reverse ds)
 
 -- Wrappers
 
-parseRules :: String -> Either ParseError [(String,RuleExpr)]
-parseRules = parse (allOf (many ruleAssign)) "Rules"
+parseRules :: String -> Either ParseError [RuleDef]
+parseRules = parse (allOf ruleDefs) "Rules"
 
 parseTerms :: String -> Either ParseError [Term]
 parseTerms = parse (allOf (many constTerm)) "Terms"

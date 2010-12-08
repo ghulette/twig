@@ -4,4 +4,12 @@
 a1 = [ack(z,N) -> s(N)]
 a2 = [ack(s(M),z) -> ack(M,s(z))]
 a3 = [ack(s(M),s(N)) -> ack(M,ack(s(M),N))]
-ack = (a3 | a2 | a1) ; (some ack) ; (ack | T)
+
+-- try(s) = s | T
+-- repeat(s) = try(s;repeat(s))
+
+a4 = (a3 | a2 | a1)
+a4TopDown = a4 | one a4TopDown
+ack = (a4TopDown ; ack) | T
+
+main = ack

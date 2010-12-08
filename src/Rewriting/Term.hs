@@ -1,4 +1,20 @@
-module Rewriting.Term where
+module Rewriting.Term
+(Term (..)
+,Rule (..)
+,apply
+,success
+,failure
+,test
+,neg
+,seqn
+,choice
+,branchAll
+,branchOne
+,branchSome
+,congruence
+,path
+,root
+)where
 
 import Control.Monad
 import Data.List (intercalate)

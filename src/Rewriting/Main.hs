@@ -2,9 +2,21 @@ import System.Environment (getArgs)
 import Rewriting.Parser
 import Rewriting.Term
 
-eval :: RuleExpr -> [(String,RuleExpr)] -> Term -> Maybe Term
-eval (RuleVar x) env = case lookup x env of Just t -> eval t env
-                                            Nothing -> undefined
+type Env = [RuleDef]
+
+fetch :: Env -> String -> Maybe RuleExpr
+fetch [] _ = Nothing
+fetch ((RuleDef y e):_) x | x == y = Just e
+fetch (_:rs) x = fetch rs x
+
+-- extend :: Env -> String -> RuleExpr -> Env
+-- extend rs x e = (RuleDef x e) : rs
+
+
+eval :: RuleExpr -> Env -> Term -> Maybe Term
+eval (RuleVar x) env = 
+  case fetch env x of Just t -> eval t env
+                      Nothing -> undefined
 eval (RuleLit r) _ = apply r
 eval Success _ = success
 eval Failure _ = failure
@@ -19,10 +31,10 @@ eval (Congruence ts) env = congruence (map (\t -> eval t env) ts)
 eval (Path i) _ = path (fromInteger i)
 eval (Root x) _ = root x
 
-run :: [(String,RuleExpr)] -> Term -> Maybe Term
-run = run' . reverse
-  where run' [] = Just
-        run' rs@((x,_):_) = eval (RuleVar x) rs
+run :: Env -> Term -> Maybe Term
+run env = 
+  case fetch env "main" of Just t -> eval t env
+                           Nothing -> undefined
 
 main :: IO ()
 main = do
