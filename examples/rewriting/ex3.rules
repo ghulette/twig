@@ -1,6 +1,10 @@
-snd = #2
-hd = [cons(X,Y) -> X]
-tl = [cons(X,Y) -> Y]
-rd = [s(X) -> X]
-ex = [X -> s(X)]
-main = [lt];{rd,ex}
+try(s) = s | T
+repeat(s) = try(s;repeat(s))
+
+repeat(s) = (s;repeat(s)) | T
+main = ([s(X) -> X];repeat([s(X) -> X])) | T
+
+-- oncetd(s) = s | one s
+-- test(s1,s2) = test(s1,s2)
+
+main = repeat([s(X) -> X])

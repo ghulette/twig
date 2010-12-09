@@ -1,5 +1,9 @@
 module Rewriting.Term
 (Term (..)
+,children
+,withChildren
+,isLeaf
+,isConst
 ,Rule (..)
 ,apply
 ,success
@@ -29,14 +33,25 @@ data Term = Var String
 instance Show Term where
   show (Var x) = "\'" ++ x
   show (Const k []) = k
-  show (Const k ts) = k ++ "(" ++ (intercalate "," tss) ++ ")"
-    where tss = map show ts
+  show (Const k ts) = k ++ "(" ++ (intercalate "," (map show ts)) ++ ")"
+
+children :: Term -> [Term]
+children (Var _) = undefined
+children (Const _ ts) = ts
+
+withChildren :: Term -> [Term] -> Term
+withChildren (Var _) _ = undefined
+withChildren (Const x _) ts = Const x ts
+
+isLeaf :: Term -> Bool
+isLeaf (Var _) = undefined
+isLeaf (Const _ []) = True
+isLeaf (Const _ _) = False
 
 isConst :: Term -> Bool
 isConst (Var _) = False
 isConst (Const _ []) = True
 isConst (Const _ ts) = any isConst ts
-
 
 -- Rules
 
@@ -145,25 +160,27 @@ seqn = (>=>)
 choice :: (Term -> Maybe Term) -> (Term -> Maybe Term) -> Term -> Maybe Term
 choice s1 s2 x = s1 x `mplus` s2 x
 
+-- always succeeds for leaf
 branchAll :: (Term -> Maybe Term) -> Term -> Maybe Term
 branchAll _ (Var _) = undefined
-branchAll _ (Const x []) = Just (Const x []) -- always succeeds for leaf
 branchAll s (Const x ts) = 
   case mapM s ts of 
     Just ts' -> Just (Const x ts')
     Nothing -> Nothing
 
+-- always fails for leaf
 branchOne :: (Term -> Maybe Term) -> Term -> Maybe Term
 branchOne _ (Var _) = undefined
-branchOne _ (Const _ []) = Nothing -- always fail for leaf
+branchOne _ (Const _ []) = Nothing
 branchOne s (Const x ts) = 
   case changeOne s ts of 
     Just ts' -> Just (Const x ts')
     Nothing -> Nothing
 
+-- always fails for leaf
 branchSome :: (Term -> Maybe Term) -> Term -> Maybe Term
 branchSome _ (Var _) = undefined
-branchSome _ (Const _ []) = Nothing -- always fail for leaf
+branchSome _ (Const _ []) = Nothing
 branchSome s (Const x ts) = 
   case changeSome s ts of 
     Just ts' -> Just (Const x ts')

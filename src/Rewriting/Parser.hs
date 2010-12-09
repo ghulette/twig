@@ -1,6 +1,6 @@
 module Rewriting.Parser 
 (RuleExpr(..)
-,RuleDef(..)
+,RuleStmt(..)
 ,parseRules
 ,parseTerms
 )where
@@ -10,9 +10,11 @@ import Text.ParserCombinators.Parsec.Expr
 import Rewriting.Term
 import Rewriting.Lexer
 
+type Id = String
+
 -- Terms and rule literals
 
-constId :: Parser String
+constId :: Parser Id
 constId = do 
   x <- lower
   xs <- many alphaNum
@@ -58,8 +60,9 @@ constTermList = parens (constTerm `sepBy` comma)
 
 -- Expressions
 
-data RuleExpr = RuleVar String
+data RuleExpr = RuleVar Id
               | RuleLit Rule
+              | Macro Id [RuleExpr]
               | Success
               | Failure
               | Test RuleExpr
@@ -71,18 +74,26 @@ data RuleExpr = RuleVar String
               | BranchSome RuleExpr
               | Congruence [RuleExpr]
               | Path Integer
-              | Root String
+              | Root Id
               deriving (Eq,Show)
 
-data RuleDef = RuleDef String RuleExpr deriving (Eq,Show)
+data RuleStmt = RuleDef Id RuleExpr 
+              | MacroDef Id [Id] RuleExpr
+              deriving (Eq,Show)
 
-ruleId :: Parser String
+ruleId :: Parser Id
 ruleId = identifier
 
 ruleVar :: Parser RuleExpr
 ruleVar = do
   x <- ruleId
   return (RuleVar x)
+
+macro :: Parser RuleExpr
+macro = do
+  x <- ruleId
+  args <- parens (ruleExpr `sepBy1` comma)
+  return (Macro x args)
 
 ruleLit :: Parser RuleExpr
 ruleLit = do
@@ -126,31 +137,37 @@ ruleExpr = buildExpressionParser table factor
                  [infixOp ";" Seq AssocLeft],
                  [infixOp "|" Choice AssocLeft]]
         factor =  parens ruleExpr
+              <|> try macro
               <|> ruleVar
-              <|> try(ruleLit)
-              <|> try(ruleRoot)
+              <|> try ruleLit
+              <|> try ruleRoot
               <|> rulePath
               <|> ruleSuccess 
               <|> ruleFailure
               <|> ruleCongruence
               <?> "factor"
 
-ruleDef :: Parser RuleDef
-ruleDef = do
+ruleOrMacroDef :: Id -> [Id] -> RuleExpr -> RuleStmt
+ruleOrMacroDef x [] r = RuleDef x r
+ruleOrMacroDef x ps r = MacroDef x ps r
+
+ruleStmt :: Parser RuleStmt
+ruleStmt = do
   x <- ruleId
+  params <- option [] (parens (ruleId `sepBy1` comma))
   reservedOp "="
   r <- ruleExpr
-  return (RuleDef x r)
+  return (ruleOrMacroDef x params r)
 
-ruleDefs :: Parser [RuleDef]
-ruleDefs = do
-  ds <- many ruleDef
+ruleStmts :: Parser [RuleStmt]
+ruleStmts = do
+  ds <- many ruleStmt
   return (reverse ds)
 
 -- Wrappers
 
-parseRules :: String -> Either ParseError [RuleDef]
-parseRules = parse (allOf ruleDefs) "Rules"
+parseRules :: String -> Either ParseError [RuleStmt]
+parseRules = parse (allOf ruleStmts) "Rules"
 
 parseTerms :: String -> Either ParseError [Term]
 parseTerms = parse (allOf (many constTerm)) "Terms"
