@@ -11,6 +11,7 @@ instance Show Error where
 evalError :: String -> Either Error a
 evalError msg = Left (RuntimeError msg)
 
+
 instance Monad (Either a) where
   return = Right
   (Left x) >>= _ = Left x
@@ -118,15 +119,13 @@ eval env (BranchSome s) t = do
 -- eval (Congruence ts) env = do
 --   ts' <- mapM (\t -> eval t env) ts
 --   return (congruence ts')
--- eval (RuleVar x) env = 
---   case fetchRule env x of 
---     Just t -> do
---       f <- eval t env
---       return f
---     Nothing -> 
---       evalError ("fetch " ++ x)
+eval env (RuleVar x) t = 
+  case fetchRule env x of 
+    Just s -> eval env s t
+    Nothing -> evalError ("fetch " ++ x)
 -- eval (Macro _ _) _ = 
 --   evalError "Macros are not supported"
+eval _ s _ = evalError ("Not supported:\n" ++ (show s))
 
 run :: Env -> Term -> Either Error (Maybe Term)
 run env t = case fetchRule env "main" of 
@@ -150,7 +149,8 @@ parseInput x = case parseTerms x of
 
 runOne :: Env -> Term -> IO ()
 runOne env t = do
-  print t
+  putStr (show t)
+  putStr " -> "
   case run env t of
     Left err -> fail (show err)
     Right x -> case x of
