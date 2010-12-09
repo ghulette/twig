@@ -33,44 +33,39 @@ fetchRule (_:rs) x = fetchRule rs x
 -- extend rs x e = (RuleDef x e) : rs
 
 mapAll :: (a -> Either b (Maybe a)) -> [a] -> Either b (Maybe [a])
-mapAll _ [] = Right (Just [])
-mapAll f (x:xs) = 
-  case f x of
-    Left err -> Left err
-    Right Nothing -> Right Nothing
-    Right (Just x') -> 
-      case mapAll f xs of
-        Left err -> Left err
-        Right Nothing -> Right Nothing
-        Right (Just xs') -> Right (Just (x':xs'))
+mapAll _ [] = return (Just [])
+mapAll f (x:xs) = do
+  mx' <- f x
+  case mx' of
+    Nothing -> return Nothing
+    Just x' -> do 
+      mxs' <- mapAll f xs
+      case mxs' of
+        Just xs' -> return (Just (x':xs'))
+        Nothing  -> return Nothing
 
 mapOne :: (a -> Either b (Maybe a)) -> [a] -> Either b (Maybe [a])
-mapOne _ [] = Right Nothing
-mapOne f (x:xs) = 
-  case f x of
-    Left err -> Left err
-    Right (Just x') -> Right (Just (x':xs))
-    Right Nothing -> 
-      case mapOne f xs of
-        Left err -> Left err
-        Right Nothing -> Right Nothing
-        Right (Just xs') -> Right (Just (x:xs'))
+mapOne _ [] = return Nothing
+mapOne f (x:xs) = do
+  mx' <- f x
+  case mx' of
+    Just x' -> return (Just (x':xs))
+    Nothing -> do
+      mxs' <- mapOne f xs
+      case mxs' of
+        Just xs' -> return (Just (x:xs'))
+        Nothing  -> return Nothing
 
 mapSome :: (a -> Either b (Maybe a)) -> [a] -> Either b (Maybe [a])
-mapSome _ [] = Right Nothing
-mapSome f (x:xs) = 
-  case f x of
-    Left err -> Left err
-    Right (Just x') ->
-      case mapSome f xs of
-        Left err -> Left err
-        Right Nothing -> Right (Just (x':xs))
-        Right (Just xs') -> Right (Just (x':xs'))
-    Right Nothing -> 
-      case mapSome f xs of
-        Left err -> Left err
-        Right Nothing -> Right Nothing
-        Right (Just xs') -> Right (Just (x:xs'))
+mapSome _ [] = return Nothing
+mapSome f (x:xs) = do
+  mx' <- f x
+  mxs' <- mapSome f xs
+  case (mx',mxs') of
+    (Just x',Just xs') -> return (Just (x':xs'))
+    (Just x',Nothing)  -> return (Just (x':xs))
+    (Nothing,Just xs') -> return (Just (x:xs'))
+    (Nothing,Nothing)  -> return Nothing
 
 eval :: Env -> RuleExpr -> Term -> Either Error (Maybe Term)
 eval _ (RuleLit s) t = return (apply s t)
