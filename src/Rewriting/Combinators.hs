@@ -12,9 +12,9 @@ module Rewriting.Combinators
 , path
 ) where
 
+import Control.Monad
 import Rewriting.Term
 import Rewriting.Util
-import Control.Monad
 
 -- Combinators
 

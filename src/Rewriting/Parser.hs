@@ -8,8 +8,8 @@ module Rewriting.Parser
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Rewriting.Lexer
-import Rewriting.Term
 import Rewriting.Rule
+import Rewriting.Term
 
 type Id = String
 

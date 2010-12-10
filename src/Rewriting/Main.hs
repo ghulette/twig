@@ -1,11 +1,12 @@
-import System.Environment (getArgs)
 import Data.List (find)
-import Rewriting.Parser
-import Rewriting.Term
-import Rewriting.Rule
-import Rewriting.Util
-import Rewriting.Error
+import System.Environment (getArgs)
 import Rewriting.Combinators (path)
+import Rewriting.Error
+import Rewriting.Parser
+import Rewriting.Rule
+import Rewriting.Term
+import Rewriting.Util
+
 
 type Rules = [RuleDef]
 
