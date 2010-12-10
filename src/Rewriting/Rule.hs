@@ -1,9 +1,8 @@
 module Rewriting.Rule (Rule (..),apply) where
 
-import Rewriting.Environment
 import Rewriting.Term
 
--- Rules
+-- Rule datatype
 
 data Rule = Rule Term Term deriving Eq
 
@@ -15,6 +14,8 @@ apply :: Rule -> Term -> Maybe Term
 apply (Rule p q) x = do
   e <- x `match` p
   subst e q
+
+type Env a = [(String,a)]
 
 -- LHS should not contain variables, maybe enforce this in the types?
 match :: Term -> Term -> Maybe (Env Term)
@@ -31,7 +32,7 @@ matchList ts1 ts2 = do
   return env
 
 subst :: (Env Term) -> Term -> Maybe Term
-subst e (Var x) = fetch x e
+subst e (Var x) = lookup x e
 subst e (Const x ts) = do
   ts' <- mapM (subst e) ts
   return $ Const x ts'

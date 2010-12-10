@@ -1,21 +1,15 @@
 import System.Environment (getArgs)
+import Data.List (find)
 import Rewriting.Parser
 import Rewriting.Term
 import Rewriting.Rule
 import Rewriting.Util
 import Rewriting.Error
 
-type Rules = [RuleStmt]
+type Rules = [RuleDef]
 
-fetchRule :: Rules -> String -> Maybe RuleExpr
-fetchRule [] _ = Nothing
-fetchRule ((RuleDef y t):_) x | x == y = Just t
-fetchRule (_:rs) x = fetchRule rs x
-
-fetchMacro :: Rules -> String -> Maybe ([String],RuleExpr)
-fetchMacro [] _ = Nothing
-fetchMacro ((MacroDef y params t):_) x | x == y = Just (params,t)
-fetchMacro (_:rs) x = fetchMacro rs x
+lookupRuleDef :: Rules -> String -> Maybe RuleDef
+lookupRuleDef xs x = find (\(RuleDef x' _ _) -> x == x') xs
 
 eval :: Rules -> RuleExpr -> Term -> Either Error (Maybe Term)
 eval _ (RuleLit s) t = return (apply s t)
@@ -69,15 +63,19 @@ eval env (Congruence ss) t = do
     Just ts' -> return (Just (t `withChildren` ts'))
     Nothing -> return Nothing
 eval env (RuleVar x) t = 
-  case fetchRule env x of
-    Nothing -> evalError ("fetch " ++ x)
-    Just s -> eval env s t
-eval env (Macro x args) t =
-  case fetchMacro env x of 
-    Nothing -> evalError ("fetch " ++ x)
-    Just (params,s) -> do
-      let s' = sub (zip params args) s
-      eval env s' t
+  case lookupRuleDef env x of 
+    Nothing -> evalError ("Not in scope: " ++ x)
+    Just (RuleDef _ [] s) -> eval env s t
+    Just _ -> evalError ("Requires args: " ++ x)
+eval env (Call x args) t =
+  case lookupRuleDef env x of 
+    Nothing -> evalError ("Not in scope: " ++ x)
+    Just (RuleDef _ params s) -> do
+      if length params /= length args
+        then evalError ("Wrong number of args: " ++ x)
+        else do
+          let s' = sub (zip params args) s
+          eval env s' t
 
 sub :: [(String,RuleExpr)] -> RuleExpr -> RuleExpr
 sub env (RuleVar x) = 
@@ -92,7 +90,7 @@ sub env (BranchAll s) = BranchAll (sub env s)
 sub env (BranchOne s) = BranchOne (sub env s)
 sub env (BranchSome s) = BranchSome (sub env s)
 sub env (Congruence ss) = Congruence (map (sub env) ss)
-sub env (Macro x ss) = Macro x (map (sub env) ss)
+sub env (Call x ss) = Call x (map (sub env) ss)
 sub _ t@(RuleLit _) = t
 sub _ t@Success = t
 sub _ t@Failure = t
@@ -100,8 +98,9 @@ sub _ t@(Path _) = t
 sub _ t@(Root _) = t
 
 run :: Rules -> Term -> Either Error (Maybe Term)
-run env t = case fetchRule env mainRuleId of 
-  Just s -> eval env s t
+run env t = case lookupRuleDef env mainRuleId of 
+  Just (RuleDef _ [] s) -> eval env s t
+  Just (RuleDef _ _ _ ) -> evalError "main should not have args"
   Nothing -> evalError "main is undefined"
   where
     mainRuleId = "main"

@@ -1,6 +1,6 @@
 module Rewriting.Parser 
 ( RuleExpr(..)
-, RuleStmt(..)
+, RuleDef(..)
 , parseRules
 , parseTerms
 ) where
@@ -63,7 +63,7 @@ constTermList = parens (constTerm `sepBy` comma)
 
 data RuleExpr = RuleVar Id
               | RuleLit Rule
-              | Macro Id [RuleExpr]
+              | Call Id [RuleExpr]
               | Success
               | Failure
               | Test RuleExpr
@@ -78,9 +78,7 @@ data RuleExpr = RuleVar Id
               | Root Id
               deriving (Eq,Show)
 
-data RuleStmt = RuleDef Id RuleExpr 
-              | MacroDef Id [Id] RuleExpr
-              deriving (Eq,Show)
+data RuleDef = RuleDef Id [Id] RuleExpr deriving (Eq,Show)
 
 ruleId :: Parser Id
 ruleId = identifier
@@ -90,11 +88,11 @@ ruleVar = do
   x <- ruleId
   return (RuleVar x)
 
-macro :: Parser RuleExpr
-macro = do
+call :: Parser RuleExpr
+call = do
   x <- ruleId
   args <- parens (ruleExpr `sepBy1` comma)
-  return (Macro x args)
+  return (Call x args)
 
 ruleLit :: Parser RuleExpr
 ruleLit = do
@@ -138,7 +136,7 @@ ruleExpr = buildExpressionParser table factor
                  [infixOp ";" Seq AssocLeft],
                  [infixOp "|" Choice AssocLeft]]
         factor =  parens ruleExpr
-              <|> try macro
+              <|> try call
               <|> ruleVar
               <|> try ruleLit
               <|> try ruleRoot
@@ -148,27 +146,23 @@ ruleExpr = buildExpressionParser table factor
               <|> ruleCongruence
               <?> "factor"
 
-ruleOrMacroDef :: Id -> [Id] -> RuleExpr -> RuleStmt
-ruleOrMacroDef x [] r = RuleDef x r
-ruleOrMacroDef x ps r = MacroDef x ps r
-
-ruleStmt :: Parser RuleStmt
-ruleStmt = do
+ruleDef :: Parser RuleDef
+ruleDef = do
   x <- ruleId
   params <- option [] (parens (ruleId `sepBy1` comma))
   reservedOp "="
   r <- ruleExpr
-  return (ruleOrMacroDef x params r)
+  return (RuleDef x params r)
 
-ruleStmts :: Parser [RuleStmt]
-ruleStmts = do
-  ds <- many ruleStmt
+ruleDefs :: Parser [RuleDef]
+ruleDefs = do
+  ds <- many ruleDef
   return (reverse ds)
 
 -- Wrappers
 
-parseRules :: String -> Either ParseError [RuleStmt]
-parseRules = parse (allOf ruleStmts) "Rules"
+parseRules :: String -> Either ParseError [RuleDef]
+parseRules = parse (allOf ruleDefs) "Rules"
 
 parseTerms :: String -> Either ParseError [Term]
 parseTerms = parse (allOf (many constTerm)) "Terms"
