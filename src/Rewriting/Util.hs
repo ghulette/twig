@@ -1,12 +1,11 @@
 module Rewriting.Util where
 
-update :: (a -> Maybe a) -> a -> a
-update f x = f x `withDefault` x
-
-
 withDefault :: Maybe a -> a -> a
 withDefault (Just x) _ = x
 withDefault Nothing y = y
+
+update :: (a -> Maybe a) -> a -> a
+update f x = f x `withDefault` x
 
 zappM :: Monad m => [a -> m b] -> [a] -> m [b]
 zappM [] _ = return []
