@@ -4,8 +4,6 @@ module Rewriting.Term
 , withChildren
 , isLeaf
 , isConst
-, Rule (..)
-, apply
 , success
 , failure
 , test
@@ -22,7 +20,7 @@ module Rewriting.Term
 
 import Control.Monad
 import Data.List (intercalate)
-import Data.Maybe (fromMaybe)
+import Rewriting.Util
 
 -- Terms
 
@@ -53,90 +51,8 @@ isConst (Var _) = False
 isConst (Const _ []) = True
 isConst (Const _ ts) = any isConst ts
 
--- Rules
 
-data Rule = Rule Term Term deriving Eq
-
-instance Show Rule where
-  show (Rule t1 t2) = (show t1) ++ " -> " ++ (show t2)
-
-
--- Environment
-
-type Env = [(String,Term)]
-
-empty :: Env
-empty = []
-
-extend :: String -> Term -> Env -> Env
-extend x t e = (x,t) : e
-
-fetch :: String -> Env -> Maybe Term
-fetch = lookup
-
-
--- Utility functions
-
-repeatMaybe :: (a -> Maybe a) -> a -> Maybe a
-repeatMaybe f x = case f x of Just x' -> repeatMaybe f x'
-                              Nothing -> Just x
-
-catMaybeList :: a -> Maybe [a] -> Maybe [a]
-catMaybeList _ Nothing = Nothing
-catMaybeList x (Just xs) = Just (x:xs)
-
--- This is very ineffcient, rewrite
-changeOne :: (a -> Maybe a) -> [a] -> Maybe [a]
-changeOne _ [] = Nothing
-changeOne f (x:xs) = 
-  case f x of Just x' -> Just (x':xs)
-              Nothing -> x `catMaybeList` (changeOne f xs)
-
--- This is very ineffcient, rewrite
-changeSome :: (a -> Maybe a) -> [a] -> Maybe [a]
-changeSome f xs = 
-  let
-    def = map fromMaybe xs
-    xs' = map f xs
-  in
-    if length xs' > 0 
-      then Just (zipWith ($) def xs') 
-      else Nothing
-
-
--- Rule application
-
-applyTopDown :: Rule -> Term -> Maybe Term
-applyTopDown r = choice (apply r) (branchOne (applyTopDown r))
-
--- Match against outermost term and rewrite
-apply :: Rule -> Term -> Maybe Term
-apply (Rule p q) x = do
-  e <- x `match` p
-  subst e q
-
--- LHS should not contain variables, maybe enforce this in the types?
-match :: Term -> Term -> Maybe Env
-match (Const x1 ts1) (Const x2 ts2) | x1 == x2 = matchList ts1 ts2
-match t (Var x) = Just [(x,t)]
-match _ _ = Nothing
-
-matchList :: [Term] -> [Term] -> Maybe Env
-matchList [] [] = Just []
-matchList ts1 ts2 | length ts1 /= length ts2 = Nothing
-matchList ts1 ts2 = do
-  bindings <- mapM (\(t1,t2) -> match t1 t2) (zip ts1 ts2)
-  let env = concat bindings
-  return env
-
-subst :: Env -> Term -> Maybe Term
-subst e (Var x) = fetch x e
-subst e (Const x ts) = do
-  ts' <- mapM (subst e) ts
-  return $ Const x ts'
-
-
--- Rule combinators
+-- Combinators
 
 success :: Term -> Maybe Term
 success x = Just x
@@ -160,31 +76,23 @@ seqn = (>=>)
 choice :: (Term -> Maybe Term) -> (Term -> Maybe Term) -> Term -> Maybe Term
 choice s1 s2 x = s1 x `mplus` s2 x
 
--- always succeeds for leaf
+type MaybeMap a = (a -> Maybe a) -> [a] -> Maybe [a]
+
+branch :: MaybeMap Term -> (Term -> Maybe Term) -> Term -> Maybe Term
+branch _ _ (Var _) = undefined
+branch mapf s t = do
+  let ts = children t
+  ts' <- mapf s ts
+  return (t `withChildren` ts')
+
 branchAll :: (Term -> Maybe Term) -> Term -> Maybe Term
-branchAll _ (Var _) = undefined
-branchAll s (Const x ts) = 
-  case mapM s ts of 
-    Just ts' -> Just (Const x ts')
-    Nothing -> Nothing
+branchAll = branch mapAll
 
--- always fails for leaf
 branchOne :: (Term -> Maybe Term) -> Term -> Maybe Term
-branchOne _ (Var _) = undefined
-branchOne _ (Const _ []) = Nothing
-branchOne s (Const x ts) = 
-  case changeOne s ts of 
-    Just ts' -> Just (Const x ts')
-    Nothing -> Nothing
+branchOne = branch mapOne
 
--- always fails for leaf
 branchSome :: (Term -> Maybe Term) -> Term -> Maybe Term
-branchSome _ (Var _) = undefined
-branchSome _ (Const _ []) = Nothing
-branchSome s (Const x ts) = 
-  case changeSome s ts of 
-    Just ts' -> Just (Const x ts')
-    Nothing -> Nothing
+branchSome = branch mapSome
 
 congruence :: [Term -> Maybe Term] -> Term -> Maybe Term
 congruence _ (Var _) = undefined

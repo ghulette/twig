@@ -1,14 +1,15 @@
 module Rewriting.Parser 
-(RuleExpr(..)
-,RuleStmt(..)
-,parseRules
-,parseTerms
-)where
+( RuleExpr(..)
+, RuleStmt(..)
+, parseRules
+, parseTerms
+) where
 
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
-import Rewriting.Term
 import Rewriting.Lexer
+import Rewriting.Term
+import Rewriting.Rule
 
 type Id = String
 

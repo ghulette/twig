@@ -1,29 +1,9 @@
 import System.Environment (getArgs)
-import Control.Monad
 import Rewriting.Parser
 import Rewriting.Term
-
-data Error = RuntimeError String deriving Eq
-
-instance Show Error where
-  show (RuntimeError msg) = "Runtime error: " ++ msg
-
-evalError :: String -> Either Error a
-evalError msg = Left (RuntimeError msg)
-
-zapp :: [a -> Either Error b] -> [a] -> Either Error [b]
-zapp [] [] = Right []
-zapp [] _ = evalError "Not enough rules"
-zapp _ [] = evalError "Not enough terms"
-zapp (f:fs) (x:xs) = do
-  x' <- f x
-  xs' <- zapp fs xs
-  return (x':xs')
-
-instance Monad (Either a) where
-  return = Right
-  (Left x) >>= _ = Left x
-  (Right x) >>= f = f x
+import Rewriting.Rule
+import Rewriting.Util
+import Rewriting.Error
 
 type Env = [RuleStmt]
 
@@ -39,41 +19,6 @@ fetchMacro (_:rs) x = fetchMacro rs x
 
 extend :: Env -> String -> RuleExpr -> Env
 extend rs x e = (RuleDef x e) : rs
-
-mapAll :: (a -> Either b (Maybe a)) -> [a] -> Either b (Maybe [a])
-mapAll _ [] = return (Just [])
-mapAll f (x:xs) = do
-  mx' <- f x
-  case mx' of
-    Nothing -> return Nothing
-    Just x' -> do 
-      mxs' <- mapAll f xs
-      case mxs' of
-        Just xs' -> return (Just (x':xs'))
-        Nothing  -> return Nothing
-
-mapOne :: (a -> Either b (Maybe a)) -> [a] -> Either b (Maybe [a])
-mapOne _ [] = return Nothing
-mapOne f (x:xs) = do
-  mx' <- f x
-  case mx' of
-    Just x' -> return (Just (x':xs))
-    Nothing -> do
-      mxs' <- mapOne f xs
-      case mxs' of
-        Just xs' -> return (Just (x:xs'))
-        Nothing  -> return Nothing
-
-mapSome :: (a -> Either b (Maybe a)) -> [a] -> Either b (Maybe [a])
-mapSome _ [] = return Nothing
-mapSome f (x:xs) = do
-  mx' <- f x
-  mxs' <- mapSome f xs
-  case (mx',mxs') of
-    (Just x',Just xs') -> return (Just (x':xs'))
-    (Just x',Nothing)  -> return (Just (x':xs))
-    (Nothing,Just xs') -> return (Just (x:xs'))
-    (Nothing,Nothing)  -> return Nothing
 
 eval :: Env -> RuleExpr -> Term -> Either Error (Maybe Term)
 eval _ (RuleLit s) t = return (apply s t)
@@ -103,26 +48,26 @@ eval env (Choice s1 s2) t = do
     Nothing -> eval env s2 t
 eval env (BranchAll s) t = do
   let ts = children t
-  mts' <- mapAll (eval env s) ts
+  mts' <- mapAllM (eval env s) ts
   case mts' of
     Just ts' -> return (Just (t `withChildren` ts'))
     Nothing -> return Nothing
 eval env (BranchOne s) t = do
   let ts = children t
-  mts' <- mapOne (eval env s) ts
+  mts' <- mapOneM (eval env s) ts
   case mts' of
     Just ts' -> return (Just (t `withChildren` ts'))
     Nothing -> return Nothing
 eval env (BranchSome s) t = do
   let ts = children t
-  mts' <- mapSome (eval env s) ts
+  mts' <- mapSomeM (eval env s) ts
   case mts' of
     Just ts' -> return (Just (t `withChildren` ts'))
     Nothing -> return Nothing
 eval env (Congruence ss) t = do
   let ts = children t
   let rs = map (eval env) ss
-  mts' <- zapp rs ts
+  mts' <- zappM rs ts
   case sequence mts' of
     Just ts' -> return (Just (t `withChildren` ts'))
     Nothing -> return Nothing
