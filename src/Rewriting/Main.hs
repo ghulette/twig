@@ -21,11 +21,9 @@ runOne :: Rules -> Term -> IO ()
 runOne env t = do
   putStr (show t)
   putStr " -> "
-  case run env t of
-    Left err -> fail (show err)
-    Right x -> case x of
-      Just t' -> print t'
-      Nothing -> putStrLn "No match"
+  case run "main" env t of
+    Just t' -> print t'
+    Nothing -> putStrLn "No match"
 
 main :: IO ()
 main = do

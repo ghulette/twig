@@ -1,12 +1,19 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Rewriting.RuleExpr where
 
 import Data.List (find)
-import Rewriting.Error
 import Rewriting.Rule
 import Rewriting.Term
 import Rewriting.Util
 
-  
+import Data.Typeable
+import Control.Exception
+
+data EvalException = RuntimeException String deriving (Show,Typeable)
+
+instance Exception EvalException
+
 -- Expressions
 
 type Id = String
@@ -46,76 +53,61 @@ type Rules = [RuleDef]
 lookupRuleDef :: Rules -> String -> Maybe RuleDef
 lookupRuleDef xs x = find (\(RuleDef x' _ _) -> x == x') xs
 
-eval :: Rules -> RuleExpr -> Term -> Either Error (Maybe Term)
-eval _ (RuleLit s) t = return (apply s t)
-eval _ Success t = return (Just t)
-eval _ Failure _ = return Nothing
-eval env (Test s) t = do
-  mt' <- eval env s t
-  return $ case mt' of 
+eval :: Rules -> RuleExpr -> Term -> Maybe Term
+eval _ (RuleLit s) t = apply s t
+eval _ Success t = Just t
+eval _ Failure _ = Nothing
+eval env (Test s) t =
+  case eval env s t of
     Just _ -> Just t
     Nothing -> Nothing
-eval env (Neg s) t = do
-  mt' <- eval env s t
-  return $ case mt' of
+eval env (Neg s) t =
+  case eval env s t of
     Just _ -> Nothing
     Nothing -> Just t
-eval env (Seq s1 s2) t = do
-  mt' <- eval env s1 t
-  case mt' of
+eval env (Seq s1 s2) t = 
+  case eval env s1 t of
     Just t' -> eval env s2 t'
-    Nothing -> return Nothing
-eval env (Choice s1 s2) t = do
-  mt' <- eval env s1 t
-  case mt' of 
-    Just t' -> return (Just t')
+    Nothing -> Nothing
+eval env (Choice s1 s2) t =
+  case eval env s1 t of
+    Just t' -> Just t'
     Nothing -> eval env s2 t
 eval env (Path 0 s) t = eval env s t -- #0(s) just applies s to root
 eval env (Path i s) t = do
   let ts = children t
-  mts' <- pathM (fromInteger i) (eval env s) ts
-  case mts' of 
-    Just ts' -> return (Just (t `withChildren` ts'))
-    Nothing -> return Nothing
+  ts' <- path (fromInteger i) (eval env s) ts
+  return (t `withChildren` ts')
 eval env (BranchAll s) t = do
   let ts = children t
-  mts' <- mapAllM (eval env s) ts
-  case mts' of
-    Just ts' -> return (Just (t `withChildren` ts'))
-    Nothing -> return Nothing
+  ts' <- mapAll (eval env s) ts
+  return (t `withChildren` ts')
 eval env (BranchOne s) t = do
   let ts = children t
-  mts' <- mapOneM (eval env s) ts
-  case mts' of
-    Just ts' -> return (Just (t `withChildren` ts'))
-    Nothing -> return Nothing
+  ts' <- mapOne (eval env s) ts
+  return (t `withChildren` ts')
 eval env (BranchSome s) t = do
   let ts = children t
-  mts' <- mapSomeM (eval env s) ts
-  case mts' of
-    Just ts' -> return (Just (t `withChildren` ts'))
-    Nothing -> return Nothing
+  ts' <- mapSome (eval env s) ts
+  return (t `withChildren` ts')
 eval env (Congruence ss) t = do
   let ts = children t
   let rs = map (eval env) ss
-  mts' <- zappM rs ts
-  case sequence mts' of
-    Just ts' -> return (Just (t `withChildren` ts'))
-    Nothing -> return Nothing
+  -- check that list lengths match
+  ts' <- sequence (zipWith ($) rs ts)
+  return (t `withChildren` ts')
 eval env (RuleVar x) t = 
-  case lookupRuleDef env x of 
-    Nothing -> evalError ("Not in scope: " ++ x)
+  case lookupRuleDef env x of
+    Nothing -> throw (RuntimeException ("Not in scope: " ++ x))
     Just (RuleDef _ [] s) -> eval env s t
-    Just _ -> evalError ("Requires args: " ++ x)
+    Just _ -> throw (RuntimeException ("Missing args in call to " ++ x))
 eval env (Call x args) t =
   case lookupRuleDef env x of 
-    Nothing -> evalError ("Not in scope: " ++ x)
+    Nothing -> throw (RuntimeException ("Not in scope: " ++ x))
     Just (RuleDef _ params s) -> do
-      if length params /= length args
-        then evalError ("Wrong number of args: " ++ x)
-        else do
-          let s' = subVars (zip params args) s
-          eval env s' t
+      -- check that list lengths match
+      let s' = subVars (zip params args) s
+      eval env s' t
 
 subVars :: [(String,RuleExpr)] -> RuleExpr -> RuleExpr
 subVars env = traverse sub
@@ -128,10 +120,12 @@ subVars env = traverse sub
 --   where sub' (RuleVar x) = (lookup x env) `withDefault` (RuleVar x) 
 --         sub' t = t
 
-run :: Rules -> Term -> Either Error (Maybe Term)
-run env t = case lookupRuleDef env mainRuleId of 
-  Just (RuleDef _ [] s) -> eval env s t
-  Just (RuleDef _ _ _ ) -> evalError "main should not have args"
-  Nothing -> evalError "main is undefined"
-  where
-    mainRuleId = "main"
+run :: String -> Rules -> Term -> Maybe Term
+run entry env t = 
+  case lookupRuleDef env entry of 
+    Just (RuleDef _ [] s) -> 
+      eval env s t
+    Just (RuleDef _ _ _ ) -> 
+      throw (RuntimeException (entry ++ " cannot have args"))
+    Nothing -> 
+      throw (RuntimeException (entry ++ " is not defined"))
