@@ -1,17 +1,14 @@
 module Rewriting.Parser 
-( RuleExpr(..)
-, RuleDef(..)
-, parseRules
+( parseRules
 , parseTerms
 ) where
 
 import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Expr
+import qualified Text.ParserCombinators.Parsec.Expr as Ex
 import Rewriting.Lexer
 import Rewriting.Rule
 import Rewriting.Term
-
-type Id = String
+import Rewriting.RuleExpr
 
 -- Terms and rule literals
 
@@ -58,27 +55,6 @@ constTerm = do
 constTermList :: Parser [Term]
 constTermList = parens (constTerm `sepBy` comma)
 
-
--- Expressions
-
-data RuleExpr = RuleVar Id
-              | RuleLit Rule
-              | Call Id [RuleExpr]
-              | Success
-              | Failure
-              | Test RuleExpr
-              | Neg RuleExpr
-              | Seq RuleExpr RuleExpr
-              | Choice RuleExpr RuleExpr
-              | BranchAll RuleExpr
-              | BranchOne RuleExpr
-              | BranchSome RuleExpr
-              | Congruence [RuleExpr]
-              | Path Integer
-              deriving (Eq,Show)
-
-data RuleDef = RuleDef Id [Id] RuleExpr deriving (Eq,Show)
-
 ruleId :: Parser Id
 ruleId = identifier
 
@@ -108,11 +84,11 @@ ruleFailure = do
   reserved "F"
   return Failure
 
-rulePath :: Parser RuleExpr
+rulePath :: Parser (RuleExpr -> RuleExpr)
 rulePath = do
   reservedOp "#"
   i <- natural
-  return (Path i)
+  return (\s -> Path i s)
 
 ruleCongruence :: Parser RuleExpr
 ruleCongruence = do
@@ -120,20 +96,20 @@ ruleCongruence = do
   return (Congruence xs)
 
 ruleExpr :: Parser RuleExpr
-ruleExpr = buildExpressionParser table factor
-  where prefixOp x f = Prefix (reservedOp x >> return f)
-        infixOp x f = Infix (reservedOp x >> return f)
+ruleExpr = Ex.buildExpressionParser table factor
+  where prefixOp x f = Ex.Prefix (reservedOp x >> return f)
+        infixOp x f = Ex.Infix (reservedOp x >> return f)
         table = [[prefixOp "?" Test,prefixOp "~" Neg,
+                  (Ex.Prefix rulePath),
                   prefixOp "one" BranchOne,
                   prefixOp "some" BranchSome,
                   prefixOp "all" BranchAll],
-                 [infixOp ";" Seq AssocLeft],
-                 [infixOp "|" Choice AssocLeft]]
+                 [infixOp ";" Seq Ex.AssocLeft],
+                 [infixOp "|" Choice Ex.AssocLeft]]
         factor =  parens ruleExpr
               <|> try call
               <|> ruleVar
               <|> ruleLit
-              <|> rulePath
               <|> ruleSuccess 
               <|> ruleFailure
               <|> ruleCongruence

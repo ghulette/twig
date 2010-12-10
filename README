@@ -1,8 +1,11 @@
 TODO:
 * Side effects (e.g. malloc/free)
 * Disambiguation via "universal" type mappings
-* Simple language/parser for creating typemaps
 
 Basic issues:
 * Memory management across languages
 * Marshalling basic datatypes
+
+Rewriting TODO:
+* Variable joins in literals
+* Use exceptions in interpreter instead of Either?

@@ -1,5 +1,13 @@
 module Rewriting.Util where
 
+update :: (a -> Maybe a) -> a -> a
+update f x = f x `withDefault` x
+
+
+withDefault :: Maybe a -> a -> a
+withDefault (Just x) _ = x
+withDefault Nothing y = y
+
 zappM :: Monad m => [a -> m b] -> [a] -> m [b]
 zappM [] _ = return []
 zappM _ [] = return []
@@ -7,6 +15,16 @@ zappM (f:fs) (x:xs) = do
   x' <- f x
   xs' <- zappM fs xs
   return (x':xs')
+
+path :: Int -> (a -> Maybe a) -> [a] -> Maybe [a]
+path i _ _ | i < 1 = Nothing
+path _ _ [] = Nothing
+path 1 f (x:xs) = do
+  x' <- f x
+  return (x':xs)
+path i f (x:xs) = do
+  xs' <- path (i-1) f xs
+  return (x:xs')
 
 mapAll :: (a -> Maybe a) -> [a] -> Maybe [a]
 mapAll _ [] = Just []
@@ -68,3 +86,17 @@ mapSomeM f (x:xs) = do
     (Just x',Nothing)  -> return (Just (x':xs))
     (Nothing,Just xs') -> return (Just (x:xs'))
     (Nothing,Nothing)  -> return Nothing
+
+pathM :: Monad m => Int -> (a -> m (Maybe a)) -> [a] -> m (Maybe [a])
+pathM i _ _ | i < 1 = return Nothing
+pathM _ _ [] = return Nothing
+pathM 1 f (x:xs) = do
+  mx' <- f x
+  case mx' of
+    Just x' -> return (Just (x':xs))
+    Nothing -> return Nothing
+pathM i f (x:xs) = do
+  mxs' <- pathM (i-1) f xs
+  case mxs' of
+    Just xs' -> return (Just (x:xs'))
+    Nothing -> return Nothing
