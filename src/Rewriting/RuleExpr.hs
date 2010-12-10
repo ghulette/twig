@@ -70,6 +70,7 @@ eval env (Choice s1 s2) t = do
   case mt' of 
     Just t' -> return (Just t')
     Nothing -> eval env s2 t
+eval env (Path 0 s) t = eval env s t -- #0(s) just applies s to root
 eval env (Path i s) t = do
   let ts = children t
   mts' <- pathM (fromInteger i) (eval env s) ts
