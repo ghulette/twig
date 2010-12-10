@@ -5,7 +5,7 @@ import Rewriting.Term
 import Rewriting.Rule
 import Rewriting.Util
 import Rewriting.Error
-import Rewriting.Combinators (path,root)
+import Rewriting.Combinators (path)
 
 type Rules = [RuleDef]
 
@@ -17,7 +17,6 @@ eval _ (RuleLit s) t = return (apply s t)
 eval _ Success t = return (Just t)
 eval _ Failure _ = return Nothing
 eval _ (Path i) t = return (path (fromInteger i) t)
-eval _ (Root x) t = return (root x t)
 eval env (Test s) t = do
   mt' <- eval env s t
   return $ case mt' of 
@@ -96,7 +95,6 @@ sub _ t@(RuleLit _) = t
 sub _ t@Success = t
 sub _ t@Failure = t
 sub _ t@(Path _) = t
-sub _ t@(Root _) = t
 
 run :: Rules -> Term -> Either Error (Maybe Term)
 run env t = case lookupRuleDef env mainRuleId of 

@@ -75,7 +75,6 @@ data RuleExpr = RuleVar Id
               | BranchSome RuleExpr
               | Congruence [RuleExpr]
               | Path Integer
-              | Root Id
               deriving (Eq,Show)
 
 data RuleDef = RuleDef Id [Id] RuleExpr deriving (Eq,Show)
@@ -115,11 +114,6 @@ rulePath = do
   i <- natural
   return (Path i)
 
-ruleRoot :: Parser RuleExpr
-ruleRoot = do
-  x <- brackets ruleId
-  return (Root x)
-
 ruleCongruence :: Parser RuleExpr
 ruleCongruence = do
   xs <- braces (ruleExpr `sepBy` comma)
@@ -138,8 +132,7 @@ ruleExpr = buildExpressionParser table factor
         factor =  parens ruleExpr
               <|> try call
               <|> ruleVar
-              <|> try ruleLit
-              <|> try ruleRoot
+              <|> ruleLit
               <|> rulePath
               <|> ruleSuccess 
               <|> ruleFailure

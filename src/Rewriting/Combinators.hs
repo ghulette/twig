@@ -10,7 +10,6 @@ module Rewriting.Combinators
 , branchSome
 , congruence
 , path
-, root
 ) where
 
 import Rewriting.Term
@@ -75,8 +74,3 @@ path _ (Var _) = undefined
 path 0 t = Just t
 path i (Const _ ts) | i > 0 && i <= length ts = Just (ts !! (i-1))
 path _ (Const _ _) = Nothing
-
-root :: String -> Term -> Maybe Term
-root _ (Var _) = undefined
-root x (Const y ts) | x == y = Just (Const y ts)
-root _ _ = Nothing
