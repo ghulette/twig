@@ -5,22 +5,19 @@ import Rewriting.Rule
 import Rewriting.Util
 import Rewriting.Error
 
-type Env = [RuleStmt]
+type Rules = [RuleStmt]
 
-fetchRule :: Env -> String -> Maybe RuleExpr
+fetchRule :: Rules -> String -> Maybe RuleExpr
 fetchRule [] _ = Nothing
 fetchRule ((RuleDef y t):_) x | x == y = Just t
 fetchRule (_:rs) x = fetchRule rs x
 
-fetchMacro :: Env -> String -> Maybe ([String],RuleExpr)
+fetchMacro :: Rules -> String -> Maybe ([String],RuleExpr)
 fetchMacro [] _ = Nothing
 fetchMacro ((MacroDef y params t):_) x | x == y = Just (params,t)
 fetchMacro (_:rs) x = fetchMacro rs x
 
-extend :: Env -> String -> RuleExpr -> Env
-extend rs x e = (RuleDef x e) : rs
-
-eval :: Env -> RuleExpr -> Term -> Either Error (Maybe Term)
+eval :: Rules -> RuleExpr -> Term -> Either Error (Maybe Term)
 eval _ (RuleLit s) t = return (apply s t)
 eval _ Success t = return (success t)
 eval _ Failure t = return (failure t)
@@ -72,23 +69,47 @@ eval env (Congruence ss) t = do
     Just ts' -> return (Just (t `withChildren` ts'))
     Nothing -> return Nothing
 eval env (RuleVar x) t = 
-  case fetchRule env x of 
-    Just s -> eval env s t
+  case fetchRule env x of
     Nothing -> evalError ("fetch " ++ x)
+    Just s -> eval env s t
 eval env (Macro x args) t =
   case fetchMacro env x of 
-    Just (params,s) -> eval env s t
     Nothing -> evalError ("fetch " ++ x)
+    Just (params,s) -> do
+      let s' = sub (zip params args) s
+      eval env s' t
 
-run :: Env -> Term -> Either Error (Maybe Term)
-run env t = case fetchRule env "main" of 
+sub :: [(String,RuleExpr)] -> RuleExpr -> RuleExpr
+sub env (RuleVar x) = 
+  case lookup x env of 
+    Just s -> s
+    Nothing -> RuleVar x
+sub env (Test s) = Test (sub env s)
+sub env (Neg s) = Neg (sub env s)
+sub env (Seq s1 s2) = Seq (sub env s1) (sub env s2)
+sub env (Choice s1 s2) = Choice (sub env s1) (sub env s2)
+sub env (BranchAll s) = BranchAll (sub env s)
+sub env (BranchOne s) = BranchOne (sub env s)
+sub env (BranchSome s) = BranchSome (sub env s)
+sub env (Congruence ss) = Congruence (map (sub env) ss)
+sub env (Macro x ss) = Macro x (map (sub env) ss)
+sub _ t@(RuleLit _) = t
+sub _ t@Success = t
+sub _ t@Failure = t
+sub _ t@(Path _) = t
+sub _ t@(Root _) = t
+
+run :: Rules -> Term -> Either Error (Maybe Term)
+run env t = case fetchRule env mainRuleId of 
   Just s -> eval env s t
   Nothing -> evalError "main is undefined"
+  where
+    mainRuleId = "main"
 
 
 -- Front end
 
-parse :: String -> IO Env
+parse :: String -> IO Rules
 parse x = case parseRules x of
   Left err -> fail (show err)
   Right env -> do
@@ -100,7 +121,7 @@ parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
 
-runOne :: Env -> Term -> IO ()
+runOne :: Rules -> Term -> IO ()
 runOne env t = do
   putStr (show t)
   putStr " -> "

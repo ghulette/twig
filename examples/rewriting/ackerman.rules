@@ -4,19 +4,10 @@
 a1 = [ack(z,N) -> s(N)]
 a2 = [ack(s(M),z) -> ack(M,s(z))]
 a3 = [ack(s(M),s(N)) -> ack(M,ack(s(M),N))]
+a4 = a3 | a2 | a1
 
--- try(s) = s | T
--- repeat(s) = try(s;repeat(s))
--- oncetd(s) = s | one s
--- test(s1,s2) = test(s1,s2)
+try(s) = s | T
+repeat(s) = try(s;repeat(s))
+oncetd(s) = s | one oncetd(s)
 
-a4 = (a3 | a2 | a1)
-a4TopDown = a4 | one(a4TopDown)
-ack = (a4TopDown ; ack) | T
-
--- With macros:
--- ack = repeat(oncetd(a4))
--- oncetd(a4) = ["a4"/"s"]("s | one(s)") => a4 | one(a4)
--- repeat(a4 | one(a4)) = 
-
-main = ack
+main = repeat(oncetd(a4))
