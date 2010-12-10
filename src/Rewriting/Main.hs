@@ -11,6 +11,14 @@ instance Show Error where
 evalError :: String -> Either Error a
 evalError msg = Left (RuntimeError msg)
 
+zapp :: [a -> Either Error b] -> [a] -> Either Error [b]
+zapp [] [] = Right []
+zapp [] _ = evalError "Not enough rules"
+zapp _ [] = evalError "Not enough terms"
+zapp (f:fs) (x:xs) = do
+  x' <- f x
+  xs' <- zapp fs xs
+  return (x':xs')
 
 instance Monad (Either a) where
   return = Right
@@ -24,13 +32,13 @@ fetchRule [] _ = Nothing
 fetchRule ((RuleDef y t):_) x | x == y = Just t
 fetchRule (_:rs) x = fetchRule rs x
 
--- fetchMacro :: Env -> String -> Maybe ([String],RuleExpr)
--- fetchMacro [] _ = Nothing
--- fetchMacro ((MacroDef y params t):_) x | x == y = Just (params,t)
--- fetchMacro (_:rs) x = fetchMacro rs x
--- 
--- extend :: Env -> String -> RuleExpr -> Env
--- extend rs x e = (RuleDef x e) : rs
+fetchMacro :: Env -> String -> Maybe ([String],RuleExpr)
+fetchMacro [] _ = Nothing
+fetchMacro ((MacroDef y params t):_) x | x == y = Just (params,t)
+fetchMacro (_:rs) x = fetchMacro rs x
+
+extend :: Env -> String -> RuleExpr -> Env
+extend rs x e = (RuleDef x e) : rs
 
 mapAll :: (a -> Either b (Maybe a)) -> [a] -> Either b (Maybe [a])
 mapAll _ [] = return (Just [])
@@ -111,16 +119,21 @@ eval env (BranchSome s) t = do
   case mts' of
     Just ts' -> return (Just (t `withChildren` ts'))
     Nothing -> return Nothing
--- eval (Congruence ts) env = do
---   ts' <- mapM (\t -> eval t env) ts
---   return (congruence ts')
+eval env (Congruence ss) t = do
+  let ts = children t
+  let rs = map (eval env) ss
+  mts' <- zapp rs ts
+  case sequence mts' of
+    Just ts' -> return (Just (t `withChildren` ts'))
+    Nothing -> return Nothing
 eval env (RuleVar x) t = 
   case fetchRule env x of 
     Just s -> eval env s t
     Nothing -> evalError ("fetch " ++ x)
--- eval (Macro _ _) _ = 
---   evalError "Macros are not supported"
-eval _ s _ = evalError ("Not supported:\n" ++ (show s))
+eval env (Macro x args) t =
+  case fetchMacro env x of 
+    Just (params,s) -> eval env s t
+    Nothing -> evalError ("fetch " ++ x)
 
 run :: Env -> Term -> Either Error (Maybe Term)
 run env t = case fetchRule env "main" of 

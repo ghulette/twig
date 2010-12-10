@@ -1,24 +1,24 @@
 module Rewriting.Term
-(Term (..)
-,children
-,withChildren
-,isLeaf
-,isConst
-,Rule (..)
-,apply
-,success
-,failure
-,test
-,neg
-,seqn
-,choice
-,branchAll
-,branchOne
-,branchSome
-,congruence
-,path
-,root
-)where
+( Term (..)
+, children
+, withChildren
+, isLeaf
+, isConst
+, Rule (..)
+, apply
+, success
+, failure
+, test
+, neg
+, seqn
+, choice
+, branchAll
+, branchOne
+, branchSome
+, congruence
+, path
+, root
+) where
 
 import Control.Monad
 import Data.List (intercalate)
