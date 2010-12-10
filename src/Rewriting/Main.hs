@@ -5,6 +5,7 @@ import Rewriting.Term
 import Rewriting.Rule
 import Rewriting.Util
 import Rewriting.Error
+import Rewriting.Combinators (path,root)
 
 type Rules = [RuleDef]
 
@@ -13,8 +14,8 @@ lookupRuleDef xs x = find (\(RuleDef x' _ _) -> x == x') xs
 
 eval :: Rules -> RuleExpr -> Term -> Either Error (Maybe Term)
 eval _ (RuleLit s) t = return (apply s t)
-eval _ Success t = return (success t)
-eval _ Failure t = return (failure t)
+eval _ Success t = return (Just t)
+eval _ Failure _ = return Nothing
 eval _ (Path i) t = return (path (fromInteger i) t)
 eval _ (Root x) t = return (root x t)
 eval env (Test s) t = do
