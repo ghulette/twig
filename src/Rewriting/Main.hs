@@ -1,6 +1,6 @@
 import Prelude hiding (catch)
-import System.Environment (getArgs)
 import Control.Exception
+import System.Environment (getArgs)
 import Rewriting.Parser
 import Rewriting.RuleExpr
 import Rewriting.Term
@@ -24,13 +24,9 @@ runOne env t = do
   case run "main" env t of
     (Just t') -> print t'
     Nothing -> putStrLn "No match"
-  `catch` 
-    handleRuntimeError
-
-handleRuntimeError :: EvalException -> IO ()
-handleRuntimeError (RuntimeException msg) = do
-  putStrLn "Error"
-  putStrLn msg
+  `catch` \(RuntimeException msg) -> do 
+    putStrLn "Error"
+    putStrLn msg
 
 main :: IO ()
 main = do
