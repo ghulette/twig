@@ -9,10 +9,14 @@ import Rewriting.Util
 
 import Data.Typeable
 import Control.Exception
+import Control.Monad (guard,when)
 
 data EvalException = RuntimeException String deriving (Show,Typeable)
 
 instance Exception EvalException
+
+runtimeErr :: String -> a
+runtimeErr msg = throw (RuntimeException msg)
 
 -- Expressions
 
@@ -93,19 +97,20 @@ eval env (BranchSome s) t = do
 eval env (Congruence ss) t = do
   let ts = children t
   let rs = map (eval env) ss
-  -- check that list lengths match
+  guard (length ts == length rs)
   ts' <- sequence (zipWith ($) rs ts)
   return (t `withChildren` ts')
 eval env (RuleVar x) t = 
   case lookupRuleDef env x of
-    Nothing -> throw (RuntimeException ("Not in scope: " ++ x))
+    Nothing -> runtimeErr ("Not in scope: " ++ x)
     Just (RuleDef _ [] s) -> eval env s t
-    Just _ -> throw (RuntimeException ("Missing args in call to " ++ x))
+    Just _ -> runtimeErr ("Missing args in call to " ++ x)
 eval env (Call x args) t =
   case lookupRuleDef env x of 
-    Nothing -> throw (RuntimeException ("Not in scope: " ++ x))
+    Nothing -> runtimeErr ("Not in scope: " ++ x)
     Just (RuleDef _ params s) -> do
-      -- check that list lengths match
+      when (length args < length params) (runtimeErr "Not enough args")
+      when (length args > length params) (runtimeErr "Too many args")
       let s' = subVars (zip params args) s
       eval env s' t
 
@@ -123,9 +128,6 @@ subVars env = traverse sub
 run :: String -> Rules -> Term -> Maybe Term
 run entry env t = 
   case lookupRuleDef env entry of 
-    Just (RuleDef _ [] s) -> 
-      eval env s t
-    Just (RuleDef _ _ _ ) -> 
-      throw (RuntimeException (entry ++ " cannot have args"))
-    Nothing -> 
-      throw (RuntimeException (entry ++ " is not defined"))
+    Just (RuleDef _ [] s) -> eval env s t
+    Just (RuleDef _ _ _) -> runtimeErr (entry ++ " cannot have args")
+    Nothing -> runtimeErr (entry ++ " is not defined")

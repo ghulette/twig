@@ -1,4 +1,6 @@
+import Prelude hiding (catch)
 import System.Environment (getArgs)
+import Control.Exception
 import Rewriting.Parser
 import Rewriting.RuleExpr
 import Rewriting.Term
@@ -8,9 +10,7 @@ import Rewriting.Term
 parse :: String -> IO Rules
 parse x = case parseRules x of
   Left err -> fail (show err)
-  Right env -> do
-    mapM_ print env
-    return env
+  Right env -> return env
 
 parseInput :: String -> IO [Term]
 parseInput x = case parseTerms x of
@@ -22,8 +22,15 @@ runOne env t = do
   putStr (show t)
   putStr " -> "
   case run "main" env t of
-    Just t' -> print t'
+    (Just t') -> print t'
     Nothing -> putStrLn "No match"
+  `catch` 
+    handleRuntimeError
+
+handleRuntimeError :: EvalException -> IO ()
+handleRuntimeError (RuntimeException msg) = do
+  putStrLn "Error"
+  putStrLn msg
 
 main :: IO ()
 main = do

@@ -1,9 +1,9 @@
 -- Two-argument Ackerman function
 -- http://en.wikipedia.org/wiki/Ackermann_function
 
-a1 = [ack(z,N) -> s(N)]
-a2 = [ack(s(M),z) -> ack(M,s(z))]
-a3 = [ack(s(M),s(N)) -> ack(M,ack(s(M),N))]
+a1 = [ ack(z,N) -> s(N) ]
+a2 = [ ack(s(M),z) -> ack(M,s(z)) ]
+a3 = [ ack(s(M),s(N)) -> ack(M,ack(s(M),N)) ]
 a4 = a3 | a2 | a1
 
 try(s) = s | T
