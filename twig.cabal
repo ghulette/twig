@@ -5,15 +5,9 @@ License:        BSD3
 Author:         Geoff Hulette
 Synopsis:       Term-reWriting Interface Generator
 Build-Type:     Simple
-
-Executable twig
-  Main-Is:        Main.hs
-  Hs-Source-Dirs: src
-  Build-Depends:	base >= 4,array
-  GHC-Options:    -O2 -Wall
   
 Executable rewrite
   Main-Is:        Rewriting/Main.hs
   Hs-Source-Dirs: src
-  Build-Depends:	base >= 4,array,parsec >= 2
+  Build-Depends:	base >= 4,array,parsec >= 2,containers
   GHC-Options:    -O2 -Wall

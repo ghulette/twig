@@ -20,10 +20,11 @@ parseInput x = case parseTerms x of
 runOne :: Rules -> Term -> IO ()
 runOne env t = do
   putStr (show t)
-  putStr " -> "
   case run "main" env t of
-    (Just t') -> print t'
-    Nothing -> putStrLn "No match"
+    (Just t') -> do
+      putStr " -> "
+      print t'
+    Nothing -> putStrLn " No match"
   `catch` \(RuntimeException msg) -> do 
     putStrLn "Error"
     putStrLn msg

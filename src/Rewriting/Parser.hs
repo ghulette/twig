@@ -55,6 +55,9 @@ constTerm = do
 constTermList :: Parser [Term]
 constTermList = parens (constTerm `sepBy` comma)
 
+
+-- Rule expressions
+
 ruleId :: Parser Id
 ruleId = identifier
 
@@ -99,14 +102,15 @@ ruleExpr :: Parser RuleExpr
 ruleExpr = Ex.buildExpressionParser table factor
   where prefixOp x f = Ex.Prefix (reservedOp x >> return f)
         infixOp x f = Ex.Infix (reservedOp x >> return f)
-        table = [[prefixOp "?" Test,prefixOp "~" Neg,
-                  (Ex.Prefix rulePath),
+        table = [[prefixOp "?" Test,
+                  prefixOp "~" Neg,
+                  Ex.Prefix rulePath,
                   prefixOp "one" BranchOne,
                   prefixOp "some" BranchSome,
-                  prefixOp "all" BranchAll],
-                 [infixOp ";" Seq Ex.AssocLeft],
+                  prefixOp "all" BranchAll ],
+                 [infixOp ";" Seq Ex.AssocLeft ],
                  [infixOp "|" LeftChoice Ex.AssocLeft,
-                  infixOp "+" Choice Ex.AssocLeft]]
+                  infixOp "+" Choice Ex.AssocLeft ]]
         factor =  parens ruleExpr
               <|> try call
               <|> ruleVar
@@ -115,6 +119,9 @@ ruleExpr = Ex.buildExpressionParser table factor
               <|> ruleFailure
               <|> ruleCongruence
               <?> "factor"
+
+
+-- Rule definitions and constructors
 
 ruleDef :: Parser RuleDef
 ruleDef = do
@@ -128,6 +135,7 @@ ruleDefs :: Parser [RuleDef]
 ruleDefs = do
   ds <- many ruleDef
   return (reverse ds)
+
 
 -- Wrappers
 
