@@ -1,0 +1,18 @@
+-- Illustrates non-deterministic choice ('+') and the possibility 
+-- of non-confluence that it introduces.
+--
+-- Rules that do not include non-deterministic choice are confluent.
+-- Rules that include non-deterministic choice are confluent if and only if
+-- the choice is between rules that are orthogonal, i.e. the first rule 
+-- succeeds only if the second fails, and vice-versa.
+--
+-- Twig will fail if it detects non-confluence, as this example demonstrates.
+
+r1 = [s(X) -> X]
+r2 = [s(X) -> s(s(X))]
+r3 = [p(X) -> X]
+
+nonconfluent = r1 + r2
+orthogonal = r1 + r3
+
+main = nonconfluent

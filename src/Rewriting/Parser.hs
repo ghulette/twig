@@ -105,7 +105,8 @@ ruleExpr = Ex.buildExpressionParser table factor
                   prefixOp "some" BranchSome,
                   prefixOp "all" BranchAll],
                  [infixOp ";" Seq Ex.AssocLeft],
-                 [infixOp "|" Choice Ex.AssocLeft]]
+                 [infixOp "|" LeftChoice Ex.AssocLeft,
+                  infixOp "+" Choice Ex.AssocLeft]]
         factor =  parens ruleExpr
               <|> try call
               <|> ruleVar

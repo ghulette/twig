@@ -30,6 +30,7 @@ data RuleExpr = RuleVar Id
               | Test RuleExpr
               | Neg RuleExpr
               | Seq RuleExpr RuleExpr
+              | LeftChoice RuleExpr RuleExpr
               | Choice RuleExpr RuleExpr
               | Path Integer RuleExpr
               | BranchAll RuleExpr
@@ -42,6 +43,8 @@ traverse :: (RuleExpr -> Maybe RuleExpr) -> RuleExpr -> RuleExpr
 traverse f (Test s) = update f (Test (traverse f s))
 traverse f (Neg s) = update f (Neg (traverse f s))
 traverse f (Seq s1 s2) = update f (Seq (traverse f s1) (traverse f s2))
+traverse f (LeftChoice s1 s2) = 
+  update f (LeftChoice (traverse f s1) (traverse f s2))
 traverse f (Choice s1 s2) = update f (Choice (traverse f s1) (traverse f s2))
 traverse f (BranchAll s) = update f (BranchAll (traverse f s))
 traverse f (BranchOne s) = update f (BranchOne (traverse f s))
@@ -73,10 +76,16 @@ eval env (Seq s1 s2) t =
   case eval env s1 t of
     Just t' -> eval env s2 t'
     Nothing -> Nothing
-eval env (Choice s1 s2) t =
+eval env (LeftChoice s1 s2) t =
   case eval env s1 t of
     Just t' -> Just t'
     Nothing -> eval env s2 t
+eval env (Choice s1 s2) t =
+  case (eval env s1 t,eval env s2 t) of
+    (Nothing,Nothing) -> Nothing
+    (Just _,Just _) -> runtimeErr "Non-confluence"
+    (Just t',Nothing) -> Just t'
+    (Nothing,Just t') -> Just t'
 eval env (Path 0 s) t = eval env s t -- #0(s) just applies s to root
 eval env (Path i s) t = do
   let ts = children t
