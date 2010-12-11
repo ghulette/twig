@@ -6,6 +6,8 @@
 -- the choice is between rules that are orthogonal, i.e. the first rule 
 -- succeeds only if the second fails, and vice-versa.
 --
+-- It is almost always better to use left choice ('|').
+--
 -- Twig will fail if it detects non-confluence, as this example demonstrates.
 
 r1 = [s(X) -> X]
