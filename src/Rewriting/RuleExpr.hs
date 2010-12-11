@@ -86,7 +86,8 @@ eval env (Choice s1 s2) t =
     (Just t',Nothing) -> Just t'
     (Nothing,Just t') -> Just t'
     (Nothing,Nothing) -> Nothing
-eval env (Path 0 s) t = eval env s t -- #0(s) just applies s to root
+eval env (Path 0 s) t = 
+  eval env s t -- #0(s) just applies s to root
 eval env (Path i s) t = do
   let ts = children t
   ts' <- path (fromInteger i) (eval env s) ts

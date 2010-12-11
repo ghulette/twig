@@ -5,7 +5,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Rewriting.Term
 
--- Environment type for variable bindings
+-- Environment for variable bindings
 
 type Env a = Map String a
 
