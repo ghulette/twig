@@ -9,7 +9,7 @@ and4 = [ and(true,P) -> P ]
 not1 = [ not(true) -> false ]
 not2 = [ not(false) -> true ]
 
-dblNeg = [ not(not(P)) -> P]
+dblNeg = [ not(not(P)) -> P ]
 
 demorgan1 = [ not(or(P,Q)) -> and(not(P),not(Q)) ]
 demorgan2 = [ not(and(P,Q)) -> or(not(P),not(Q)) ]
