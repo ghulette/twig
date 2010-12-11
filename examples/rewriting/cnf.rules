@@ -1,0 +1,30 @@
+or1 = [ or(P,true) -> true ]
+or2 = [ or(true,P) -> true ]
+or3 = [ or(P,false) -> P ]
+or4 = [ or(false,P) -> P ]
+and1 = [ and(P,false) -> false ]
+and2 = [ and(false,P) -> false ]
+and3 = [ and(P,true) -> P ]
+and4 = [ and(true,P) -> P ]
+not1 = [ not(true) -> false ]
+not2 = [ not(false) -> true ]
+
+dblNeg = [ not(not(P)) -> P]
+
+demorgan1 = [ not(or(P,Q)) -> and(not(P),not(Q)) ]
+demorgan2 = [ not(and(P,Q)) -> or(not(P),not(Q)) ]
+
+demorgan = demorgan1 | demorgan2
+
+dist1 = [ and(P,or(Q,R)) -> or(and(P,Q),and(P,R)) ]
+dist2 = [ and(or(P,Q),R) -> or(and(P,R),and(Q,R)) ]
+dist3 = [ or(P,and(Q,R)) -> and(or(P,Q),or(P,R)) ]
+dist4 = [ or(and(P,Q),R) -> and(or(P,R),or(Q,R)) ]
+
+cnf = dblNeg | demorgan | dist3 | dist4
+
+try(s) = s | T
+repeat(s) = try(s;repeat(s))
+oncetd(s) = s | one oncetd(s)
+
+main = repeat(oncetd(cnf))

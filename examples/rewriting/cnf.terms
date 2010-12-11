@@ -1,0 +1,3 @@
+not(or(p,q))
+or(and(p,q),r)
+and(p,or(q,and(r,s)))
