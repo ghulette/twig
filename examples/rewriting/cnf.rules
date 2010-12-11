@@ -1,14 +1,3 @@
-or1 = [ or(P,true) -> true ]
-or2 = [ or(true,P) -> true ]
-or3 = [ or(P,false) -> P ]
-or4 = [ or(false,P) -> P ]
-and1 = [ and(P,false) -> false ]
-and2 = [ and(false,P) -> false ]
-and3 = [ and(P,true) -> P ]
-and4 = [ and(true,P) -> P ]
-not1 = [ not(true) -> false ]
-not2 = [ not(false) -> true ]
-
 dblNeg = [ not(not(P)) -> P ]
 
 demorgan1 = [ not(or(P,Q)) -> and(not(P),not(Q)) ]

@@ -1,0 +1,10 @@
+-- The following terms are of the form or(P,not(P)) and and(not(P),P).
+-- Notice that we rely on the rewriting system ensuring that the bindings to
+-- P take on the same term.
+
+or(or(and(p,q),r),not(or(and(p,q),r)))
+
+and(not(or(and(p,q),r)),or(and(p,q),r))
+
+-- This one should not match, because p != q
+or(p,not(q)) 

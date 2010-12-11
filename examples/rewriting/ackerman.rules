@@ -4,10 +4,9 @@
 a1 = [ ack(z,N) -> s(N) ]
 a2 = [ ack(s(M),z) -> ack(M,s(z)) ]
 a3 = [ ack(s(M),s(N)) -> ack(M,ack(s(M),N)) ]
-a4 = a3 | a2 | a1
 
 try(s) = s | T
 repeat(s) = try(s;repeat(s))
 oncetd(s) = s | one oncetd(s)
 
-main = repeat(oncetd(a4))
+main = repeat(oncetd(a3 | a2 | a1))
