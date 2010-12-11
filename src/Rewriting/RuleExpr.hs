@@ -82,10 +82,10 @@ eval env (LeftChoice s1 s2) t =
     Nothing -> eval env s2 t
 eval env (Choice s1 s2) t =
   case (eval env s1 t,eval env s2 t) of
-    (Nothing,Nothing) -> Nothing
     (Just _,Just _) -> runtimeErr "Non-confluence"
     (Just t',Nothing) -> Just t'
     (Nothing,Just t') -> Just t'
+    (Nothing,Nothing) -> Nothing
 eval env (Path 0 s) t = eval env s t -- #0(s) just applies s to root
 eval env (Path i s) t = do
   let ts = children t

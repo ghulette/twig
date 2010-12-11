@@ -1,4 +1,3 @@
 TODO:
 * Variable joins in literals
-* Use exceptions in interpreter instead of Either?
 * Trace rewriting
