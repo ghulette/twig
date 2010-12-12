@@ -1,0 +1,168 @@
+A quick introduction to Twig's term rewriting language
+======================================================
+
+Twig is based on **System S**, detailed in [A Core Language for
+Rewriting][visser98core] by Eelco Visser and Zine-el-Abidine Benaissa.
+
+Twig is a fairly straightforward implementation of System S1, i.e. System S
+without explicit match and build primitives, and without conditional rules.
+Twig's deviations from System S are noted in this document.
+
+
+Terms
+-----
+
+Twig is used to rewrite *terms*. A term is a textual representation of a tree
+n-ary structure. Some examples of terms include:
+
+* `root(left,middle,right)`
+* `and(true,not(p))`
+* `cons(one,cons(two,cons(three,nil)))`
+
+Terms are labeled with an alphanumeric identifier, and labels must start with
+a lowercase letter. A node can have any number of children, given in
+parentheses and separated by commas. A leaf node (i.e. having no children) may
+omit the empty parentheses.
+
+
+Primitive Rules
+---------------
+
+Terms are rewritten using *rules*. The simplest kind of rules are called
+*primitive* rules. Primitive rules are specified by a pair of terms enclsoed
+in square brackets and separated by an right arrow, like this:
+
+    [ and(true,true) -> true ]
+
+A rule can be used to rewrite a term. Rewriting attempts to match the
+left-hand side of the rule against the input term. If they match, the output
+is the right hand side. If they do no match, we say the rule application
+*fails* and there is no output.
+
+Primitive rules can also contain variables, like this:
+
+    [ and(false,X) -> false ]
+
+The variable (`X`) will match any term. Variables can be any alphanumeric
+identifier, but must start with a capital letter.
+
+If a variable is matched on left-hand side, it can be used on the right-hand
+side:
+
+    [ and(true,P) -> P ]
+
+For example, if the rule above were applied to the term and(true,or(p,q)), it
+would match and rewrite to or(p,q).
+
+If the same variable appears more than once on the left-hand side, Twig will
+ensure that it matches the same term. For example:
+
+    [ and(P,not(P)) -> false ]
+
+
+Rule definitions
+----------------
+
+A Twig file consists of a set of rule *definitions*. A rule definition assigns
+a rule to an identifier, like this:
+
+    rule1 = [ and(P,not(P)) -> false ]
+
+A Twig rules file contains a list of rule definitions.
+
+
+Combining rules
+---------------
+
+A rule definition assigns a rule *expression* to a rule identifier. Rule
+expressions can be simple primitive rules as above, or rules can be combined
+using *operators*.
+
+Twig supports the following operators and special expressions:
+
+* Definition references. If a rule is named in a definition, it can be
+  referenced by using the definition name. For example, if we have a rule
+  definition `r = [ s(X) -> X ]`, then we can use `r` in another expression.
+
+* Primitive success. The expression `T` succeeds for any term, and returns the
+  term unaltered. It is equivalent to the primitive rule `[X -> X]`.
+
+* Primitive failure. The expression `F` will fail for any term.
+
+* Test. The expression `? r` will try rule `r` on the input term, succeed only
+  if `r` succeeds, and returns the original term. If `r` fails then the
+  expression also fails.
+
+* Negation. The expression `~ r` will try rule `r` on the input term, succeed
+  only if `r` fails, returning the original term. If `r` succeeds the
+  expression fails.
+
+* Sequencing. The expression `r1 ; r2` will apply `r1` first and if it
+  succeeds, applies `r2`. It fails if either application fails.
+
+* Left choice. The expression `r1 | r2` first tries `r1`. If `r1` succeeds it
+  returns the result term, but if it fails it tries `r2`. It fails if both
+  applications fail.
+
+* Pure (non-deterministic) choice. The expression `r1 + r2` tries `r1` and
+  `r2` in parallel. If only one rule succeeds, then that is the result. If
+  both fail, the expression as a whole fails. If both succeed, Twig will
+  terminate with an error and indicate that the rules are non-confluent.
+
+Twig also includes built in operators for traversing terms.
+
+* Congruence. The expression `{r1,r2}` will apply `r1` to the first child of
+  the input term, and `r2` to the second, succeed only if both sub-rules
+  succeed, and return the term with its children transformed. It will fail if
+  any sub-rule fails, or if it is applied to a term with the wrong number of
+  children. Congruences can contain any number of sub-rules, separated by
+  commas.
+
+* Root. The expression `[foo]` will succeed if the root of the input term is
+  `foo`, and return the original term.
+
+* Path. The expression `#2 r` will apply `r` to the second child of the input
+  term, succeed only if `r` succeeds, and return the root term with rewritten
+  child. Note that child indexing starts from 1, i.e. `#1` will rewrite the
+  first child, 2 the second, and so on. The path expression `#0 r` applies to
+  the root term, so it is equivalent to simply `r`.
+
+* All children. The expression `all r` applies `r` to each child of the input
+  term, succeeds only if each child is successfully rewritten, and returns the
+  input term with the rewritten children. It fails if any of the child
+  rewrites fail.
+
+* One child. The expression `one r` applies `r` to each child of the input,
+  moving from left to right, and succeeds if exactly one of the children is
+  successfully rewritten.
+
+* Some children. The expression `some r` applies `r` to each child of the
+  input, moving from left to right, and succeeds if at least one of the
+  children is successfully rewritten.
+
+
+Rule parameters
+---------------
+
+Rule definitions can include parameters, like this:
+
+    try(s) = s | T
+    main = try([s(X) -> X])
+
+Here, `main` is defined by substituting `[s(X) -> X]` for `s` in `try`, so it
+is equivalent to `main = [s(X) -> X] | T`
+
+Rules can include multiple parameters, like so:
+
+    seq(r1,r2) = r1;r2
+
+Rules can be referenced recursively to create intricate and reusable reduction
+strategies, like this:
+
+    try(s) = s | T
+    repeat(s) = try(s;repeat(s))
+
+Note however that recursion introduces the possibility of non-termination.
+
+
+[visser98core]: http://dx.doi.org/10.1016/S1571-0661(05)80027-1

@@ -1,0 +1,156 @@
+<h1>A quick introduction to Twig's term rewriting language</h1>
+
+<p>Twig is based on <strong>System S</strong>, detailed in <a href="http://dx.doi.org/10.1016/S1571-0661(05)80027-1">A Core Language for
+Rewriting</a> by Eelco Visser and Zine-el-Abidine Benaissa.</p>
+
+<p>Twig is a fairly straightforward implementation of System S1, i.e. System S
+without explicit match and build primitives, and without conditional rules.
+Twig's deviations from System S are noted in this document.</p>
+
+<h2>Terms</h2>
+
+<p>Twig is used to rewrite <em>terms</em>. A term is a textual representation of a tree
+n-ary structure. Some examples of terms include:</p>
+
+<ul>
+<li><code>root(left,middle,right)</code></li>
+<li><code>and(true,not(p))</code></li>
+<li><code>cons(one,cons(two,cons(three,nil)))</code></li>
+</ul>
+
+<p>Terms are labeled with an alphanumeric identifier, and labels must start with
+a lowercase letter. A node can have any number of children, given in
+parentheses and separated by commas. A leaf node (i.e. having no children) may
+omit the empty parentheses.</p>
+
+<h2>Primitive Rules</h2>
+
+<p>Terms are rewritten using <em>rules</em>. The simplest kind of rules are called
+<em>primitive</em> rules. Primitive rules are specified by a pair of terms enclsoed
+in square brackets and separated by an right arrow, like this:</p>
+
+<pre><code>[ and(true,true) -&gt; true ]
+</code></pre>
+
+<p>A rule can be used to rewrite a term. Rewriting attempts to match the
+left-hand side of the rule against the input term. If they match, the output
+is the right hand side. If they do no match, we say the rule application
+<em>fails</em> and there is no output.</p>
+
+<p>Primitive rules can also contain variables, like this:</p>
+
+<pre><code>[ and(false,X) -&gt; false ]
+</code></pre>
+
+<p>The variable (<code>X</code>) will match any term. Variables can be any alphanumeric
+identifier, but must start with a capital letter.</p>
+
+<p>If a variable is matched on left-hand side, it can be used on the right-hand
+side:</p>
+
+<pre><code>[ and(true,P) -&gt; P ]
+</code></pre>
+
+<p>For example, if the rule above were applied to the term and(true,or(p,q)), it
+would match and rewrite to or(p,q).</p>
+
+<p>If the same variable appears more than once on the left-hand side, Twig will
+ensure that it matches the same term. For example:</p>
+
+<pre><code>[ and(P,not(P)) -&gt; false ]
+</code></pre>
+
+<h2>Rule definitions</h2>
+
+<p>A Twig file consists of a set of rule <em>definitions</em>. A rule definition assigns
+a rule to an identifier, like this:</p>
+
+<pre><code>rule1 = [ and(P,not(P)) -&gt; false ]
+</code></pre>
+
+<p>A Twig rules file contains a list of rule definitions.</p>
+
+<h2>Combining rules</h2>
+
+<p>A rule definition assigns a rule <em>expression</em> to a rule identifier. Rule
+expressions can be simple primitive rules as above, or rules can be combined
+using <em>operators</em>.</p>
+
+<p>Twig supports the following operators and special expressions:</p>
+
+<ul>
+<li><p>Definition references. If a rule is named in a definition, it can be
+referenced by using the definition name. For example, if we have a rule
+definition <code>r = [ s(X) -&gt; X ]</code>, then we can use <code>r</code> in another expression.</p></li>
+<li><p>Primitive success. The expression <code>T</code> succeeds for any term, and returns the
+term unaltered. It is equivalent to the primitive rule <code>[X -&gt; X]</code>.</p></li>
+<li><p>Primitive failure. The expression <code>F</code> will fail for any term.</p></li>
+<li><p>Test. The expression <code>? r</code> will try rule <code>r</code> on the input term, succeed only
+if <code>r</code> succeeds, and returns the original term. If <code>r</code> fails then the
+expression also fails.</p></li>
+<li><p>Negation. The expression <code>~ r</code> will try rule <code>r</code> on the input term, succeed
+only if <code>r</code> fails, returning the original term. If <code>r</code> succeeds the
+expression fails.</p></li>
+<li><p>Sequencing. The expression <code>r1 ; r2</code> will apply <code>r1</code> first and if it
+succeeds, applies <code>r2</code>. It fails if either application fails.</p></li>
+<li><p>Left choice. The expression <code>r1 | r2</code> first tries <code>r1</code>. If <code>r1</code> succeeds it
+returns the result term, but if it fails it tries <code>r2</code>. It fails if both
+applications fail.</p></li>
+<li><p>Pure (non-deterministic) choice. The expression <code>r1 + r2</code> tries <code>r1</code> and
+<code>r2</code> in parallel. If only one rule succeeds, then that is the result. If
+both fail, the expression as a whole fails. If both succeed, Twig will
+terminate with an error and indicate that the rules are non-confluent.</p></li>
+</ul>
+
+<p>Twig also includes built in operators for traversing terms.</p>
+
+<ul>
+<li><p>Congruence. The expression <code>{r1,r2}</code> will apply <code>r1</code> to the first child of
+the input term, and <code>r2</code> to the second, succeed only if both sub-rules
+succeed, and return the term with its children transformed. It will fail if
+any sub-rule fails, or if it is applied to a term with the wrong number of
+children. Congruences can contain any number of sub-rules, separated by
+commas.</p></li>
+<li><p>Root. The expression <code>[foo]</code> will succeed if the root of the input term is
+<code>foo</code>, and return the original term.</p></li>
+<li><p>Path. The expression <code>#2 r</code> will apply <code>r</code> to the second child of the input
+term, succeed only if <code>r</code> succeeds, and return the root term with rewritten
+child. Note that child indexing starts from 1, i.e. <code>#1</code> will rewrite the
+first child, 2 the second, and so on. The path expression <code>#0 r</code> applies to
+the root term, so it is equivalent to simply <code>r</code>.</p></li>
+<li><p>All children. The expression <code>all r</code> applies <code>r</code> to each child of the input
+term, succeeds only if each child is successfully rewritten, and returns the
+input term with the rewritten children. It fails if any of the child
+rewrites fail.</p></li>
+<li><p>One child. The expression <code>one r</code> applies <code>r</code> to each child of the input,
+moving from left to right, and succeeds if exactly one of the children is
+successfully rewritten.</p></li>
+<li><p>Some children. The expression <code>some r</code> applies <code>r</code> to each child of the
+input, moving from left to right, and succeeds if at least one of the
+children is successfully rewritten.</p></li>
+</ul>
+
+<h2>Rule parameters</h2>
+
+<p>Rule definitions can include parameters, like this:</p>
+
+<pre><code>try(s) = s | T
+main = try([s(X) -&gt; X])
+</code></pre>
+
+<p>Here, <code>main</code> is defined by substituting <code>[s(X) -&gt; X]</code> for <code>s</code> in <code>try</code>, so it
+is equivalent to <code>main = [s(X) -&gt; X] | T</code></p>
+
+<p>Rules can include multiple parameters, like so:</p>
+
+<pre><code>seq(r1,r2) = r1;r2
+</code></pre>
+
+<p>Rules can be referenced recursively to create intricate and reusable reduction
+strategies, like this:</p>
+
+<pre><code>try(s) = s | T
+repeat(s) = try(s;repeat(s))
+</code></pre>
+
+<p>Note however that recursion introduces the possibility of non-termination.</p>
