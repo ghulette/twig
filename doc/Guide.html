@@ -97,9 +97,12 @@ succeeds, applies <code>r2</code>. It fails if either application fails.</p></li
 returns the result term, but if it fails it tries <code>r2</code>. It fails if both
 applications fail.</p></li>
 <li><p>Pure (non-deterministic) choice. The expression <code>r1 + r2</code> tries <code>r1</code> and
-<code>r2</code> in parallel. If only one rule succeeds, then that is the result. If
-both fail, the expression as a whole fails. If both succeed, Twig will
-terminate with an error and indicate that the rules are non-confluent.</p></li>
+<code>r2</code> in parallel. If only one rule succeeds, then the result of the
+successful rule is the result of the expression. If both fail, the
+expression as a whole fails. If both succeed, Twig will check whether or not
+the results are the same, i.e. the result terms of both sides are equal. If
+they are equal, then that value is the result. If they are different, Twig
+will terminate with an error and indicate that the rules are non-confluent.</p></li>
 </ul>
 
 <p>Twig also includes built in operators for traversing terms.</p>

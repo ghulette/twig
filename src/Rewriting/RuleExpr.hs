@@ -82,7 +82,10 @@ eval env (LeftChoice s1 s2) t =
     Nothing -> eval env s2 t
 eval env (Choice s1 s2) t =
   case (eval env s1 t,eval env s2 t) of
-    (Just _,Just _) -> runtimeErr "Non-confluence"
+    (Just x,Just x') -> 
+      if x == x' 
+        then Just x 
+        else runtimeErr "Non-confluence"
     (Just t',Nothing) -> Just t'
     (Nothing,Just t') -> Just t'
     (Nothing,Nothing) -> Nothing

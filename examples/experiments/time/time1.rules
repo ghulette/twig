@@ -1,0 +1,2 @@
+r1 = [s(X) -> X]
+main = (r1 ; main) | T
