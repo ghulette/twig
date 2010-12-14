@@ -74,10 +74,10 @@ neg :: Monoid m => Term -> Maybe (Term,m) -> Maybe (Term,m)
 neg _ (Just _) = Nothing
 neg t Nothing = Just (t,mempty)
 
-eval :: Monoid m => Rules -> RuleExpr -> Term -> Maybe (Term,m)
+eval :: Rules -> RuleExpr -> Term -> Maybe (Term,Trace)
 eval _ (RuleLit s) t = do
   t' <- apply s t
-  return (t',mempty)
+  return (t',[show s])
 eval _ Success t = Just (t,mempty)
 eval _ Failure _ = Nothing
 eval env (Test s) t = test t (eval env s t)
