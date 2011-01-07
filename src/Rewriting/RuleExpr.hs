@@ -41,6 +41,7 @@ data RuleExpr = RuleVar Id
               | BranchOne RuleExpr
               | BranchSome RuleExpr
               | Congruence [RuleExpr]
+              | Print String
               deriving (Eq,Show)
 
 traverse :: (RuleExpr -> Maybe RuleExpr) -> RuleExpr -> RuleExpr
@@ -77,7 +78,7 @@ neg t Nothing = Just (t,mempty)
 eval :: Rules -> RuleExpr -> Term -> Maybe (Term,Trace)
 eval _ (RuleLit s) t = do
   t' <- apply s t
-  return (t',[show s])
+  return (t',mempty)
 eval _ Success t = Just (t,mempty)
 eval _ Failure _ = Nothing
 eval env (Test s) t = test t (eval env s t)
@@ -143,6 +144,8 @@ eval env (Call x args) t =
       when (length args > length params) (runtimeErr "Too many args")
       let s' = subVars (zip params args) s
       eval env s' t
+eval env (Print msg) t =
+  return (t,[msg])
 
 subVars :: [(String,RuleExpr)] -> RuleExpr -> RuleExpr
 subVars env = traverse sub

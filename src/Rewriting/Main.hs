@@ -1,6 +1,7 @@
 import Prelude hiding (catch)
 import Control.Exception
 import System.Environment (getArgs)
+import Control.Monad (when)
 import Rewriting.Parser
 import Rewriting.RuleExpr
 import Rewriting.Term
@@ -21,10 +22,12 @@ runOne :: Rules -> Term -> IO ()
 runOne env t = do
   putStr (show t)
   case run "main" env t of
-    Just (t',_) -> do
+    Just (t',trace) -> do
       putStr " -> "
       print t'
-      --mapM_ (\x -> putStr " " >> putStrLn x) trace
+      when (length trace > 0) $ do
+        putStr "Trace"
+        (mapM_ putStrLn trace)
     Nothing -> putStrLn " No match"
   `catch` \(RuntimeException msg) -> do 
     putStrLn "Error"
