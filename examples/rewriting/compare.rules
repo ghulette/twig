@@ -9,4 +9,4 @@ cmp2 = [ cmp(s(X), z) -> lt ]
 cmp3 = [ cmp(s(X), s(Y)) -> cmp(X, Y) ]
 cmp = cmp0 | cmp1 | cmp2 | cmp3
 
-main = repeat(cmp)
+main = repeat(cmp);print "Ok"

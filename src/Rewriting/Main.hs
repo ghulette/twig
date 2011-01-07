@@ -25,9 +25,7 @@ runOne env t = do
     Just (t',trace) -> do
       putStr " -> "
       print t'
-      when (length trace > 0) $ do
-        putStr "Trace"
-        (mapM_ putStrLn trace)
+      when (length trace > 0) $ mapM_ putStrLn trace
     Nothing -> putStrLn " No match"
   `catch` \(RuntimeException msg) -> do 
     putStrLn "Error"

@@ -8,7 +8,6 @@ a3 = [ ack(s(M),s(N)) -> ack(M,ack(s(M),N)) ]
 try(s) = s | T
 repeat(s) = try(s;repeat(s))
 oncetd(s) = s | one(oncetd(s))
-reduce(s) = repeat(oncetd(s);
-                   print "yes")
+reduce(s) = repeat(oncetd(s))
 
 main = reduce(a3 | a2 | a1)
