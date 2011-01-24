@@ -9,5 +9,11 @@ Build-Type:     Simple
 Executable rewrite
   Main-Is:        Rewriting/Main.hs
   Hs-Source-Dirs: src
-  Build-Depends:	base >= 4,array,parsec >= 2,containers
+  Build-Depends:  base >= 4,array,parsec >= 2,containers
+  GHC-Options:    -O2 -Wall
+
+Executable demo
+  Main-Is:        Iso/Main.hs
+  Hs-Source-Dirs: src
+  Build-Depends:  base >= 4,array,containers
   GHC-Options:    -O2 -Wall
