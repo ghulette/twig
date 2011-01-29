@@ -7,11 +7,12 @@ void get_line(char *prompt, char *buffer) {
   scanf("%s", buffer);
 }
 
-// This is what Twig needs to generate
+// This is what Twig needs to generate, starting with this:
+// void get_line(char *prompt, char *buffer)
 JNIEXPORT jstring JNICALL
 Java_Prompt_getLine (JNIEnv *env, jobject self, jstring prompt) {
-  // We assume here that the user does not type more than 127 characters.
-  char buf[128];
+  
+  // #1 INIT - Convert prompt from Java to C string
   const jbyte *str;
   str = (*env)->GetStringUTFChars(env, prompt, NULL);
   if (str == NULL) {
@@ -19,8 +20,20 @@ Java_Prompt_getLine (JNIEnv *env, jobject self, jstring prompt) {
     return NULL;
   }
   char *cstr = (char *)str; // conversion "function"
+  
+  // #2 INIT - Invoke inner function, with an output parameter buf
+  char buf[128];
   get_line(cstr,buf);
+  
+  // #3 INIT - Create a new string from the out parameter
   jstring result = (*env)->NewStringUTF(env, buf);
+  
+  
+  // #1 FINAL - Release memory for C string
   (*env)->ReleaseStringUTFChars(env, prompt, str);
+  
+  
   return result;
 }
+
+
