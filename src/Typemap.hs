@@ -8,7 +8,7 @@ data Conversion m a = Convert m a
                     | Fail
                     deriving (Eq,Show)
 
-instance Monoid m => Functor (Conversion m) where
+instance Functor (Conversion m) where
   fmap f (Convert m x) = Convert m (f x)
   fmap _ Fail = Fail
 

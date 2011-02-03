@@ -144,7 +144,7 @@ eval env (Call x args) t =
       when (length args > length params) (runtimeErr "Too many args")
       let s' = subVars (zip params args) s
       eval env s' t
-eval env (Print msg) t =
+eval _ (Print msg) t =
   return (t,[msg])
 
 subVars :: [(String,RuleExpr)] -> RuleExpr -> RuleExpr

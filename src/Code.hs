@@ -1,4 +1,4 @@
-module Iso.Code where
+module Code where
 
 import Data.Monoid
 

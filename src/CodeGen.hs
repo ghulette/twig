@@ -1,4 +1,4 @@
-module Iso.CodeGen where
+module CodeGen where
 
 import Control.Monad.Identity
 import Control.Monad.Supply

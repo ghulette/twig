@@ -1,56 +1,50 @@
 import Code
-import Typemap
-import Control.Monad
 
-data CType = CInt 
-           | CFloat 
-           | CChar 
-           | CPtr CType
-           | CVoid
-           deriving (Eq,Show)
+type Id = String
 
-data Alloc a = Alloc a deriving (Eq,Show)
+data Type = CVoid
+          | CChar
+          | CPtr Type
+          | CFunc Type [(Id,Type)]
+          | JavaString
+          | JavaMethod Type [(Id,Type)]
+          deriving (Eq,Show)
 
-instance Functor Alloc where
-  fmap f (Alloc x) = Alloc (f x)
-  
-instance Monad Alloc where
-  return = Alloc
-  Alloc x >>= f = f x
+type Term = (Id,Type)
 
-malloc :: Int -> Typemap Code CType (Alloc CType)
-malloc _ x = Convert ["malloc"] (Alloc (CPtr x))
+type Rewrite a = a -> Maybe a
 
-free :: Typemap Code (Alloc CType) CType
-free (Alloc (CPtr _)) = Convert ["free"] CVoid
-free _ = Fail
+type Rule = Rewrite Term
 
-toFloat :: Typemap Code CType CType
-toFloat CInt          = Convert ["float"] CFloat
-toFloat CChar         = Convert ["float"] CFloat
-toFloat CFloat        = Convert ["id"] CFloat
-toFloat (CPtr CChar)  = Convert ["atoi"] CFloat
-toFloat _             = Fail
+-- To should be its own inverse?  But side-effects should be different for
+-- inverted function?
+convertFrom :: Rule
+convertFrom (x,CPtr CChar) = do
+  let pre = ["const jbyte *str;",
+             "str = (*env)->GetStringUTFChars(env, prompt, NULL);",
+             "if (str == NULL) {return NULL;}",
+             "char *cstr = (char *)str;"]
+  let post = "(*env)->ReleaseStringUTFChars(env, prompt, str);"
+  let code = block (unlines pre) post
+  return (x,JavaString)
+convertFrom (x,JavaString) = do
+  return (x,CPtr CChar)
+convertFrom _ = 
+  Nothing
 
-deref :: Typemap Code CType CType
-deref (CPtr x)        = Convert ["*"] x
-deref _               = Fail
+freeVars :: [Id]
+freeVars = [replicate k ['a'..'z'] | k <- [1..]] >>= sequence
 
-refer :: Typemap Code CType CType
-refer x               = Convert ["&"] (CPtr x)
+-- code :: CodeGen ()
+-- code = do
+--   x <- genSym
+--   tell $ stmt ("foo " ++ x)
 
-convert :: Typemap Code CType CType
-convert x = do
-  y <- toFloat x
-  z <- refer y
-  deref z
-
-convert2 :: Typemap Code CType CType
-convert2 x = do
-  y <- malloc 10 x
-  free y
+exTerm1 :: Term
+exTerm1 = ("foo",CFunc CVoid [("x",CPtr CChar),("y",CPtr CChar)])
 
 main :: IO ()
 main = do
-  print $ return CInt >>= convert
-  print $ return CFloat >>= convert2
+  print exTerm1
+  let m = convertFrom exTerm1
+  print m
