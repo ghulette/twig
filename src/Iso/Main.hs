@@ -32,6 +32,21 @@ convertFrom (x,JavaString) = do
 convertFrom _ = do
   failure  
 
+-- From CodeGen
+-- freeVars :: [Id]
+-- freeVars = [replicate k ['a'..'z'] | k <- [1..]] >>= sequence
+-- 
+-- code :: CodeGen ()
+-- code = do
+--   x <- genSym
+--   tell $ stmt ("foo " ++ x)
+-- 
+-- main :: IO ()
+-- main = do
+--   let (_,blc,_) = evalCodeGen code freeVars
+--   putStrLn (render blc)
+
+
 example :: Term
 example = ("foo",CFunc CVoid [("x",CPtr CChar),("y",CPtr CChar)])
 
