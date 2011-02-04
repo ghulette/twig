@@ -1,4 +1,5 @@
 import Code
+import CodeGen
 
 type Id = String
 
@@ -10,41 +11,44 @@ data Type = CVoid
           | JavaMethod Type [(Id,Type)]
           deriving (Eq,Show)
 
-type Term = (Id,Type)
+type Term = (Id,Type) 
 
-type Rewrite a = a -> Maybe a
-
-type Rule = Rewrite Term
+type Rule = Term -> CodeGen (Maybe Term)
 
 -- To should be its own inverse?  But side-effects should be different for
 -- inverted function?
 convertFrom :: Rule
-convertFrom (x,CPtr CChar) = do
-  let pre = ["const jbyte *str;",
-             "str = (*env)->GetStringUTFChars(env, prompt, NULL);",
-             "if (str == NULL) {return NULL;}",
-             "char *cstr = (char *)str;"]
-  let post = "(*env)->ReleaseStringUTFChars(env, prompt, str);"
-  let code = block (unlines pre) post
-  return (x,JavaString)
 convertFrom (x,JavaString) = do
-  return (x,CPtr CChar)
+  y <- genSym
+  z <- genSym
+  let pre = ["const jbyte *" ++ y ++ ";",
+             y ++ " = (*env)->GetStringUTFChars(env, " ++ x ++ ", NULL);",
+             "if(" ++ y ++ " == NULL) {return NULL;}",
+             "char *" ++ z ++ " = (char *)" ++ y ++ ";"]
+  let post = "(*env)->ReleaseStringUTFChars(env, " ++ x ++ ", " ++ y ++ ");"
+  let code = block (unlines pre) post
+  writeCode code
+  return $ Just (z,CPtr CChar)
+convertFrom (x,CPtr CChar) = do
+  y <- genSym
+  let pre = ["jstring " ++ y ++ ";",
+             y ++ " = (*env)->NewStringUTF(env, " ++ x ++");"]
+  let code = stmt (unlines pre)
+  writeCode code
+  return $ Just (x,JavaString)
 convertFrom _ = 
-  Nothing
+  return Nothing
 
 freeVars :: [Id]
-freeVars = [replicate k ['a'..'z'] | k <- [1..]] >>= sequence
+freeVars = ["_gen" ++ (show i) | i <- [(0 :: Integer)..]]
 
--- code :: CodeGen ()
--- code = do
---   x <- genSym
---   tell $ stmt ("foo " ++ x)
-
-exTerm1 :: Term
-exTerm1 = ("foo",CFunc CVoid [("x",CPtr CChar),("y",CPtr CChar)])
+-- ex1 :: Term
+-- ex1 = ("foo",CFunc CVoid [("x",CPtr CChar),("y",CPtr CChar)])
 
 main :: IO ()
 main = do
-  print exTerm1
-  let m = convertFrom exTerm1
-  print m
+  let ex2 = ("my_string",CPtr CChar)
+  print ex2
+  let (t,c,_) = evalCodeGen (convertFrom ex2) freeVars
+  print t
+  putStrLn (render c)
