@@ -8,6 +8,7 @@ module CodeGen
   , evalCodeGen
   , Bindings
   , bind
+  , fetch
   , replaceSyms
   , replaceSymsFresh
   ) where
@@ -61,6 +62,9 @@ doReplaceSyms (x:xs) = do
 
 bind :: [(Char,Ident)] -> Bindings
 bind = Map.fromList
+
+fetch :: Bindings -> Char -> Maybe Ident
+fetch env x = Map.lookup x env
 
 replaceSyms :: Bindings -> String -> CodeGen (String,Bindings)
 replaceSyms env s = runStateT (doReplaceSyms s) env
