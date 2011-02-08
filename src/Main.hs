@@ -2,18 +2,15 @@ import Code
 import CodeGen
 import Data.List (intercalate)
 
-
-type Id = String
-
 data Type = CVoid
           | CChar
           | CPtr Type
-          | CFunc Type [(Id,Type)]
+          | CFunc Type [(Ident,Type)]
           | JavaString
-          | JavaMethod Type [(Id,Type)]
+          | JavaMethod Type [(Ident,Type)]
           deriving (Eq,Show)
 
-type Term = (Id,Type) 
+type Term = (Ident,Type) 
 
 type Rule = Term -> CodeGen (Maybe Term)
 
@@ -45,7 +42,7 @@ convertFrom (x,CPtr CChar) = do
 convertFrom _ = 
   return Nothing
 
-freeVars :: [Id]
+freeVars :: [Ident]
 freeVars = ["_gen" ++ (show i) | i <- [(0 :: Integer)..]]
 
 -- ex1 :: Term
