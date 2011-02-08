@@ -30,11 +30,11 @@ convertFrom (x,JavaString) = do
   writeCode code
   return $ Just (z,CPtr CChar)
 convertFrom (x,CPtr CChar) = do
-  y <- genSym
-  let pre = ["jstring " ++ y ++ ";",
-             y ++ " = (*env)->NewStringUTF(env, " ++ x ++");"]
-  let code = stmt (unlines pre)
-  writeCode code
+  let env = bind [('x',x)]
+  let pre = unlines ["jstring ${y};",
+                     "${y} = (*env)->NewStringUTF(env, ${x});"]
+  (pre',_) <- replaceSyms env pre
+  writeCode (stmt pre')
   return $ Just (x,JavaString)
 convertFrom _ = 
   return Nothing
