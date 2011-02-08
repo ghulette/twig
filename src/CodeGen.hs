@@ -3,71 +3,67 @@
 module CodeGen 
   ( Ident
   , CodeGen
+  , evalCodeGen
   , genSym
   , writeCode
-  , evalCodeGen
-  , Bindings
-  , bind
-  , fetch
   , replaceSyms
-  , replaceSymsFresh
+  , clearEnv
+  , bind
+  , getVar
   ) where
 
 import Control.Monad.Identity
 import Control.Monad.Supply
 import Control.Monad.Writer
-import Control.Monad.State
-import Data.Map (Map)
-import qualified Data.Map as Map
+import Control.Monad.Env
 import Code
 
 type Ident = String
 
-newtype CodeGen a = CodeGen (WriterT Code (SupplyT Ident Identity) a)
+newtype CodeGen a = 
+  CodeGen (WriterT Code 
+          (SupplyT Ident 
+          (EnvT Char Ident Identity)) a)
   deriving (Functor,Monad)
 
-genSym :: CodeGen Ident
-genSym = CodeGen $ lift supply
-
-writeCode :: Code -> CodeGen ()
-writeCode = CodeGen . tell
-
-evalCodeGen :: CodeGen a -> [Ident] -> (a,Code,[Ident])
-evalCodeGen (CodeGen m) vars = (x,cs,vars')
+evalCodeGen :: CodeGen a -> [Ident] -> (a,Code)
+evalCodeGen (CodeGen m) vars = (x,cs)
   where m1 = runWriterT m
         m2 = runSupplyT m1 vars
-        ((x,cs),vars') = runIdentity m2
+        m3 = evalEnvT m2
+        ((x,cs),_) = runIdentity m3
 
--- This part should maybe live in its own module?
+fetch :: Char -> CodeGen (Maybe Ident)
+fetch x = CodeGen $ lift $ lift $ load x
 
-type Bindings = Map Char Ident
+bind :: Char -> Ident -> CodeGen ()
+bind x v = CodeGen $ lift $ lift $ store x v
 
-getVar :: Bindings -> Char -> CodeGen String
-getVar env x =
-  case Map.lookup x env of 
+clearEnv :: CodeGen ()
+clearEnv = CodeGen $ lift $ lift $ reset
+
+genSym :: CodeGen Ident
+genSym = CodeGen $ lift $ supply
+
+writeCode :: Code -> CodeGen ()
+writeCode c = CodeGen $ tell c
+
+getVar :: Char -> CodeGen String
+getVar x = do
+  mbvar <- fetch x
+  case mbvar of 
     Just y -> return y
-    Nothing -> genSym
+    Nothing -> do
+      y <- genSym
+      bind x y
+      return y
 
-doReplaceSyms :: String -> StateT Bindings CodeGen String
-doReplaceSyms "" = return ""
-doReplaceSyms ('$' : '{' : x : '}' : xs) = do
-  env <- get
-  sym <- lift (getVar env x)
-  put (Map.insert x sym env)
-  xs' <- doReplaceSyms xs
+replaceSyms :: String -> CodeGen String
+replaceSyms "" = return ""
+replaceSyms ('$' : '{' : x : '}' : xs) = do
+  sym <- getVar x
+  xs' <- replaceSyms xs
   return (sym ++ xs')
-doReplaceSyms (x:xs) = do
-  xs' <- doReplaceSyms xs
+replaceSyms (x:xs) = do
+  xs' <- replaceSyms xs
   return (x:xs')
-
-bind :: [(Char,Ident)] -> Bindings
-bind = Map.fromList
-
-fetch :: Bindings -> Char -> Maybe Ident
-fetch env x = Map.lookup x env
-
-replaceSyms :: Bindings -> String -> CodeGen (String,Bindings)
-replaceSyms env s = runStateT (doReplaceSyms s) env
-
-replaceSymsFresh :: String -> CodeGen (String,Bindings)
-replaceSymsFresh = replaceSyms (bind [])
