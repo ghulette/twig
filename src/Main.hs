@@ -29,21 +29,18 @@ convertFrom (x,JavaString) = do
               "if(${y} == NULL) {return NULL;}",
               "char* ${z} = (char *)${y};"]
   let b = "(*env)->ReleaseStringUTFChars(env, ${x}, ${y});"
-  clearEnv
-  bind 'x' x
-  a' <- replaceSyms a
-  b' <- replaceSyms b
-  writeCode (block a' b')
-  z <- getVar 'z'
+  clearVars
+  bindVar 'x' x
+  writeBlock a b
+  z <- var 'z'
   return $ Just (z,CPtr CChar)
 convertFrom (x,CPtr CChar) = do
   let a = jn ["jstring ${y};",
               "${y} = (*env)->NewStringUTF(env, ${x});"]
-  clearEnv
-  bind 'x' x
-  a' <- replaceSyms a
-  writeCode (stmt a')
-  y <- getVar 'y'
+  clearVars
+  bindVar 'x' x
+  writeStmt a
+  y <- var 'y'
   return $ Just (y,JavaString)
 convertFrom _ = 
   return Nothing

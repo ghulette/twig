@@ -5,11 +5,12 @@ module CodeGen
   , CodeGen
   , evalCodeGen
   , genSym
-  , writeCode
-  , replaceSyms
-  , clearEnv
-  , bind
-  , getVar
+  , writeStmt
+  , writeBlock
+  , replaceVars
+  , clearVars
+  , bindVar
+  , var
   ) where
 
 import Control.Monad.Identity
@@ -36,34 +37,45 @@ evalCodeGen (CodeGen m) vars = (x,cs)
 fetch :: Char -> CodeGen (Maybe Ident)
 fetch x = CodeGen $ lift $ lift $ load x
 
-bind :: Char -> Ident -> CodeGen ()
-bind x v = CodeGen $ lift $ lift $ store x v
-
-clearEnv :: CodeGen ()
-clearEnv = CodeGen $ lift $ lift $ reset
+bindVar :: Char -> Ident -> CodeGen ()
+bindVar x v = CodeGen $ lift $ lift $ store x v
 
 genSym :: CodeGen Ident
 genSym = CodeGen $ lift $ supply
 
+clearVars :: CodeGen ()
+clearVars = CodeGen $ lift $ lift $ reset
+
 writeCode :: Code -> CodeGen ()
 writeCode c = CodeGen $ tell c
 
-getVar :: Char -> CodeGen String
-getVar x = do
+writeStmt :: String -> CodeGen ()
+writeStmt s = do
+  s' <- replaceVars s
+  writeCode (stmt s')
+
+writeBlock :: String -> String -> CodeGen ()
+writeBlock s1 s2 = do
+  s1' <- replaceVars s1
+  s2' <- replaceVars s2
+  writeCode (block s1' s2')
+
+var :: Char -> CodeGen String
+var x = do
   mbvar <- fetch x
   case mbvar of 
     Just y -> return y
     Nothing -> do
       y <- genSym
-      bind x y
+      bindVar x y
       return y
 
-replaceSyms :: String -> CodeGen String
-replaceSyms "" = return ""
-replaceSyms ('$' : '{' : x : '}' : xs) = do
-  sym <- getVar x
-  xs' <- replaceSyms xs
+replaceVars :: String -> CodeGen String
+replaceVars "" = return ""
+replaceVars ('$' : '{' : x : '}' : xs) = do
+  sym <- var x
+  xs' <- replaceVars xs
   return (sym ++ xs')
-replaceSyms (x:xs) = do
-  xs' <- replaceSyms xs
+replaceVars (x:xs) = do
+  xs' <- replaceVars xs
   return (x:xs')
