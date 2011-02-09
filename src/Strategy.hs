@@ -1,33 +1,26 @@
 module Strategy where
 
-type Strategy a = a -> Maybe a
+import Control.Arrow
+import CodeGen
+
+type Strategy a = a -> CodeGen a
 
 success :: Strategy a
-success = Just
+success = return
 
 failure :: Strategy a
-failure _ = Nothing
+failure _ = abort
 
-test :: Strategy a -> Strategy a
-test s t = 
-  case s t of
-    Just _ -> Just t
-    Nothing -> Nothing
-
-neg :: Strategy a -> Strategy a
-neg s t = 
-  case s t of
-    Just _ -> Nothing
-    Nothing -> Just t
+-- These need "try" or something like that
+-- test :: Strategy a -> Strategy a
+-- test s x = undefined
+--   
+-- neg :: Strategy a -> Strategy a
+-- neg s x = undefined
 
 seqn :: Strategy a -> Strategy a -> Strategy a
-seqn s1 s2 t = 
-  case s1 t of
-    Just t' -> s2 t
-    Nothing -> Nothing
+seqn s1 s2 = runKleisli $ (Kleisli s1) >>> (Kleisli s2)
 
-choice :: Strategy a -> Strategy a -> Strategy a
-choice s1 s2 t =
-  case s1 t of
-    Just t' -> Just t'
-    Nothing -> s2 t
+-- MonadPlus is not well defined
+-- choice :: Strategy a -> Strategy a -> Strategy a
+-- choice s1 s2 = runKleisli $ (Kleisli s1) <+> (Kleisli s2)

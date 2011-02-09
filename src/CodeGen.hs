@@ -4,6 +4,7 @@ module CodeGen
   ( Ident
   , CodeGen
   , evalCodeGen
+  , abort
   , genSym
   , writeStmt
   , writeBlock
@@ -13,26 +14,52 @@ module CodeGen
   , var
   ) where
 
+import Code
+import Control.Monad.Env
 import Control.Monad.Identity
 import Control.Monad.Supply
 import Control.Monad.Writer
-import Control.Monad.Env
-import Code
+import Control.Monad.Maybe (MaybeT,runMaybeT)
+import qualified Control.Monad.Maybe (abort)
 
 type Ident = String
 
 newtype CodeGen a = 
   CodeGen (WriterT Code 
-          (SupplyT Ident 
-          (EnvT Char Ident Identity)) a)
+          (SupplyT Ident
+          (EnvT Char Ident
+          (MaybeT
+          Identity))) a)
   deriving (Functor,Monad)
 
-evalCodeGen :: CodeGen a -> [Ident] -> (a,Code)
-evalCodeGen (CodeGen m) vars = (x,cs)
+-- data CodeGenState = CodeGenState 
+--   { getVars :: [Ident]
+--   , getCode :: Code
+--   }
+-- 
+-- newEmptyState :: [Ident] -> CodeGenState
+-- newEmptyState vs = CodeGenState vs noop
+
+-- instance Monoid CodeGenState where
+--   mempty = CodeGenState mempty mempty
+--   mappend (CodeGenState v1 c1) (CodeGenState v2 c2) =
+--     CodeGenState v' (c1 `mappend` c2)
+--     where v' = case (v1,v2) of (_,[]) -> v1
+--                                ([],_) -> v2
+--                                _ -> v2
+
+evalCodeGen :: [Ident] -> CodeGen a -> Maybe (Code,a)
+evalCodeGen vars (CodeGen m) = 
+  case runIdentity m4 of
+    Just ((x,code),_) -> Just (code,x)
+    Nothing -> Nothing
   where m1 = runWriterT m
         m2 = runSupplyT m1 vars
         m3 = evalEnvT m2
-        ((x,cs),_) = runIdentity m3
+        m4 = runMaybeT m3
+
+abort :: CodeGen a
+abort = CodeGen $ lift $ lift $ lift Control.Monad.Maybe.abort
 
 fetch :: Char -> CodeGen (Maybe Ident)
 fetch x = CodeGen $ lift $ lift $ load x

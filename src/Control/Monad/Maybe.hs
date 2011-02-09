@@ -3,6 +3,7 @@
 module Control.Monad.Maybe
 ( MaybeT
 , runMaybeT
+, abort
 ) where
 
 import Control.Monad
@@ -13,6 +14,12 @@ import Control.Monad.Writer
 
 newtype MaybeT m a = MaybeT {runMaybeT :: m (Maybe a)}
 
+class Monad m => MaybeMonad m where
+  abort :: m a
+
+instance Monad m => MaybeMonad (MaybeT m) where
+  abort = MaybeT (return Nothing)
+
 instance Functor m => Functor (MaybeT m) where
   fmap f = MaybeT . fmap (fmap f) . runMaybeT
 
@@ -21,7 +28,7 @@ instance Monad m => Monad (MaybeT m) where
   x >>= f = MaybeT $ do 
     mx <- runMaybeT x
     case mx of
-      Just x  -> runMaybeT $ f x
+      Just x' -> runMaybeT $ f x'
       Nothing -> return Nothing
 
 instance Monad m => MonadPlus (MaybeT m) where
