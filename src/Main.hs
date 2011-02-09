@@ -13,7 +13,7 @@ data Type = CVoid
 
 type Term = (Ident,Type)
 
-type Rule = Term -> CodeGen Term
+type Rule = Strategy CodeGen Term
 
 jn :: [String] -> String
 jn = intercalate "\n"
@@ -29,7 +29,7 @@ convert (x,JavaString) = do
   bindVar 'x' x
   writeBlock a b
   z <- var 'z'
-  return (z,CPtr CChar)
+  return $ Just (z,CPtr CChar)
 convert (x,CPtr CChar) = do
   let a = jn ["jstring ${y};",
               "${y} = (*env)->NewStringUTF(env, ${x});"]
@@ -37,18 +37,18 @@ convert (x,CPtr CChar) = do
   bindVar 'x' x
   writeStmt a
   y <- var 'y'
-  return (y,JavaString)
-convert _ = abort
+  return $ Just (y,JavaString)
+convert _ = return Nothing
 
 runExample :: Rule -> Term -> IO ()
 runExample rule t = do
   putStrLn $ "Input: " ++ show t
   case evalCodeGen freeVars (rule t) of
-    Just (code,t') -> do
+    (Just t',code) -> do
       putStrLn $ "Output: " ++ show t'
       putStrLn $ "Code:"
       putStrLn $ render code
-    Nothing -> do
+    (Nothing,_) -> do
       putStrLn $ "Failed"
   where freeVars = ["_gen" ++ (show i) | i <- [(0 :: Integer)..]]
 
@@ -57,7 +57,7 @@ main = do
   runExample convert ("cstr",CPtr CChar)
   runExample convert ("jstr",JavaString)
   runExample (convert `seqn` convert) ("jstr",JavaString)
-  -- runExample (convert `seqn` success) ("jstr",JavaString)
-  -- runExample (success `seqn` convert) ("jstr",JavaString)
+  runExample (convert `seqn` failure) ("jstr",JavaString)
+  runExample (success `seqn` convert) ("jstr",JavaString)
   runExample convert ("foo",CFunc CVoid [("x",CPtr CChar),
                                          ("y",CPtr CChar)])
