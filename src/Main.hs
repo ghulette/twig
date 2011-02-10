@@ -56,7 +56,7 @@ convert _ = Nothing
 
 genCode :: Gen -> Ident -> Code
 genCode (Gen gen) x = code
-  where (_,code) = evalCodeGen freeVars (gen x)
+  where (_,code) = runCodeGen freeVars (gen x)
         freeVars = ["_gen" ++ (show i) | i <- [(0 :: Integer)..]]
 
 runExample :: Rule -> Type -> Ident -> IO ()

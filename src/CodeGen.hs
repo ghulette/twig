@@ -1,69 +1,61 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module CodeGen 
+module CodeGen
   ( Ident
   , CodeGen
-  , evalCodeGen
+  , runCodeGen
   , genSym
+  , fetchVar
+  , bindVar
+  , clearVars
   , writeStmt
   , writeBlock
   , replaceVars
-  , clearVars
-  , bindVar
   , var
   ) where
 
 import Code
-import Control.Monad.Env
-import Control.Monad.Identity
-import Control.Monad.Supply
-import Control.Monad.Writer
+import Control.Monad.WSE (WSE)
+import qualified Control.Monad.WSE as WSE
 
 type Ident = String
 
-newtype CodeGen a = 
-  CodeGen (WriterT Code 
-          (SupplyT Ident
-          (EnvT Char Ident
-          Identity)) a)
+newtype CodeGen a = CodeGen (WSE Code Ident Char a)
   deriving (Functor,Monad)
 
-evalCodeGen :: [Ident] -> CodeGen a -> (a,Code)
-evalCodeGen vars (CodeGen m) = (x,code)
-  where m1 = runWriterT m
-        m2 = runSupplyT m1 vars
-        m3 = evalEnvT m2
-        ((x,code),_) = runIdentity m3
+runCodeGen :: [Ident] -> CodeGen a -> (a,Code)
+runCodeGen vars (CodeGen m) = (x,code)
+  where (x,code,_) = WSE.run vars m
 
-fetch :: Char -> CodeGen (Maybe Ident)
-fetch x = CodeGen $ lift $ lift $ load x
+fetchVar :: Char -> CodeGen (Maybe Ident)
+fetchVar = CodeGen . WSE.fetch
 
 bindVar :: Char -> Ident -> CodeGen ()
-bindVar x v = CodeGen $ lift $ lift $ store x v
+bindVar x v = CodeGen $ WSE.bind x v
 
 clearVars :: CodeGen ()
-clearVars = CodeGen $ lift $ lift $ reset
+clearVars = CodeGen $ WSE.reset
 
 genSym :: CodeGen Ident
-genSym = CodeGen $ lift $ supply
+genSym = CodeGen $ WSE.supply
 
-writeCode :: Code -> CodeGen ()
-writeCode c = CodeGen $ tell c
+write :: Code -> CodeGen ()
+write = CodeGen . WSE.tell
 
 writeStmt :: String -> CodeGen ()
 writeStmt s = do
   s' <- replaceVars s
-  writeCode (stmt s')
+  write (stmt s')
 
 writeBlock :: String -> String -> CodeGen ()
 writeBlock s1 s2 = do
   s1' <- replaceVars s1
   s2' <- replaceVars s2
-  writeCode (block s1' s2')
+  write (block s1' s2')
 
 var :: Char -> CodeGen String
 var x = do
-  mbvar <- fetch x
+  mbvar <- fetchVar x
   case mbvar of 
     Just y -> return y
     Nothing -> do

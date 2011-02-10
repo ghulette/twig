@@ -15,16 +15,16 @@ newtype EnvT k e m a = EnvT {envState :: StateT (Map k e) m a}
   deriving (Monad,Functor,MonadTrans,MonadIO)
 
 class Monad m => MonadEnv k e m | m -> k, m -> e where
-  load :: k -> m (Maybe e)
-  store :: k -> e -> m ()
+  fetch :: k -> m (Maybe e)
+  bind :: k -> e -> m ()
   reset :: m ()
 
 instance (Monad m,Ord k) => MonadEnv k e (EnvT k e m) where
-  load x = EnvT $ do
+  fetch x = EnvT $ do
     s <- get
     let r = Map.lookup x s
     return r
-  store x v = EnvT $ do
+  bind x v = EnvT $ do
     s <- get
     let s' = Map.insert x v s
     put s'
