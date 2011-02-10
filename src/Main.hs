@@ -54,10 +54,11 @@ runExample rule t = do
 
 main :: IO ()
 main = do
-  runExample convert ("cstr",CPtr CChar)
-  runExample convert ("jstr",JavaString)
-  runExample (convert `seqn` convert) ("jstr",JavaString)
-  runExample (convert `seqn` failure) ("jstr",JavaString)
-  runExample (success `seqn` convert) ("jstr",JavaString)
-  runExample convert ("foo",CFunc CVoid [("x",CPtr CChar),
-                                         ("y",CPtr CChar)])
+  runExample (neg convert `choice` convert) ("cstr",CPtr CChar)
+  -- runExample (test convert) ("cstr",CPtr CChar)
+  -- runExample convert ("jstr",JavaString)
+  -- runExample (convert `seqn` convert) ("jstr",JavaString)
+  -- runExample (convert `seqn` failure) ("jstr",JavaString)
+  -- runExample (success `seqn` convert) ("jstr",JavaString)
+  -- runExample convert ("foo",CFunc CVoid [("x",CPtr CChar),
+  --                                        ("y",CPtr CChar)])
