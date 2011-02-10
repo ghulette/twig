@@ -47,7 +47,7 @@ gen2 = Gen $ \x -> do
   y <- var 'y'
   return y
 
-type Rule = Strategy Gen Type
+type Rule = Strategy Type Gen
 
 convert :: Rule
 convert JavaString = Just (CPtr CChar,gen1)
@@ -70,7 +70,6 @@ runExample rule t x = do
       putStrLn $ render code
     Nothing -> do
       putStrLn $ "Failed"
-  where 
 
 main :: IO ()
 main = do

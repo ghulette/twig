@@ -2,27 +2,27 @@ module Strategy where
 
 import Data.Monoid
 
-type Strategy m a = a -> Maybe (a,m)
+type Strategy a m = a -> Maybe (a,m)
 
-success :: Monoid m => Strategy m a
+success :: Monoid m => Strategy a m
 success x = Just (x,mempty)
 
-failure :: Monoid m => Strategy m a
+failure :: Monoid m => Strategy a m
 failure _ = Nothing
 
-test :: Monoid m => Strategy m a -> Strategy m a
+test :: Monoid m => Strategy a m -> Strategy a m
 test s x = 
   case s x of 
     Just _ -> Just (x,mempty)
     Nothing -> Nothing
 
-neg :: Monoid m => Strategy m a -> Strategy m a
+neg :: Monoid m => Strategy a m -> Strategy a m
 neg s x = 
   case s x of
     Just _ -> Nothing
     Nothing -> Just (x,mempty)
 
-seqn :: Monoid m => Strategy m a -> Strategy m a -> Strategy m a
+seqn :: Monoid m => Strategy a m -> Strategy a m -> Strategy a m
 seqn s1 s2 x =
   case s1 x of 
     Nothing -> Nothing
@@ -33,7 +33,7 @@ seqn s1 s2 x =
 
     
 
-choice :: Monoid m => Strategy m a -> Strategy m a -> Strategy m a
+choice :: Monoid m => Strategy a m -> Strategy a m -> Strategy a m
 choice s1 s2 x =
   case s1 x of 
     Nothing -> s2 x
