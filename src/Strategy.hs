@@ -1,36 +1,40 @@
 module Strategy where
 
-import Control.Monad
+import Data.Monoid
 
-type Strategy m a b = a -> Maybe (a,b -> m b)
+type Strategy m a = a -> Maybe (a,m)
 
-success :: Monad m => Strategy m a b
-success x = Just (x,return)
+success :: Monoid m => Strategy m a
+success x = Just (x,mempty)
 
-failure :: Monad m => Strategy m a b
+failure :: Monoid m => Strategy m a
 failure _ = Nothing
 
-test :: Monad m => Strategy m a b -> Strategy m a b
+test :: Monoid m => Strategy m a -> Strategy m a
 test s x = 
-  case s x of Just _ -> Just (x,return)
-              Nothing -> Nothing
-
-neg :: Monad m => Strategy m a b -> Strategy m a b
-neg s x = 
-  case s x of Just _ -> Nothing
-              Nothing -> Just (x,return)
-
-seqn :: Monad m => Strategy m a b -> Strategy m a b -> Strategy m a b
-seqn s1 s2 x =
-  case s1 x of 
-    Just (x',g1) -> 
-      case s2 x' of
-        Just (x'',g2) -> Just (x'',g1 >=> g2)
-        Nothing -> Nothing
+  case s x of 
+    Just _ -> Just (x,mempty)
     Nothing -> Nothing
 
-choice :: Monad m => Strategy m a b -> Strategy m a b -> Strategy m a b
+neg :: Monoid m => Strategy m a -> Strategy m a
+neg s x = 
+  case s x of
+    Just _ -> Nothing
+    Nothing -> Just (x,mempty)
+
+seqn :: Monoid m => Strategy m a -> Strategy m a -> Strategy m a
+seqn s1 s2 x =
+  case s1 x of 
+    Nothing -> Nothing
+    Just (x',g1) -> 
+      case s2 x' of
+        Nothing -> Nothing
+        Just (x'',g2) -> Just (x'',g1 `mappend` g2)
+
+    
+
+choice :: Monoid m => Strategy m a -> Strategy m a -> Strategy m a
 choice s1 s2 x =
   case s1 x of 
-    Just (x',g) -> Just (x',g)
     Nothing -> s2 x
+    Just (x',g) -> Just (x',g)

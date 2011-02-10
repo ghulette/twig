@@ -1,7 +1,15 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 import Code
 import CodeGen
 import Strategy
 import Data.List (intercalate)
+import Data.Monoid
+import Control.Monad
+
+instance Monoid Gen where
+  mempty = Gen return
+  (Gen m1) `mappend` (Gen m2) = Gen (m1 >=> m2)
 
 data Type = CVoid
           | CChar
@@ -11,13 +19,13 @@ data Type = CVoid
           | JavaMethod Type [(Ident,Type)]
           deriving (Eq,Show)
 
-type Gen = Ident -> CodeGen Ident
+newtype Gen = Gen (Ident -> CodeGen Ident)
 
 jn :: [String] -> String
 jn = intercalate "\n"
 
 gen1 :: Gen
-gen1 x = do
+gen1 = Gen $ \x -> do
   let a = jn ["const jbyte* ${y};",
               "${y} = (*env)->GetStringUTFChars(env, ${x}, NULL);",
               "if(${y} == NULL) {return NULL;}",
@@ -30,7 +38,7 @@ gen1 x = do
   return z
 
 gen2 :: Gen
-gen2 x = do
+gen2 = Gen $ \x -> do
   let a = jn ["jstring ${y};",
               "${y} = (*env)->NewStringUTF(env, ${x});"]
   clearVars
@@ -39,7 +47,7 @@ gen2 x = do
   y <- var 'y'
   return y
 
-type Rule = Strategy CodeGen Type Ident
+type Rule = Strategy Gen Type
 
 convert :: Rule
 convert JavaString = Just (CPtr CChar,gen1)
@@ -47,7 +55,7 @@ convert (CPtr CChar) = Just (JavaString,gen2)
 convert _ = Nothing
 
 genCode :: Gen -> Ident -> Code
-genCode gen x = code
+genCode (Gen gen) x = code
   where (_,code) = evalCodeGen freeVars (gen x)
         freeVars = ["_gen" ++ (show i) | i <- [(0 :: Integer)..]]
 
