@@ -7,9 +7,9 @@ module Control.Monad.Maybe
 ) where
 
 import Control.Monad
-import Control.Monad.Trans
-import Control.Monad.State
 import Control.Monad.Reader
+import Control.Monad.State
+import Control.Monad.Trans
 import Control.Monad.Writer
 
 newtype MaybeT m a = MaybeT {runMaybeT :: m (Maybe a)}

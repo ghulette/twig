@@ -1,13 +1,11 @@
 {-# LANGUAGE MultiParamTypeClasses,
              FunctionalDependencies,
              FlexibleInstances,
-             GeneralizedNewtypeDeriving,
-             UndecidableInstances #-}
+             GeneralizedNewtypeDeriving #-}
 
 module Control.Monad.Env where
 
 import Control.Monad.State
-import Control.Monad.Try
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -32,11 +30,6 @@ instance (Monad m,Ord k) => MonadEnv k e (EnvT k e m) where
     put s'
   reset = EnvT $ do
     put Map.empty
-
-instance MonadTry m => MonadTry (EnvT k e m) where
-  try f = do
-    x <- try f
-    return x
 
 evalEnvT :: (Monad m,Ord k) => EnvT k e m a -> m a
 evalEnvT m = evalStateT (envState m) Map.empty

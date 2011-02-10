@@ -11,15 +11,13 @@ data Type = CVoid
           | JavaMethod Type [(Ident,Type)]
           deriving (Eq,Show)
 
-type Term = (Ident,Type)
-
-type Rule = Strategy CodeGen Term
+type Gen = Ident -> CodeGen Ident
 
 jn :: [String] -> String
 jn = intercalate "\n"
 
-convert :: Rule
-convert (x,JavaString) = do
+gen1 :: Gen
+gen1 x = do
   let a = jn ["const jbyte* ${y};",
               "${y} = (*env)->GetStringUTFChars(env, ${x}, NULL);",
               "if(${y} == NULL) {return NULL;}",
@@ -29,36 +27,47 @@ convert (x,JavaString) = do
   bindVar 'x' x
   writeBlock a b
   z <- var 'z'
-  return $ Just (z,CPtr CChar)
-convert (x,CPtr CChar) = do
+  return z
+
+gen2 :: Gen
+gen2 x = do
   let a = jn ["jstring ${y};",
               "${y} = (*env)->NewStringUTF(env, ${x});"]
   clearVars
   bindVar 'x' x
   writeStmt a
   y <- var 'y'
-  return $ Just (y,JavaString)
-convert _ = return Nothing
+  return y
 
-runExample :: Rule -> Term -> IO ()
-runExample rule t = do
+type Rule = Strategy CodeGen Type Ident
+
+convert :: Rule
+convert JavaString = Just (CPtr CChar,gen1)
+convert (CPtr CChar) = Just (JavaString,gen2)
+convert _ = Nothing
+
+genCode :: Gen -> Ident -> Code
+genCode gen x = code
+  where (_,code) = evalCodeGen freeVars (gen x)
+        freeVars = ["_gen" ++ (show i) | i <- [(0 :: Integer)..]]
+
+runExample :: Rule -> Type -> Ident -> IO ()
+runExample rule t x = do
   putStrLn $ "Input: " ++ show t
-  case evalCodeGen freeVars (rule t) of
-    (Just t',code) -> do
+  case rule t of
+    Just (t',gen) -> do
       putStrLn $ "Output: " ++ show t'
       putStrLn $ "Code:"
+      let code = genCode gen x
       putStrLn $ render code
-    (Nothing,_) -> do
+    Nothing -> do
       putStrLn $ "Failed"
-  where freeVars = ["_gen" ++ (show i) | i <- [(0 :: Integer)..]]
+  where 
 
 main :: IO ()
 main = do
-  runExample (neg convert `choice` convert) ("cstr",CPtr CChar)
-  -- runExample (test convert) ("cstr",CPtr CChar)
-  -- runExample convert ("jstr",JavaString)
-  -- runExample (convert `seqn` convert) ("jstr",JavaString)
-  -- runExample (convert `seqn` failure) ("jstr",JavaString)
-  -- runExample (success `seqn` convert) ("jstr",JavaString)
-  -- runExample convert ("foo",CFunc CVoid [("x",CPtr CChar),
-  --                                        ("y",CPtr CChar)])
+  runExample convert (CPtr CChar) "cstr"
+  runExample convert JavaString "jstr"
+  runExample (convert `seqn` convert) JavaString "jstr"
+  runExample (success `seqn` convert) JavaString "jstr"
+  runExample convert (CFunc CVoid [("x",CPtr CChar),("y",CPtr CChar)]) "foo"

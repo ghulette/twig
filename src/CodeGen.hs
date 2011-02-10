@@ -18,7 +18,6 @@ import Control.Monad.Env
 import Control.Monad.Identity
 import Control.Monad.Supply
 import Control.Monad.Writer
-import Control.Monad.Try
 
 type Ident = String
 
@@ -28,9 +27,6 @@ newtype CodeGen a =
           (EnvT Char Ident
           Identity)) a)
   deriving (Functor,Monad)
-
-instance MonadTry CodeGen where
-  try (CodeGen f) = CodeGen $ try f
 
 evalCodeGen :: [Ident] -> CodeGen a -> (a,Code)
 evalCodeGen vars (CodeGen m) = (x,code)
@@ -45,11 +41,11 @@ fetch x = CodeGen $ lift $ lift $ load x
 bindVar :: Char -> Ident -> CodeGen ()
 bindVar x v = CodeGen $ lift $ lift $ store x v
 
-genSym :: CodeGen Ident
-genSym = CodeGen $ lift $ supply
-
 clearVars :: CodeGen ()
 clearVars = CodeGen $ lift $ lift $ reset
+
+genSym :: CodeGen Ident
+genSym = CodeGen $ lift $ supply
 
 writeCode :: Code -> CodeGen ()
 writeCode c = CodeGen $ tell c

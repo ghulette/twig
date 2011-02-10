@@ -1,35 +1,36 @@
 module Strategy where
 
-import Control.Monad.Try
+import Control.Monad
 
-type Strategy m a = a -> m (Maybe a)
+type Strategy m a b = a -> Maybe (a,b -> m b)
 
-success :: Monad m => Strategy m a
-success = return . Just
+success :: Monad m => Strategy m a b
+success x = Just (x,return)
 
-failure :: Monad m => Strategy m a
-failure _ = return Nothing
+failure :: Monad m => Strategy m a b
+failure _ = Nothing
 
-test :: MonadTry m => Strategy m a -> Strategy m a
-test s x = do
-  mbx' <- try (s x)
-  case mbx' of Just _ -> return (Just x)
-               Nothing -> return Nothing
-  
-neg :: MonadTry m => Strategy m a -> Strategy m a
-neg s x = do
-  mbx' <- try (s x)
-  case mbx' of Just _ -> return Nothing
-               Nothing -> return (Just x)
+test :: Monad m => Strategy m a b -> Strategy m a b
+test s x = 
+  case s x of Just _ -> Just (x,return)
+              Nothing -> Nothing
 
-seqn :: Monad m => Strategy m a -> Strategy m a -> Strategy m a
-seqn s1 s2 x = do
-  mbx' <- s1 x
-  case mbx' of Just x' -> s2 x'
-               Nothing -> return Nothing
+neg :: Monad m => Strategy m a b -> Strategy m a b
+neg s x = 
+  case s x of Just _ -> Nothing
+              Nothing -> Just (x,return)
 
-choice :: MonadTry m => Strategy m a -> Strategy m a -> Strategy m a
-choice s1 s2 x = do
-  mbx' <- try (s1 x)
-  case mbx' of Just _  -> s1 x
-               Nothing -> s2 x
+seqn :: Monad m => Strategy m a b -> Strategy m a b -> Strategy m a b
+seqn s1 s2 x =
+  case s1 x of 
+    Just (x',g1) -> 
+      case s2 x' of
+        Just (x'',g2) -> Just (x'',g1 >=> g2)
+        Nothing -> Nothing
+    Nothing -> Nothing
+
+choice :: Monad m => Strategy m a b -> Strategy m a b -> Strategy m a b
+choice s1 s2 x =
+  case s1 x of 
+    Just (x',g) -> Just (x',g)
+    Nothing -> s2 x
