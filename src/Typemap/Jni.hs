@@ -38,7 +38,17 @@ gen2 = CodeGenProc $ \x -> do
   y <- var 'y'
   return y
 
-convert :: Strategy Type CodeGenProc
-convert JavaString = Just (CPtr CChar,gen1)
-convert (CPtr CChar) = Just (JavaString,gen2)
-convert _ = Nothing
+convertFrom :: Strategy Type CodeGenProc
+convertFrom JavaString = Just (CPtr CChar,gen1)
+convertFrom (CPtr CChar) = Just (JavaString,gen2)
+convertFrom _ = Nothing
+
+-- | The convertTo function is defined in terms of convertFrom. This implies
+-- that convertFrom must be bijective where it is defined (i.e. when the
+-- resulting term is not Nothing).
+-- This may not be well-defined with respect to code generation?
+convertTo :: Strategy Type CodeGenProc
+convertTo t = 
+  case convertFrom t of
+    Just (t',_) -> convertFrom t'
+    Nothing -> Nothing
