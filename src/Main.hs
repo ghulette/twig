@@ -1,15 +1,7 @@
-{-# LANGUAGE FlexibleInstances #-}
-
 import Code
 import CodeGen
 import Strategy
 import Data.List (intercalate)
-import Data.Monoid
-import Control.Monad
-
-instance Monoid Gen where
-  mempty = Gen return
-  (Gen m1) `mappend` (Gen m2) = Gen (m1 >=> m2)
 
 data Type = CVoid
           | CChar
@@ -19,13 +11,11 @@ data Type = CVoid
           | JavaMethod Type [(Ident,Type)]
           deriving (Eq,Show)
 
-newtype Gen = Gen (Ident -> CodeGen Ident)
-
 jn :: [String] -> String
 jn = intercalate "\n"
 
-gen1 :: Gen
-gen1 = Gen $ \x -> do
+gen1 :: CodeGenProc
+gen1 = CodeGenProc $ \x -> do
   let a = jn ["const jbyte* ${y};",
               "${y} = (*env)->GetStringUTFChars(env, ${x}, NULL);",
               "if(${y} == NULL) {return NULL;}",
@@ -37,8 +27,8 @@ gen1 = Gen $ \x -> do
   z <- var 'z'
   return z
 
-gen2 :: Gen
-gen2 = Gen $ \x -> do
+gen2 :: CodeGenProc
+gen2 = CodeGenProc $ \x -> do
   let a = jn ["jstring ${y};",
               "${y} = (*env)->NewStringUTF(env, ${x});"]
   clearVars
@@ -47,26 +37,25 @@ gen2 = Gen $ \x -> do
   y <- var 'y'
   return y
 
-type Rule = Strategy Type Gen
+type Rule = Strategy Type CodeGenProc
 
 convert :: Rule
 convert JavaString = Just (CPtr CChar,gen1)
 convert (CPtr CChar) = Just (JavaString,gen2)
 convert _ = Nothing
 
-genCode :: Gen -> Ident -> Code
-genCode (Gen gen) x = code
-  where (_,code) = runCodeGen freeVars (gen x)
-        freeVars = ["_gen" ++ (show i) | i <- [(0 :: Integer)..]]
+genCode :: CodeGenProc -> Ident -> (Ident,Code)
+genCode gen x = runCodeGenProc freeVars x gen
+  where freeVars = ["_gen" ++ (show i) | i <- [(0 :: Integer)..]]
 
 runExample :: Rule -> Type -> Ident -> IO ()
 runExample rule t x = do
-  putStrLn $ "Input: " ++ show t
+  putStrLn $ "Input=  " ++ x ++ ":" ++ (show t)
   case rule t of
     Just (t',gen) -> do
-      putStrLn $ "Output: " ++ show t'
-      putStrLn $ "Code:"
-      let code = genCode gen x
+      let (x',code) = genCode gen x
+      putStrLn $ "Output= " ++ x' ++ ":" ++ (show t')
+      putStrLn $ "Code"
       putStrLn $ render code
     Nothing -> do
       putStrLn $ "Failed"

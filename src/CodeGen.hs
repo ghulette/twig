@@ -3,7 +3,9 @@
 module CodeGen
   ( Ident
   , CodeGen
-  , runCodeGen
+  , CodeGenProc (..)
+  , run
+  , runCodeGenProc
   , genSym
   , fetchVar
   , bindVar
@@ -15,6 +17,8 @@ module CodeGen
   ) where
 
 import Code
+import Data.Monoid
+import Control.Monad
 import Control.Monad.WSE (WSE)
 import qualified Control.Monad.WSE as WSE
 
@@ -23,9 +27,19 @@ type Ident = String
 newtype CodeGen a = CodeGen (WSE Code Ident Char a)
   deriving (Functor,Monad)
 
-runCodeGen :: [Ident] -> CodeGen a -> (a,Code)
-runCodeGen vars (CodeGen m) = (x,code)
+newtype CodeGenProc = CodeGenProc (Ident -> CodeGen Ident)
+
+instance Monoid CodeGenProc where
+  mempty = CodeGenProc $ return
+  (CodeGenProc m1) `mappend` (CodeGenProc m2) = CodeGenProc $ m1 >=> m2
+
+run :: [Ident] -> CodeGen a -> (a,Code)
+run vars (CodeGen m) = (x,code)
   where (x,code,_) = WSE.run vars m
+
+runCodeGenProc :: [Ident] -> Ident -> CodeGenProc -> (Ident,Code)
+runCodeGenProc vars x (CodeGenProc m) = (x',code)
+  where (x',code) = run vars (m x)
 
 fetchVar :: Char -> CodeGen (Maybe Ident)
 fetchVar = CodeGen . WSE.fetch
