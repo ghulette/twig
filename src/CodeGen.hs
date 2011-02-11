@@ -4,7 +4,6 @@ module CodeGen
   ( Ident
   , CodeGen
   , CodeGenProc (..)
-  , run
   , runCodeGenProc
   , genSym
   , fetchVar

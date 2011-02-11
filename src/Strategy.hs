@@ -31,8 +31,6 @@ seqn s1 s2 x =
         Nothing -> Nothing
         Just (x'',g2) -> Just (x'',g1 `mappend` g2)
 
-    
-
 choice :: Monoid m => Strategy a m -> Strategy a m -> Strategy a m
 choice s1 s2 x =
   case s1 x of 
