@@ -1,6 +1,7 @@
 import CodeGen
 import Strategy
 import Typemap.Jni
+import Term
 
 runExample :: Show a => Strategy a CodeGenProc -> Ident -> a -> IO ()
 runExample rule x t = do
