@@ -2,7 +2,7 @@ module Strategy where
 
 import Control.Monad
 import Data.Monoid
-import Term
+import Data.Tree
 import Util (mapOne,mapSome,mapAll)
 import qualified Util as Util
 
@@ -41,35 +41,27 @@ choice s1 s2 x =
     Nothing -> s2 x
     Just (x',g) -> Just (x',g)
 
-path :: Monoid m => Int -> Strategy Term m -> Strategy Term m
-path 0 s t = s t
-path i s t = do
-  let ts = children t
-  (ts',m) <- Util.path i s ts
-  return (t `withChildren` ts',m)
+branch :: ([Tree a] -> Maybe ([Tree a],b)) -> Tree a -> Maybe (Tree a,b)
+branch f (Node x xs) = do
+  (xs',m) <- f xs
+  return (Node x xs',m)
 
-branchAll :: Monoid m => Strategy Term m -> Strategy Term m
-branchAll s t = do
-  let ts = children t
-  (ts',m) <- mapAll s ts
-  return (t `withChildren` ts',m)
+path :: Monoid m => Int -> Strategy (Tree a) m -> Strategy (Tree a) m
+path 0 s = s
+path i s = branch (Util.path i s)
 
-branchOne :: Monoid m => Strategy Term m -> Strategy Term m
-branchOne s t = do
-  let ts = children t
-  (ts',m) <- mapOne s ts
-  return (t `withChildren` ts',m)
+branchAll :: Monoid m => Strategy (Tree a) m -> Strategy (Tree a) m
+branchAll s = branch (mapAll s)
 
-branchSome :: Monoid m => Strategy Term m -> Strategy Term m
-branchSome s t = do
-  let ts = children t
-  (ts',m) <- mapSome s ts
-  return (t `withChildren` ts',m)
+branchOne :: Monoid m => Strategy (Tree a) m -> Strategy (Tree a) m
+branchOne s = branch (mapOne s)
 
-congruence :: Monoid m => [Strategy Term m] -> Strategy Term m
-congruence ss t = do
-  let ts = children t
-  guard (length ts == length ss)
-  mts' <- sequence (zipWith ($) ss ts)
-  let (ts',ms) = unzip mts'
-  return (t `withChildren` ts',mconcat ms)
+branchSome :: Monoid m => Strategy (Tree a) m -> Strategy (Tree a) m
+branchSome s = branch (mapSome s)
+
+congruence :: Monoid m => [Strategy (Tree a) m] -> Strategy (Tree a) m
+congruence ss (Node x xs) = do
+  guard (length xs == length ss)
+  mts' <- sequence (zipWith ($) ss xs)
+  let (xs',ms) = unzip mts'
+  return (Node x xs',mconcat ms)

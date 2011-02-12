@@ -2,9 +2,15 @@ module Util where
 
 import Data.Monoid
 import Data.List (intercalate)
+import Data.Tree
 
 jn :: [String] -> String
 jn = intercalate "\n"
+
+-- | Tree functions
+
+mapChildren :: (Tree a -> Tree a) -> Tree a -> Tree a
+mapChildren f x = x {subForest = fmap f (subForest x)}
 
 -- | Path functions are indexed starting at 1
 path :: Monoid m => Int -> (a -> Maybe (a,m)) -> [a] -> Maybe ([a],m)
@@ -42,3 +48,66 @@ mapSome f (x:xs) = case f x of
   Nothing -> case mapSome f xs of
     Just (xs',m2) -> Just (x:xs',m2)
     Nothing -> Nothing
+
+pathM :: Monad m => Int -> (a -> Maybe (m a)) -> [a] -> Maybe (m [a])
+pathM i _ _ | i < 1 = Nothing
+pathM _ _ [] = Nothing
+pathM 1 f (x:xs) = 
+  case f x of
+    Just mx' -> Just $ do 
+      x' <- mx'
+      return (x':xs)
+    Nothing -> Nothing
+pathM i f (x:xs) = 
+  case pathM (i-1) f xs of
+    Just mxs' -> Just $ do 
+      xs' <- mxs'
+      return (x:xs')
+    Nothing -> Nothing
+
+mapAllM :: Monad m => (a -> Maybe (m a)) -> [a] -> Maybe (m [a])
+mapAllM _ [] = Just (return [])
+mapAllM f (x:xs) = 
+  case f x of
+    Just mx' -> 
+      case mapAllM f xs of
+        Just mxs' -> Just $ do 
+          x' <- mx'
+          xs' <- mxs'
+          return (x':xs')
+        Nothing -> Nothing
+    Nothing -> Nothing
+
+mapOneM :: Monad m => (a -> Maybe (m a)) -> [a] -> Maybe (m [a])
+mapOneM _ [] = Nothing
+mapOneM f (x:xs) = 
+  case f x of
+    Just mx' -> Just $ do
+      x' <- mx'
+      return (x':xs)
+    Nothing -> 
+      case mapOneM f xs of
+        Just mxs' -> Just $ do
+          xs' <- mxs'
+          return (x:xs')
+        Nothing -> Nothing
+
+mapSomeM :: Monad m => (a -> Maybe (m a)) -> [a] -> Maybe (m [a])
+mapSomeM _ [] = Nothing
+mapSomeM f (x:xs) = 
+  case f x of
+    Just mx' -> 
+      case mapSomeM f xs of
+        Just mxs' -> Just $ do
+          x' <- mx'
+          xs' <- mxs'
+          return (x':xs')
+        Nothing -> Just $ do
+          x' <- mx'
+          return (x':xs)
+    Nothing -> 
+      case mapSomeM f xs of
+        Just mxs' -> Just $ do
+          xs' <- mxs'
+          return (x:xs')
+        Nothing -> Nothing

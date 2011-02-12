@@ -1,39 +1,31 @@
 module Term
-( Term (..)
-, fromString
-, children
-, withChildren
-, isLeaf
-) where
+  ( Term
+  , readTerm
+  , showTerm
+  , isLeaf
+  ) where
 
+import Data.Tree
 import Data.List (intercalate)
 import Rewriting.Lexer
 import Text.ParserCombinators.Parsec
 
 -- Terms
 
-data Term = Term String [Term] 
-  deriving Eq
+type Term = Tree String
 
-instance Show Term where
-  show (Term k []) = k
-  show (Term k ts) = k ++ "(" ++ (intercalate "," (map show ts)) ++ ")"
+showTerm :: Term -> String
+showTerm (Node k []) = k
+showTerm (Node k ts) = k ++ "(" ++ (intercalate "," (map show ts)) ++ ")"
 
-children :: Term -> [Term]
-children (Term _ ts) = ts
-
-withChildren :: Term -> [Term] -> Term
-withChildren (Term x _) ts = Term x ts
-
-isLeaf :: Term -> Bool
-isLeaf (Term _ []) = True
-isLeaf (Term _ _) = False
-
-fromString :: String -> Term
-fromString s = 
+readTerm :: String -> Term
+readTerm s = 
   case parseTerm s of
     Left _ -> error "Not a term"
     Right t -> t
+
+isLeaf :: Term -> Bool
+isLeaf (Node _ xs) = null xs
 
 -- Parser functions
 
@@ -50,7 +42,7 @@ term :: Parser Term
 term = do
   x <- lexeme termId
   ts <- option [] termList
-  return $ Term x ts
+  return $ Node x ts
 
 parseTerm :: String -> Either ParseError Term
 parseTerm = parse (allOf term) "Term"

@@ -1,10 +1,10 @@
 {-# LANGUAGE FlexibleInstances,MultiParamTypeClasses,UndecidableInstances #-}
 
 module Control.Monad.Maybe
-( MaybeT
-, runMaybeT
-, abort
-) where
+  ( MaybeT
+  , runMaybeT
+  , abort
+  ) where
 
 import Control.Monad
 import Control.Monad.Reader
