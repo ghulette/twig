@@ -1,6 +1,6 @@
 module Typemap.Jni where
 
-import Util (jn)
+import Util (br)
 import CodeGen
 import Strategy
 
@@ -17,10 +17,10 @@ data Type = CVoid
 
 gen1 :: CodeGenProc
 gen1 = CodeGenProc $ \x -> do
-  let a = jn ["const jbyte* ${y};",
-              "${y} = (*env)->GetStringUTFChars(env, ${x}, NULL);",
-              "if(${y} == NULL) {return NULL;}",
-              "char* ${z} = (char *)${y};"]
+  let a = "const jbyte* ${y};" `br`
+          "${y} = (*env)->GetStringUTFChars(env, ${x}, NULL);" `br`
+          "if(${y} == NULL) {return NULL;}" `br`
+          "char* ${z} = (char *)${y};"
   let b = "(*env)->ReleaseStringUTFChars(env, ${x}, ${y});"
   clearVars
   bindVar 'x' x
@@ -30,8 +30,8 @@ gen1 = CodeGenProc $ \x -> do
 
 gen2 :: CodeGenProc
 gen2 = CodeGenProc $ \x -> do
-  let a = jn ["jstring ${y};",
-              "${y} = (*env)->NewStringUTF(env, ${x});"]
+  let a = "jstring ${y};" `br`
+          "${y} = (*env)->NewStringUTF(env, ${x});"
   clearVars
   bindVar 'x' x
   writeStmt a

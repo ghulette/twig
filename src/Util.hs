@@ -1,11 +1,10 @@
 module Util where
 
 import Data.Monoid
-import Data.List (intercalate)
 import Data.Tree
 
-jn :: [String] -> String
-jn = intercalate "\n"
+br :: String -> String -> String
+s1 `br` s2 = s1 ++ "\n" ++ s2
 
 -- | Tree functions
 
