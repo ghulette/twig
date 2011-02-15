@@ -15,5 +15,5 @@ Executable rewrite
 Executable demo
   Main-Is:        Main.hs
   Hs-Source-Dirs: src
-  Build-Depends:  base >= 4,array,containers,mtl
+  Build-Depends:  base >= 4,containers,mtl,gensym
   GHC-Options:    -O2 -Wall

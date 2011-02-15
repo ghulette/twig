@@ -6,25 +6,22 @@ module CodeGen
   , CodeGenProc (..)
   , module Code
   , runCodeGenProc
-  , genSym
-  , fetchVar
-  , bindVar
-  , clearVars
+  , bind
+  , local
   , writeStmt
   , writeBlock
-  , replaceVars
   , var
   ) where
 
 import Code
 import Data.Monoid
+import qualified Control.Monad.GenSym as GenSym
+import Control.Monad.GenSym (GenSym,Sym,evalGenSym)
 import Control.Monad
-import Control.Monad.WSE (WSE)
-import qualified Control.Monad.WSE as WSE
 
-type Ident = String
+type Ident = Sym
 
-newtype CodeGen a = CodeGen (WSE Code Ident Char a)
+newtype CodeGen a = CodeGen (GenSym Code a)
   deriving (Functor,Monad)
 
 newtype CodeGenProc = CodeGenProc (Ident -> CodeGen Ident)
@@ -34,55 +31,27 @@ instance Monoid CodeGenProc where
   (CodeGenProc m1) `mappend` (CodeGenProc m2) = CodeGenProc $ m1 >=> m2
 
 run :: [Ident] -> CodeGen a -> (a,Code)
-run vars (CodeGen m) = (x,code)
-  where (x,code,_) = WSE.run vars m
+run vars (CodeGen m) = evalGenSym vars m
 
 runCodeGenProc :: [Ident] -> Ident -> CodeGenProc -> (Ident,Code)
-runCodeGenProc vars x (CodeGenProc m) = (x',code)
-  where (x',code) = run vars (m x)
+runCodeGenProc vars x (CodeGenProc m) = run vars (m x)
 
-fetchVar :: Char -> CodeGen (Maybe Ident)
-fetchVar = CodeGen . WSE.fetch
-
-bindVar :: Char -> Ident -> CodeGen ()
-bindVar x v = CodeGen $ WSE.bind x v
-
-clearVars :: CodeGen ()
-clearVars = CodeGen $ WSE.reset
-
-genSym :: CodeGen Ident
-genSym = CodeGen $ WSE.supply
-
-write :: Code -> CodeGen ()
-write = CodeGen . WSE.tell
-
-writeStmt :: String -> CodeGen ()
-writeStmt s = do
-  s' <- replaceVars s
-  write (stmt s')
-
-writeBlock :: String -> String -> CodeGen ()
-writeBlock s1 s2 = do
-  s1' <- replaceVars s1
-  s2' <- replaceVars s2
-  write (block s1' s2')
+bind :: Char -> Ident -> CodeGen ()
+bind k v = CodeGen $ GenSym.bindVar k v
 
 var :: Char -> CodeGen String
-var x = do
-  mbvar <- fetchVar x
-  case mbvar of 
-    Just y -> return y
-    Nothing -> do
-      y <- genSym
-      bindVar x y
-      return y
+var x = CodeGen $ GenSym.var x
 
-replaceVars :: String -> CodeGen String
-replaceVars "" = return ""
-replaceVars ('$' : '{' : x : '}' : xs) = do
-  sym <- var x
-  xs' <- replaceVars xs
-  return (sym ++ xs')
-replaceVars (x:xs) = do
-  xs' <- replaceVars xs
-  return (x:xs')
+local :: CodeGen a -> CodeGen a
+local (CodeGen m) = CodeGen $ (GenSym.doLocal m)
+
+writeStmt :: String -> CodeGen ()
+writeStmt s = CodeGen $ do
+  s' <- GenSym.replaceVars s
+  GenSym.write (stmt s')
+
+writeBlock :: String -> String -> CodeGen ()
+writeBlock s1 s2 = CodeGen $ do
+  s1' <- GenSym.replaceVars s1
+  s2' <- GenSym.replaceVars s2
+  GenSym.write (block s1' s2')

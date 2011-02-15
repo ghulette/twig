@@ -16,24 +16,22 @@ data Type = CVoid
           deriving (Eq,Show)
 
 gen1 :: CodeGenProc
-gen1 = CodeGenProc $ \x -> do
+gen1 = CodeGenProc $ \x -> local $ do
   let a = "const jbyte* ${y};" `br`
           "${y} = (*env)->GetStringUTFChars(env, ${x}, NULL);" `br`
           "if(${y} == NULL) {return NULL;}" `br`
           "char* ${z} = (char *)${y};"
   let b = "(*env)->ReleaseStringUTFChars(env, ${x}, ${y});"
-  clearVars
-  bindVar 'x' x
+  bind 'x' x
   writeBlock a b
   z <- var 'z'
   return z
 
 gen2 :: CodeGenProc
-gen2 = CodeGenProc $ \x -> do
+gen2 = CodeGenProc $ \x -> local $ do
   let a = "jstring ${y};" `br`
           "${y} = (*env)->NewStringUTF(env, ${x});"
-  clearVars
-  bindVar 'x' x
+  bind 'x' x
   writeStmt a
   y <- var 'y'
   return y
