@@ -1,0 +1,34 @@
+Conversions from Reppy
+
+int foo(int x,int y)
+CFunc [CInt,[CInt,CInt]]
+
+conv CInt -> JInt
+conv JInt -> CInt
+
+Example #1
+[unwrap,unwrap] (or, branchAll unwrap)
+Input  = [JInt,JInt]
+Output = [CInt,CInt]
+
+Example #2
+ccall
+Input  = [CFunc [CInt,[CInt,CInt]],[CInt,CInt]]
+Output = CInt
+
+Example #3
+[id,[unwrap,unwrap]]
+Input  = [CFunc [CInt,[CInt,CInt]],[JInt,JInt]]
+Output = [CFunc [CInt,[CInt,CInt]],[CInt,CInt]]
+
+Example #4
+[id,[unwrap,unwrap]];ccall;wrap
+Input  = [CFunc [CInt,[CInt,CInt]],[JInt,JInt]]
+Output = JInt
+
+Example #5
+centry([id,[unwrap,unwrap]];ccall;wrap)
+Input  = CFunc [CInt,[CInt,CInt]]
+Output = JFunc [JInt,[JInt,JInt]]
+
+

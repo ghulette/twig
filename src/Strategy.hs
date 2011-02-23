@@ -41,6 +41,13 @@ choice s1 s2 x =
     Nothing -> s2 x
     Just (x',g) -> Just (x',g)
 
+-- This is wrong
+dual :: Monoid m => Strategy a m -> Strategy a m
+dual s x = 
+  case s x of
+    Just (y,_) -> s y
+    Nothing -> Nothing
+
 branch :: ([Tree a] -> Maybe ([Tree a],b)) -> Tree a -> Maybe (Tree a,b)
 branch f (Node x xs) = do
   (xs',m) <- f xs
