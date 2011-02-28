@@ -87,12 +87,6 @@ ruleFailure = do
   reserved "F"
   return Failure
 
-rulePrint :: Parser RuleExpr
-rulePrint = do
-  reserved "print"
-  s <- stringLiteral
-  return (Print s)
-
 rulePath :: Parser (RuleExpr -> RuleExpr)
 rulePath = do
   reservedOp "#"
@@ -123,7 +117,6 @@ ruleExpr = Ex.buildExpressionParser table factor
               <|> ruleLit
               <|> ruleSuccess 
               <|> ruleFailure
-              <|> rulePrint
               <|> ruleCongruence
               <?> "factor"
 

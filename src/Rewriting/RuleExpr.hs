@@ -10,6 +10,7 @@ import Data.Typeable
 import Rewriting.Rule
 import Rewriting.Term
 import Rewriting.Util
+import Rewriting.CodeGen
 
 
 -- Runtime exceptions
@@ -41,7 +42,6 @@ data RuleExpr = RuleVar Id
               | BranchOne RuleExpr
               | BranchSome RuleExpr
               | Congruence [RuleExpr]
-              | Print String
               deriving (Eq,Show)
 
 traverse :: (RuleExpr -> Maybe RuleExpr) -> RuleExpr -> RuleExpr
@@ -75,7 +75,7 @@ neg :: Monoid m => Term -> Maybe (Term,m) -> Maybe (Term,m)
 neg _ (Just _) = Nothing
 neg t Nothing = Just (t,mempty)
 
-eval :: Rules -> RuleExpr -> Term -> Maybe (Term,Trace)
+eval :: Rules -> RuleExpr -> Term -> Maybe (Term,CodeGenProc)
 eval _ (RuleLit s) t = do
   t' <- apply s t
   return (t',mempty)
@@ -144,8 +144,6 @@ eval env (Call x args) t =
       when (length args > length params) (runtimeErr "Too many args")
       let s' = subVars (zip params args) s
       eval env s' t
-eval _ (Print msg) t =
-  return (t,[msg])
 
 subVars :: [(String,RuleExpr)] -> RuleExpr -> RuleExpr
 subVars env = traverse sub
@@ -158,9 +156,7 @@ subVars env = traverse sub
 --   where sub' (RuleVar x) = (lookup x env) `withDefault` (RuleVar x) 
 --         sub' t = t
 
-type Trace = [String]
-
-run :: String -> Rules -> Term -> Maybe (Term,Trace)
+run :: String -> Rules -> Term -> Maybe (Term,CodeGenProc)
 run entry env t = 
   case lookupRuleDef env entry of 
     Just (RuleDef _ [] s) -> eval env s t
