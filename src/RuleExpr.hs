@@ -1,16 +1,16 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Rewriting.RuleExpr where
+module RuleExpr where
 
 import Control.Exception
 import Control.Monad (guard,when)
 import Data.List (find)
 import Data.Monoid
 import Data.Typeable
-import Rewriting.Rule
-import Rewriting.Term
-import Rewriting.Util
-import Rewriting.CodeGen
+import Rule
+import Term
+import Util
+import CodeGen
 
 
 -- Runtime exceptions

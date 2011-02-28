@@ -1,4 +1,4 @@
-module Rewriting.Code where
+module Code where
 
 import Data.Monoid
 

@@ -1,4 +1,4 @@
-module Rewriting.Lexer where
+module Lexer where
 
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as Tok

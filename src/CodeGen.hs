@@ -1,10 +1,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Rewriting.CodeGen
+module CodeGen
   ( Ident
   , CodeGen
   , CodeGenProc (..)
-  , module Rewriting.Code
+  , module Code
   , runCodeGenProc
   , bind
   , local
@@ -13,10 +13,10 @@ module Rewriting.CodeGen
   , var
   ) where
 
-import Rewriting.Code
+import Code
 import Data.Monoid
-import qualified Rewriting.GenSym as GenSym
-import Rewriting.GenSym (GenSym,Sym,evalGenSym)
+import qualified GenSym
+import GenSym (GenSym,Sym,evalGenSym)
 import Control.Monad
 
 type Ident = Sym

@@ -1,9 +1,9 @@
 import Prelude hiding (catch)
 import Control.Exception
 import System.Environment (getArgs)
-import Rewriting.Parser
-import Rewriting.RuleExpr
-import Rewriting.Term
+import Parser
+import RuleExpr
+import Term
 
 -- Front end
 

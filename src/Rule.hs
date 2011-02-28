@@ -1,9 +1,9 @@
-module Rewriting.Rule (Rule (..),apply) where
+module Rule (Rule (..),apply) where
 
 import Control.Monad
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Rewriting.Term
+import Term
 
 -- Environment for variable bindings
 

@@ -1,4 +1,4 @@
-module Rewriting.Term
+module Term
 ( Term (..)
 , children
 , withChildren

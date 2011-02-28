@@ -1,14 +1,14 @@
-module Rewriting.Parser 
+module Parser 
 ( parseRules
 , parseTerms
 ) where
 
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Expr as Ex
-import Rewriting.Lexer
-import Rewriting.Rule
-import Rewriting.Term
-import Rewriting.RuleExpr
+import Lexer
+import Rule
+import Term
+import RuleExpr
 
 -- Terms and rule literals
 
