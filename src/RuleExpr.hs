@@ -10,7 +10,6 @@ import Data.Typeable
 import Rule
 import Term
 import Util
-import CodeGen
 
 
 -- Runtime exceptions

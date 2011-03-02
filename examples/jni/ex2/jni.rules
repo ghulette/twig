@@ -1,7 +1,8 @@
-strJ2C = [jstring -> cptr(cchar) : "Hello"]
-strC2J = [cptr(cchar) -> jstring : "Ok"]
+strJ2C = [jstring -> cptr(cchar) : "rule strJ2C"]
+strC2J = [cptr(cchar) -> jstring : "rule strC2J"]
 
-main = strJ2C | strC2J
+main = strJ2C ; strC2J 
+     | strC2J ; strJ2C
 
 -- In this case, we actually don't want to convert buffer. We may want to
 -- allocate it in the JNI function, or pass it in from Java. This will require 
