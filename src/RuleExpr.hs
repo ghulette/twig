@@ -26,9 +26,10 @@ runtimeErr msg = throw (RuntimeException msg)
 -- Expressions
 
 type Id = String
+type Trace = String
 
 data RuleExpr = RuleVar Id
-              | RuleLit Rule
+              | RuleLit Rule Trace
               | Call Id [RuleExpr]
               | Success
               | Failure
@@ -75,10 +76,10 @@ neg :: Monoid m => Term -> Maybe (Term,m) -> Maybe (Term,m)
 neg _ (Just _) = Nothing
 neg t Nothing = Just (t,mempty)
 
-eval :: Rules -> RuleExpr -> Term -> Maybe (Term,CodeGenProc)
-eval _ (RuleLit s) t = do
+eval :: Rules -> RuleExpr -> Term -> Maybe (Term,[Trace])
+eval _ (RuleLit s m) t = do
   t' <- apply s t
-  return (t',mempty)
+  return (t',[m])
 eval _ Success t = Just (t,mempty)
 eval _ Failure _ = Nothing
 eval env (Test s) t = test t (eval env s t)
@@ -156,7 +157,7 @@ subVars env = traverse sub
 --   where sub' (RuleVar x) = (lookup x env) `withDefault` (RuleVar x) 
 --         sub' t = t
 
-run :: String -> Rules -> Term -> Maybe (Term,CodeGenProc)
+run :: String -> Rules -> Term -> Maybe (Term,[Trace])
 run entry env t = 
   case lookupRuleDef env entry of 
     Just (RuleDef _ [] s) -> eval env s t

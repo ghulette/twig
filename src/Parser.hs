@@ -43,6 +43,11 @@ rule = do
   t2 <- term
   return $ Rule t1 t2
 
+trace :: Parser String
+trace = do
+  reservedOp ":"
+  m <- stringLiteral
+  return m
 
 -- ConstTerms (no variables)
 
@@ -74,8 +79,11 @@ call = do
 
 ruleLit :: Parser RuleExpr
 ruleLit = do
-  r <- brackets rule
-  return (RuleLit r)
+  (r,m) <- brackets $ do
+    r <- rule
+    m <- option "" trace
+    return (r,m)
+  return (RuleLit r m)
 
 ruleSuccess :: Parser RuleExpr
 ruleSuccess = do

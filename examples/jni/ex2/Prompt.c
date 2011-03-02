@@ -35,5 +35,3 @@ Java_Prompt_getLine (JNIEnv *env, jobject self, jstring prompt) {
   
   return result;
 }
-
-

@@ -21,9 +21,10 @@ runOne :: Rules -> Term -> IO ()
 runOne env t = do
   putStr (show t)
   case run "main" env t of
-    Just (t',_) -> do
+    Just (t',ms) -> do
       putStr " -> "
       print t'
+      mapM_ putStrLn ms
     Nothing -> putStrLn " No match"
   `catch` \(RuntimeException msg) -> do 
     putStrLn "Error"
