@@ -1,35 +1,37 @@
-strJ2C = [jstring -> cptr(cchar) : "rule strJ2C"]
-strC2J = [cptr(cchar) -> jstring : "rule strC2J"]
+f = [jstring -> cptr(cchar) : "rule strJ2C"]
+g = [cptr(cchar) -> jstring : "rule strC2J"]
 
-main = strJ2C ; strC2J 
-     | strC2J ; strJ2C
+main = f ; g
+     | g ; f
+
+-- Input: cfunc(cvoid,cargs(cptr(cchar),cptr(cchar)))
+-- Output: jmethod(jstring,jargs(jstring))
 
 -- In this case, we actually don't want to convert buffer. We may want to
 -- allocate it in the JNI function, or pass it in from Java. This will require 
 -- an annotation to tell Twig to treat it specially.
 --
--- // void get_line(char *prompt, char *buffer)
 -- JNIEXPORT jstring JNICALL
 -- Java_Prompt_getLine (JNIEnv *env, jobject self, jstring prompt) {
 --   
---   // #1 INIT - Convert prompt from Java to C string
---   const jbyte *str;
---   str = (*env)->GetStringUTFChars(env, prompt, NULL);
+--   // Step 1: Convert prompt from Java String to C string.
+--   const jbyte *str = (*env)->GetStringUTFChars(env, prompt, NULL);
 --   if (str == NULL) {
 --     // OutOfMemoryError already thrown.
 --     return NULL;
 --   }
---   char *cstr = (char *)str; // conversion "function"
+--   char *cstr = (char *)str;
 --   
---   // #2 INIT - Invoke inner function, with an output parameter buf
+--   // Step 2: Invoke inner function with an output parameter buffer.
 --   char buf[128];
 --   get_line(cstr,buf);
 --   
---   // #3 INIT - Create a new string from the out parameter
+--   // Step 3: Convert output in buffer to a Java String.
 --   jstring result = (*env)->NewStringUTF(env, buf);
 --   
---   // #1 FINAL - Release memory for C string
+--   // Step 4: Release the C string allocated in step 1.
 --   (*env)->ReleaseStringUTFChars(env, prompt, str);
 --   
+--   // Step 5: Lift conversion to a JNI function.
 --   return result;
 -- }
