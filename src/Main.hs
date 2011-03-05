@@ -7,17 +7,19 @@ import Term
 
 -- Front end
 
-parse :: String -> IO Rules
+parse :: String -> IO RuleEnv
 parse x = case parseRules x of
   Left err -> fail (show err)
-  Right env -> return env
+  Right env -> do
+    print env
+    return env
 
 parseInput :: String -> IO [Term]
 parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
 
-runOne :: Rules -> Term -> IO ()
+runOne :: RuleEnv -> Term -> IO ()
 runOne env t = do
   putStr (show t)
   case run "main" env t of
@@ -27,8 +29,7 @@ runOne env t = do
       mapM_ putStrLn ms
     Nothing -> putStrLn " No match"
   `catch` \(RuntimeException msg) -> do 
-    putStrLn "Error"
-    putStrLn msg
+    putStrLn $ " -> Error: " ++ msg
 
 main :: IO ()
 main = do

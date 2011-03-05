@@ -4,9 +4,10 @@ module RuleExpr where
 
 import Control.Exception
 import Control.Monad (guard,when)
-import Data.List (find)
 import Data.Monoid
-import Data.Typeable
+import Data.Typeable (Typeable)
+import Data.Map (Map)
+import qualified Data.Map as Map
 import Rule
 import Term
 import Util
@@ -14,7 +15,7 @@ import Util
 
 -- Runtime exceptions
 
-data EvalException = RuntimeException String deriving (Show,Typeable)
+data EvalException = RuntimeException String deriving (Typeable,Show)
 
 instance Exception EvalException
 
@@ -26,9 +27,19 @@ runtimeErr msg = throw (RuntimeException msg)
 
 type Id = String
 type Trace = String
+type Strategy = Term -> Maybe (Term,[Trace])
+data RuleProc = RuleProc [Id] RuleExpr deriving (Eq,Show)
+type RuleEnv = Map Id RuleProc
 
-data RuleExpr = RuleVar Id
-              | RuleLit Rule Trace
+buildRuleEnv :: [(Id,[Id],RuleExpr)] -> RuleEnv
+buildRuleEnv = Map.fromList . (map (\x -> (procId x,proc x)))
+  where procId (x,_,_) = x
+        proc (_,ps,e) = RuleProc ps e
+
+lookupRule :: Id -> RuleEnv -> Maybe RuleProc
+lookupRule = Map.lookup
+
+data RuleExpr = RuleLit Rule Trace
               | Call Id [RuleExpr]
               | Success
               | Failure
@@ -44,45 +55,20 @@ data RuleExpr = RuleVar Id
               | Congruence [RuleExpr]
               deriving (Eq,Show)
 
-traverse :: (RuleExpr -> Maybe RuleExpr) -> RuleExpr -> RuleExpr
-traverse f (Test s) = update f (Test (traverse f s))
-traverse f (Neg s) = update f (Neg (traverse f s))
-traverse f (Seq s1 s2) = update f (Seq (traverse f s1) (traverse f s2))
-traverse f (LeftChoice s1 s2) = 
-  update f (LeftChoice (traverse f s1) (traverse f s2))
-traverse f (Choice s1 s2) = update f (Choice (traverse f s1) (traverse f s2))
-traverse f (BranchAll s) = update f (BranchAll (traverse f s))
-traverse f (BranchOne s) = update f (BranchOne (traverse f s))
-traverse f (BranchSome s) = update f (BranchSome (traverse f s))
-traverse f (Congruence ss) = update f (Congruence (map (traverse f) ss))
-traverse f (Call x ss) = update f (Call x (map (traverse f) ss))
-traverse f s = update f s
-
-data RuleDef = RuleDef Id [Id] RuleExpr deriving (Eq,Show)
-
-type Rules = [RuleDef]
-
-lookupRuleDef :: Rules -> String -> Maybe RuleDef
-lookupRuleDef xs x = find (\(RuleDef x' _ _) -> x == x') xs
-
--- We define these test and neg separately because otherwise the type of
--- mempty is ambiguous.
-test :: Monoid m => Term -> Maybe (Term,m) -> Maybe (Term,m)
-test t (Just _) = Just (t,mempty)
-test _ Nothing = Nothing
-
-neg :: Monoid m => Term -> Maybe (Term,m) -> Maybe (Term,m)
-neg _ (Just _) = Nothing
-neg t Nothing = Just (t,mempty)
-
-eval :: Rules -> RuleExpr -> Term -> Maybe (Term,[Trace])
+eval :: RuleEnv -> RuleExpr -> Strategy
 eval _ (RuleLit s m) t = do
   t' <- apply s t
   return (t',[m])
 eval _ Success t = Just (t,mempty)
 eval _ Failure _ = Nothing
-eval env (Test s) t = test t (eval env s t)
-eval env (Neg s) t = neg t (eval env s t)
+eval env (Test s) t = 
+  case eval env s t of
+    Just _ -> Just (t,mempty)
+    Nothing -> Nothing
+eval env (Neg s) t = 
+  case eval env s t of
+    Just _ -> Nothing
+    Nothing -> Just (t,mempty)
 eval env (Seq s1 s2) t = 
   case eval env s1 t of
     Nothing -> Nothing
@@ -129,32 +115,23 @@ eval env (BranchSome s) t = do
 eval env (Congruence ss) t = do
   let ts = children t
   let rs = map (eval env) ss
-  guard (length ts == length rs)
+  guard $ length ts == length rs
   mts' <- sequence (zipWith ($) rs ts)
   let (ts',ms) = unzip mts'
   return (t `withChildren` ts',mconcat ms)
-eval env (RuleVar x) t = 
-  case lookupRuleDef env x of
-    Nothing -> runtimeErr ("Not in scope: " ++ x)
-    Just (RuleDef _ [] s) -> eval env s t
-    Just _ -> runtimeErr ("Missing args in call to " ++ x)
 eval env (Call x args) t =
-  case lookupRuleDef env x of 
-    Nothing -> runtimeErr ("Not in scope: " ++ x)
-    Just (RuleDef _ params s) -> do
-      when (length args < length params) (runtimeErr "Not enough args")
-      when (length args > length params) (runtimeErr "Too many args")
-      let s' = subVars (zip params args) s
-      eval env s' t
+  case lookupRule x env of
+    Nothing -> 
+      runtimeErr $ "Variable " ++ x ++ " not in scope"
+    Just (RuleProc params s) -> do
+      when (length args < length params) $ runtimeErr "Not enough args"
+      when (length args > length params) $ runtimeErr "Too many args"
+      --let env' = localRuleEnv env (zip3 params (repeat []) args)
+      eval env s t
 
-subVars :: [(String,RuleExpr)] -> RuleExpr -> RuleExpr
-subVars env = traverse sub
-  where sub (RuleVar x) = lookup x env
-        sub _ = Nothing
-
-run :: String -> Rules -> Term -> Maybe (Term,[Trace])
+run :: Id -> RuleEnv -> Term -> Maybe (Term,[Trace])
 run entry env t = 
-  case lookupRuleDef env entry of 
-    Just (RuleDef _ [] s) -> eval env s t
-    Just (RuleDef _ _ _) -> runtimeErr (entry ++ " cannot have args")
+  case lookupRule entry env of 
+    Just (RuleProc [] s) -> eval env s t
+    Just (RuleProc _ _) -> runtimeErr (entry ++ " cannot have args")
     Nothing -> runtimeErr (entry ++ " is not defined")
