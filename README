@@ -1,3 +1,9 @@
 Twig is a term rewriting system for constructing multi-language programs. The
 TRS in Twig is based on System S, a rewriting language described in "A Core
 Language for Rewriting" by Eelco Visser and Zine-el-Abidine Benaissa.
+
+TODO
+- Add options for printing parse tree
+- Add options for skipping trace
+- Make rule abstraction an explicit construct
+- Add build and match primitives

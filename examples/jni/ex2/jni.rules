@@ -1,6 +1,8 @@
 f = [jstring -> cptr(cchar) : "rule strJ2C"]
 g = [cptr(cchar) -> jstring : "rule strC2J"]
 
+call(s) = [cfunc(Arg,Ret) -> ]
+
 main = f ; g
      | g ; f
 
