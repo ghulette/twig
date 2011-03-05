@@ -65,8 +65,8 @@ type Rules = [RuleDef]
 lookupRuleDef :: Rules -> String -> Maybe RuleDef
 lookupRuleDef xs x = find (\(RuleDef x' _ _) -> x == x') xs
 
--- We define these test and neg separately because otherwise the type of the
--- returned mempty monoid is ambiguous.
+-- We define these test and neg separately because otherwise the type of
+-- mempty is ambiguous.
 test :: Monoid m => Term -> Maybe (Term,m) -> Maybe (Term,m)
 test t (Just _) = Just (t,mempty)
 test _ Nothing = Nothing
@@ -98,6 +98,8 @@ eval env (LeftChoice s1 s2) t =
         Just (t',m) -> Just (t',m)
         Nothing -> Nothing
 eval env (Choice s1 s2) t =
+  -- Probably we don't want non-det choice for Twig, but it is interesting
+  -- as a general rewriting expression.
   case (eval env s1 t,eval env s2 t) of
     (Just (x,m1),Just (x',_)) -> 
       if x == x' 
@@ -149,12 +151,6 @@ subVars :: [(String,RuleExpr)] -> RuleExpr -> RuleExpr
 subVars env = traverse sub
   where sub (RuleVar x) = lookup x env
         sub _ = Nothing
-
--- We can do variable substitution with syb generics instead, but it is slow.
--- sub :: [(String,RuleExpr)] -> RuleExpr -> RuleExpr sub env =
--- everywhere (mkT sub')
---   where sub' (RuleVar x) = (lookup x env) `withDefault` (RuleVar x) 
---         sub' t = t
 
 run :: String -> Rules -> Term -> Maybe (Term,[Trace])
 run entry env t = 
