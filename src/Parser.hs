@@ -66,11 +66,16 @@ constTermList = parens (constTerm `sepBy` comma)
 ruleId :: Parser Id
 ruleId = identifier
 
+var :: Parser RuleExpr
+var = do
+  x <- ruleId
+  return (RuleVar x)
+
 call :: Parser RuleExpr
 call = do
   x <- ruleId
-  args <- option [] (parens (ruleExpr `sepBy1` comma))
-  return (Call x args)
+  args <- parens (ruleExpr `sepBy1` comma)
+  return (RuleCall x args)
 
 ruleLit :: Parser RuleExpr
 ruleLit = do
@@ -116,6 +121,7 @@ ruleExpr = Ex.buildExpressionParser table factor
                   infixOp "+" Choice Ex.AssocLeft ]]
         factor =  parens ruleExpr
               <|> try call
+              <|> var
               <|> ruleLit
               <|> ruleSuccess 
               <|> ruleFailure
@@ -125,23 +131,23 @@ ruleExpr = Ex.buildExpressionParser table factor
 
 -- Rule definitions and constructors
 
-ruleDef :: Parser (Id,[Id],RuleExpr)
-ruleDef = do
+ruleProc :: Parser (Id,Proc)
+ruleProc = do
   x <- ruleId
   params <- option [] (parens (ruleId `sepBy1` comma))
   reservedOp "="
-  s <- ruleExpr
-  return (x,params,s)
+  e <- ruleExpr
+  return (x,Proc params e)
 
-ruleDefs :: Parser RuleEnv
+ruleDefs :: Parser Env
 ruleDefs = do
-  ds <- many ruleDef
-  return (buildRuleEnv ds)
+  procs <- many ruleProc
+  return (buildEnv procs)
 
 
 -- Wrappers
 
-parseRules :: String -> Either ParseError RuleEnv
+parseRules :: String -> Either ParseError Env
 parseRules = parse (allOf ruleDefs) "Rules"
 
 parseTerms :: String -> Either ParseError [Term]

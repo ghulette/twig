@@ -23,24 +23,38 @@ runtimeErr :: String -> a
 runtimeErr msg = throw (RuntimeException msg)
 
 
--- Expressions
+-- Values
 
 type Id = String
 type Trace = String
 type Strategy = Term -> Maybe (Term,[Trace])
-data RuleProc = RuleProc [Id] RuleExpr deriving (Eq,Show)
-type RuleEnv = Map Id RuleProc
+data Proc = Proc [Id] RuleExpr deriving (Eq,Show)
 
-buildRuleEnv :: [(Id,[Id],RuleExpr)] -> RuleEnv
-buildRuleEnv = Map.fromList . (map (\x -> (procId x,proc x)))
-  where procId (x,_,_) = x
-        proc (_,ps,e) = RuleProc ps e
 
-lookupRule :: Id -> RuleEnv -> Maybe RuleProc
-lookupRule = Map.lookup
+-- Environment
+
+data Env = Env 
+  { envProcs :: Map Id Proc
+  , envVars :: Map Id Strategy
+  }
+
+buildEnv :: [(Id,Proc)] -> Env
+buildEnv xs = Env (Map.fromList xs) Map.empty 
+
+lookupProc :: Id -> Env -> Maybe Proc
+lookupProc x = Map.lookup x . envProcs
+
+lookupVar :: Id -> Env -> Maybe Strategy
+lookupVar x = Map.lookup x . envVars
+
+bindVars :: Env -> [(Id,Strategy)] -> Env
+bindVars (Env procs _) = Env procs . Map.fromList
+
+-- Expressions
 
 data RuleExpr = RuleLit Rule Trace
-              | Call Id [RuleExpr]
+              | RuleCall Id [RuleExpr]
+              | RuleVar Id
               | Success
               | Failure
               | Test RuleExpr
@@ -55,83 +69,86 @@ data RuleExpr = RuleLit Rule Trace
               | Congruence [RuleExpr]
               deriving (Eq,Show)
 
-eval :: RuleEnv -> RuleExpr -> Strategy
-eval _ (RuleLit s m) t = do
-  t' <- apply s t
+eval :: RuleExpr -> Env -> Strategy
+eval (RuleLit rule m) _ t = do
+  t' <- apply rule t
   return (t',[m])
-eval _ Success t = Just (t,mempty)
-eval _ Failure _ = Nothing
-eval env (Test s) t = 
-  case eval env s t of
+eval Success _ t = Just (t,mempty)
+eval Failure _ _ = Nothing
+eval (Test e) env t = 
+  case eval e env t of
     Just _ -> Just (t,mempty)
     Nothing -> Nothing
-eval env (Neg s) t = 
-  case eval env s t of
+eval (Neg e) env t = 
+  case eval e env t of
     Just _ -> Nothing
     Nothing -> Just (t,mempty)
-eval env (Seq s1 s2) t = 
-  case eval env s1 t of
+eval (Seq e1 e2) env t =
+  case eval e1 env t of
     Nothing -> Nothing
     Just (t',m1) -> 
-      case eval env s2 t' of
+      case eval e2 env t' of
         Just (t'',m2) -> Just (t'',m1 `mappend` m2)
         Nothing -> Nothing
-eval env (LeftChoice s1 s2) t =
-  case eval env s1 t of
+eval (LeftChoice e1 e2) env t =
+  case eval e1 env t of
     Just (t',m) -> Just (t',m)
     Nothing -> 
-      case eval env s2 t of
+      case eval e2 env t of
         Just (t',m) -> Just (t',m)
         Nothing -> Nothing
-eval env (Choice s1 s2) t =
+eval (Choice e1 e2) env t =
   -- Probably we don't want non-det choice for Twig, but it is interesting
   -- as a general rewriting expression.
-  case (eval env s1 t,eval env s2 t) of
+  case (eval e1 env t,eval e2 env t) of
     (Just (x,m1),Just (x',_)) -> 
-      if x == x' 
-        then Just (x,m1) -- What do we do with the second trace here?
-        else runtimeErr "Non-confluence"
+      if x == x' then Just (x,m1) -- Note: arbitrarily choose first trace!
+                 else runtimeErr "Non-confluence"
     (Just (t',m),Nothing) -> Just (t',m)
     (Nothing,Just (t',m)) -> Just (t',m)
     (Nothing,Nothing) -> Nothing
-eval env (Path 0 s) t = 
-  eval env s t -- #0(s) just applies s to root
-eval env (Path i s) t = do
+eval (Path 0 e) env t = 
+  eval e env t -- #0(s) just applies s to root
+eval (Path i e) env t = do
   let ts = children t
-  (ts',m) <- path (fromInteger i) (eval env s) ts
+  (ts',m) <- path (fromInteger i) (eval e env) ts
   return (t `withChildren` ts',m)
-eval env (BranchAll s) t = do
+eval (BranchAll e) env t = do
   let ts = children t
-  (ts',m) <- mapAll (eval env s) ts
+  (ts',m) <- mapAll (eval e env) ts
   return (t `withChildren` ts',m)
-eval env (BranchOne s) t = do
+eval (BranchOne e) env t = do
   let ts = children t
-  (ts',m) <- mapOne (eval env s) ts
+  (ts',m) <- mapOne (eval e env) ts
   return (t `withChildren` ts',m)
-eval env (BranchSome s) t = do
+eval (BranchSome e) env t = do
   let ts = children t
-  (ts',m) <- mapSome (eval env s) ts
+  (ts',m) <- mapSome (eval e env) ts
   return (t `withChildren` ts',m)
-eval env (Congruence ss) t = do
+eval (Congruence es) env t = do
   let ts = children t
-  let rs = map (eval env) ss
+  let rs = map (\e -> eval e env) es
   guard $ length ts == length rs
   mts' <- sequence (zipWith ($) rs ts)
   let (ts',ms) = unzip mts'
   return (t `withChildren` ts',mconcat ms)
-eval env (Call x args) t =
-  case lookupRule x env of
-    Nothing -> 
-      runtimeErr $ "Variable " ++ x ++ " not in scope"
-    Just (RuleProc params s) -> do
+eval (RuleVar x) env t = 
+  case lookupVar x env of
+    Nothing -> eval (RuleCall x []) env t
+    Just s -> s t
+eval (RuleCall x args) env t =
+  case lookupProc x env of
+    Nothing -> runtimeErr $ "Variable " ++ x ++ " not in scope"
+    Just (Proc params e) -> do
       when (length args < length params) $ runtimeErr "Not enough args"
       when (length args > length params) $ runtimeErr "Too many args"
-      --let env' = localRuleEnv env (zip3 params (repeat []) args)
-      eval env s t
+      let ss = map (\arg -> eval arg env) args
+      let env' = bindVars env (zip params ss)
+      eval e env' t
 
-run :: Id -> RuleEnv -> Term -> Maybe (Term,[Trace])
+run :: Id -> Env -> Strategy
 run entry env t = 
-  case lookupRule entry env of 
-    Just (RuleProc [] s) -> eval env s t
-    Just (RuleProc _ _) -> runtimeErr (entry ++ " cannot have args")
+  case lookupProc entry env of 
+    Just (Proc [] e) -> eval e env t
+    Just (Proc _ _) -> runtimeErr (entry ++ " cannot have args")
     Nothing -> runtimeErr (entry ++ " is not defined")

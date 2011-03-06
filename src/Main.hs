@@ -7,26 +7,24 @@ import Term
 
 -- Front end
 
-parse :: String -> IO RuleEnv
+parse :: String -> IO Env
 parse x = case parseRules x of
   Left err -> fail (show err)
-  Right env -> do
-    print env
-    return env
+  Right env -> return env
 
 parseInput :: String -> IO [Term]
 parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
 
-runOne :: RuleEnv -> Term -> IO ()
+runOne :: Env -> Term -> IO ()
 runOne env t = do
   putStr (show t)
   case run "main" env t of
     Just (t',ms) -> do
       putStr " -> "
       print t'
-      mapM_ putStrLn ms
+      --mapM_ putStrLn ms
     Nothing -> putStrLn " No match"
   `catch` \(RuntimeException msg) -> do 
     putStrLn $ " -> Error: " ++ msg
