@@ -139,7 +139,7 @@ ruleProc = do
   e <- ruleExpr
   return (x,Proc params e)
 
-ruleDefs :: Parser Env
+ruleDefs :: Parser RuleEnv
 ruleDefs = do
   procs <- many ruleProc
   return (buildEnv procs)
@@ -147,7 +147,7 @@ ruleDefs = do
 
 -- Wrappers
 
-parseRules :: String -> Either ParseError Env
+parseRules :: String -> Either ParseError RuleEnv
 parseRules = parse (allOf ruleDefs) "Rules"
 
 parseTerms :: String -> Either ParseError [Term]

@@ -3,9 +3,9 @@
 module RuleExpr where
 
 import Control.Exception
+import Data.Typeable (Typeable)
 import Control.Monad (guard,when)
 import Data.Monoid
-import Data.Typeable (Typeable)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Rule
@@ -33,28 +33,31 @@ data Proc = Proc [Id] RuleExpr deriving (Eq,Show)
 
 -- Environment
 
-data Env = Env 
+data RuleEnv = RuleEnv 
   { envProcs :: Map Id Proc
   , envVars :: Map Id Strategy
   }
 
-buildEnv :: [(Id,Proc)] -> Env
-buildEnv xs = Env (Map.fromList xs) Map.empty 
+buildEnv :: [(Id,Proc)] -> RuleEnv
+buildEnv xs = RuleEnv (Map.fromList xs) Map.empty 
 
-lookupProc :: Id -> Env -> Maybe Proc
+lookupProc :: Id -> RuleEnv -> Maybe Proc
 lookupProc x = Map.lookup x . envProcs
 
-lookupVar :: Id -> Env -> Maybe Strategy
+lookupVar :: Id -> RuleEnv -> Maybe Strategy
 lookupVar x = Map.lookup x . envVars
 
-bindVars :: Env -> [(Id,Strategy)] -> Env
-bindVars (Env procs _) = Env procs . Map.fromList
+bindVars :: RuleEnv -> [(Id,Strategy)] -> RuleEnv
+bindVars (RuleEnv procs _) = RuleEnv procs . Map.fromList
+
 
 -- Expressions
 
-data RuleExpr = RuleLit Rule Trace
-              | RuleCall Id [RuleExpr]
+data RuleExpr = RuleCall Id [RuleExpr]
               | RuleVar Id
+              | RuleLit Rule Trace
+              | Match Term
+              | Build Term
               | Success
               | Failure
               | Test RuleExpr
@@ -69,10 +72,12 @@ data RuleExpr = RuleLit Rule Trace
               | Congruence [RuleExpr]
               deriving (Eq,Show)
 
-eval :: RuleExpr -> Env -> Strategy
+eval :: RuleExpr -> RuleEnv -> Strategy
 eval (RuleLit rule m) _ t = do
   t' <- apply rule t
   return (t',[m])
+eval (Match pat) _ t = undefined
+eval (Build pat) _ t = undefined
 eval Success _ t = Just (t,mempty)
 eval Failure _ _ = Nothing
 eval (Test e) env t = 
@@ -147,7 +152,7 @@ eval (RuleCall x args) env t =
       let env' = bindVars env (zip params ss)
       eval e env' t
 
-run :: Id -> Env -> Strategy
+run :: Id -> RuleEnv -> Strategy
 run entry env t = 
   case lookupProc entry env of 
     Just (Proc [] e) -> eval e env t

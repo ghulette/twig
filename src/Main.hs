@@ -7,7 +7,7 @@ import Term
 
 -- Front end
 
-parse :: String -> IO Env
+parse :: String -> IO RuleEnv
 parse x = case parseRules x of
   Left err -> fail (show err)
   Right env -> return env
@@ -17,7 +17,7 @@ parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
 
-runOne :: Env -> Term -> IO ()
+runOne :: RuleEnv -> Term -> IO ()
 runOne env t = do
   putStr (show t)
   case run "main" env t of

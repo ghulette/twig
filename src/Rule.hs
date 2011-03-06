@@ -1,4 +1,4 @@
-module Rule (Rule (..),apply) where
+module Rule (Rule (..),TermBindings,apply,match,build) where
 
 import Control.Monad
 import Data.Map (Map)
@@ -7,18 +7,18 @@ import Term
 
 -- Environment for variable bindings
 
-type Env a = Map String a
+type TermBindings a = Map String a
 
-emptyEnv :: Env a
+emptyEnv :: TermBindings a
 emptyEnv = Map.empty
 
-singletonEnv :: String -> a -> Env a
+singletonEnv :: String -> a -> TermBindings a
 singletonEnv = Map.singleton
 
-lookupEnv :: String -> Env a -> Maybe a
+lookupEnv :: String -> TermBindings a -> Maybe a
 lookupEnv = Map.lookup
 
-insertEnv :: Eq a => String -> a -> Env a -> Maybe (Env a)
+insertEnv :: Eq a => String -> a -> TermBindings a -> Maybe (TermBindings a)
 insertEnv k x t = 
   case insertLookup k x t of
     (Just x',t') -> do
@@ -28,11 +28,11 @@ insertEnv k x t =
   where
     insertLookup = Map.insertLookupWithKey (\_ a _ -> a)
 
-unionEnv :: Eq a => Env a -> Env a -> Maybe (Env a)
+unionEnv :: Eq a => TermBindings a -> TermBindings a -> Maybe (TermBindings a)
 unionEnv t1 t2 = foldM ins t1 (Map.toList t2)
   where ins = \t (k,x) -> insertEnv k x t
 
-unionsEnv :: Eq a => [Env a] -> Maybe (Env a)
+unionsEnv :: Eq a => [TermBindings a] -> Maybe (TermBindings a)
 unionsEnv = foldM unionEnv Map.empty
 
 
@@ -47,17 +47,17 @@ instance Show Rule where
 apply :: Rule -> Term -> Maybe Term
 apply (Rule p q) x = do
   e <- x `match` p
-  subst e q
+  build e q
 
 -- LHS should not contain variables, maybe enforce this in the types?
-match :: Term -> Term -> Maybe (Env Term)
+match :: Term -> Term -> Maybe (TermBindings Term)
 match (Const x1 ts1) (Const x2 ts2) = do 
   guard (x1 == x2)
   matchList ts1 ts2
 match t (Var x) = return (singletonEnv x t)
 match _ _ = Nothing
 
-matchList :: [Term] -> [Term] -> Maybe (Env Term)
+matchList :: [Term] -> [Term] -> Maybe (TermBindings Term)
 matchList [] [] = Just emptyEnv
 matchList ts1 ts2 = do
   guard (length ts1 == length ts2)
@@ -65,8 +65,8 @@ matchList ts1 ts2 = do
   env <- unionsEnv bindings
   return env
 
-subst :: (Env Term) -> Term -> Maybe Term
-subst e (Var x) = lookupEnv x e
-subst e (Const x ts) = do
-  ts' <- mapM (subst e) ts
+build :: (TermBindings Term) -> Term -> Maybe Term
+build e (Var x) = lookupEnv x e
+build e (Const x ts) = do
+  ts' <- mapM (build e) ts
   return $ Const x ts'
