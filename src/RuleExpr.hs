@@ -102,8 +102,9 @@ eval (Choice e1 e2) env t =
   -- as a general rewriting expression.
   case (eval e1 env t,eval e2 env t) of
     (Just (x,m1),Just (x',_)) -> 
-      if x == x' then Just (x,m1) -- Note: arbitrarily choose first trace!
-                 else runtimeErr "Non-confluence"
+      if x == x' 
+        then Just (x,m1) -- Note: arbitrarily choose first trace!
+        else runtimeErr "Non-confluence"
     (Just (t',m),Nothing) -> Just (t',m)
     (Nothing,Just (t',m)) -> Just (t',m)
     (Nothing,Nothing) -> Nothing
