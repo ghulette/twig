@@ -25,9 +25,12 @@ runtimeErr msg = throw (RuntimeException msg)
 
 -- Values
 
+type Strategy a b = a -> Maybe (a,b)
+
 type Id = String
 type Trace = String
-type Strategy = Term -> Maybe (Term,[Trace])
+type Factor = (Term,Env)
+type TwigStrategy = Strategy Factor [Trace]
 data Proc = Proc [Id] RuleExpr deriving (Eq,Show)
 
 
@@ -35,7 +38,7 @@ data Proc = Proc [Id] RuleExpr deriving (Eq,Show)
 
 data RuleEnv = RuleEnv 
   { envProcs :: Map Id Proc
-  , envVars :: Map Id Strategy
+  , envVars :: Map Id (TwigStrategy)
   }
 
 buildEnv :: [(Id,Proc)] -> RuleEnv
@@ -44,10 +47,10 @@ buildEnv xs = RuleEnv (Map.fromList xs) Map.empty
 lookupProc :: Id -> RuleEnv -> Maybe Proc
 lookupProc x = Map.lookup x . envProcs
 
-lookupVar :: Id -> RuleEnv -> Maybe Strategy
+lookupVar :: Id -> RuleEnv -> Maybe TwigStrategy
 lookupVar x = Map.lookup x . envVars
 
-bindVars :: RuleEnv -> [(Id,Strategy)] -> RuleEnv
+bindVars :: RuleEnv -> [(Id,TwigStrategy)] -> RuleEnv
 bindVars (RuleEnv procs _) = RuleEnv procs . Map.fromList
 
 
@@ -72,10 +75,10 @@ data RuleExpr = RuleCall Id [RuleExpr]
               | Congruence [RuleExpr]
               deriving (Eq,Show)
 
-eval :: RuleExpr -> RuleEnv -> Strategy
-eval (RuleLit rule m) _ t = do
+eval :: RuleExpr -> RuleEnv -> TwigStrategy
+eval (RuleLit rule m) _ (t,b) = do
   t' <- apply rule t
-  return (t',[m])
+  return ((t',b),[m])
 eval (Match pat) _ t = undefined
 eval (Build pat) _ t = undefined
 eval Success _ t = Just (t,mempty)
@@ -113,32 +116,33 @@ eval (Choice e1 e2) env t =
     (Just (t',m),Nothing) -> Just (t',m)
     (Nothing,Just (t',m)) -> Just (t',m)
     (Nothing,Nothing) -> Nothing
-eval (Path 0 e) env t = 
-  eval e env t -- #0(s) just applies s to root
-eval (Path i e) env t = do
-  let ts = children t
-  (ts',m) <- path (fromInteger i) (eval e env) ts
-  return (t `withChildren` ts',m)
-eval (BranchAll e) env t = do
-  let ts = children t
-  (ts',m) <- mapAll (eval e env) ts
-  return (t `withChildren` ts',m)
-eval (BranchOne e) env t = do
-  let ts = children t
-  (ts',m) <- mapOne (eval e env) ts
-  return (t `withChildren` ts',m)
-eval (BranchSome e) env t = do
-  let ts = children t
-  (ts',m) <- mapSome (eval e env) ts
-  return (t `withChildren` ts',m)
-eval (Congruence es) env t = do
-  let ts = children t
-  let rs = map (\e -> eval e env) es
-  guard $ length ts == length rs
-  mts' <- sequence (zipWith ($) rs ts)
-  let (ts',ms) = unzip mts'
-  return (t `withChildren` ts',mconcat ms)
-eval (RuleVar x) env t = 
+eval (Path 0 e) env t = eval e env t -- #0(s) just applies s to root
+-- eval (Path i e) env (t,b) = do
+--   let ts = children t
+--   let s = eval e env
+--   (tbs',m) <- path (fromInteger i) s (zip ts (repeat b))
+--   let (ts',bs) = unzip tbs'
+--   return ((t `withChildren` ts',emptyEnv),m)
+-- eval (BranchAll e) env t = do
+--   let ts = children t
+--   (ts',m) <- mapAll (eval e env) ts
+--   return (t `withChildren` ts',m)
+-- eval (BranchOne e) env t = do
+--   let ts = children t
+--   (ts',m) <- mapOne (eval e env) ts
+--   return (t `withChildren` ts',m)
+-- eval (BranchSome e) env t = do
+--   let ts = children t
+--   (ts',m) <- mapSome (eval e env) ts
+--   return (t `withChildren` ts',m)
+-- eval (Congruence es) env t = do
+--   let ts = children t
+--   let rs = map (\e -> eval e env) es
+--   guard $ length ts == length rs
+--   mts' <- sequence (zipWith ($) rs ts)
+--   let (ts',ms) = unzip mts'
+--   return (t `withChildren` ts',mconcat ms)
+eval (RuleVar x) env t =
   case lookupVar x env of
     Nothing -> eval (RuleCall x []) env t
     Just s -> s t
@@ -152,9 +156,11 @@ eval (RuleCall x args) env t =
       let env' = bindVars env (zip params ss)
       eval e env' t
 
-run :: Id -> RuleEnv -> Strategy
+run :: Id -> RuleEnv -> Strategy Term [Trace]
 run entry env t = 
   case lookupProc entry env of 
-    Just (Proc [] e) -> eval e env t
+    Just (Proc [] e) -> do
+      ((t',_),ms) <- eval e env (t,emptyEnv)
+      return (t',ms)
     Just (Proc _ _) -> runtimeErr (entry ++ " cannot have args")
     Nothing -> runtimeErr (entry ++ " is not defined")
