@@ -10,12 +10,17 @@ import Control.Monad.State
 type EnvState k v = Map k v
 
 newtype Env k v a = Env (StateT (EnvState k v) Maybe a) 
-  deriving (Functor,Monad)
+  deriving (Functor,Monad,MonadPlus)
 
-bind :: Ord k => k -> v -> Env k v ()
-bind k v = Env $ do
+bind :: (Ord k,Eq v) => k -> v -> Env k v ()
+bind k x = Env $ do
   m <- get
-  let m' = Map.insert k v m
+  -- If k is already bound, make sure we are rebinding it to the same value
+  m' <- case Map.insertLookupWithKey (\_ a _ -> a) k x m of
+    (Just x',m') -> do
+      guard (x' == x)
+      return m'
+    (Nothing,m') -> return m'
   put m'
 
 unbind :: Ord k => k -> Env k v ()
