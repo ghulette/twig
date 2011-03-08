@@ -9,26 +9,29 @@ import Control.Monad.State
 
 type EnvState k v = Map k v
 
-newtype Env k v a = Env (State (EnvState k v) a) deriving (Functor,Monad)
+newtype Env k v a = Env (StateT (EnvState k v) Maybe a) 
+  deriving (Functor,Monad)
 
 bind :: Ord k => k -> v -> Env k v ()
 bind k v = Env $ do
   m <- get
-  put (Map.insert k v m)
+  let m' = Map.insert k v m
+  put m'
 
 unbind :: Ord k => k -> Env k v ()
 unbind k = Env $ do
   m <- get
-  put (Map.delete k m)
+  let m' = Map.delete k m
+  put m'
 
-lookup :: Ord k => k -> Env k v (Maybe v)
+lookup :: Ord k => k -> Env k v v
 lookup k = Env $ do
   m <- get
-  return $ Map.lookup k m
+  v <- lift $ Map.lookup k m
+  return v
 
-evalEnv :: Env k v a -> a
-evalEnv (Env m) = evalState m Map.empty
+runEnv :: Env k v a -> EnvState k v -> Maybe (a,EnvState k v)
+runEnv (Env m) st = runStateT m st
 
-runEnv :: Env k v a -> EnvState k v -> (a,EnvState k v)
-runEnv (Env m) st = runState m st
-
+evalEnv :: Env k v a -> Maybe a
+evalEnv m = liftM fst $ runEnv m Map.empty
