@@ -5,6 +5,8 @@ import Data.List (intercalate)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Term
+import Env (Env)
+import qualified Env as Env
 
 -- Terms
 
@@ -17,34 +19,6 @@ instance Show TermPattern where
   show (Const k []) = k
   show (Const k ts) = k ++ "(" ++ (intercalate "," (map show ts)) ++ ")"
 
--- Variable bindings
-
-type Env = Map String Term
-
-emptyEnv :: Env
-emptyEnv = Map.empty
-
-singletonEnv :: String -> Term -> Env
-singletonEnv = Map.singleton
-
-lookupEnv :: String -> Env -> Maybe Term
-lookupEnv = Map.lookup
-
-insertEnv :: String -> Term -> Env -> Maybe Env
-insertEnv k x t = 
-  case Map.insertLookupWithKey (\_ a _ -> a) k x t of
-    (Just x',t') -> do
-      guard (x' == x)
-      return t'
-    (Nothing,t') -> return t'
-
-unionEnv :: Env -> Env -> Maybe Env
-unionEnv t1 t2 = foldM ins t1 (Map.toList t2)
-  where ins = \t (k,x) -> insertEnv k x t
-
-unionsEnv :: [Env] -> Maybe Env
-unionsEnv = foldM unionEnv Map.empty
-
 
 -- Rule datatype
 
@@ -54,28 +28,24 @@ instance Show Rule where
   show (Rule t1 t2) = (show t1) ++ " -> " ++ (show t2)
 
 -- Match against outermost term and rewrite
-apply :: Rule -> Term -> Maybe Term
+apply :: Rule -> Term -> Env String Term Term
 apply (Rule p q) x = do
-  e <- p `match` x
-  build e q
+  p `match` x
+  build q
 
-match :: TermPattern -> Term -> Maybe Env
-match (Const x1 ts1) (Term x2 ts2) = do 
-  guard (x1 == x2)
-  matchList ts1 ts2
+match :: TermPattern -> Term -> Env String Term Term
+match (Const y tps) (Term x ts) = do 
+  guard (x == y)
+  ts' <- mapM (\(t1,t2) -> match t1 t2) (zip tps ts)
+  return (Term x ts')
 match (Var x) t = do
-  return (singletonEnv x t)
+  Env.bind x t
+  return t
 
-matchList :: [TermPattern] -> [Term] -> Maybe Env
-matchList [] [] = Just emptyEnv
-matchList ts1 ts2 = do
-  guard (length ts1 == length ts2)
-  bindings <- mapM (\(t1,t2) -> match t1 t2) (zip ts1 ts2)
-  env <- unionsEnv bindings
-  return env
-
-build :: Env -> TermPattern -> Maybe Term
-build e (Var x) = lookupEnv x e
-build e (Const x ts) = do
-  ts' <- mapM (build e) ts
-  return $ Term x ts'
+build :: TermPattern -> Env String Term Term
+build (Var x) = do
+  t <- Env.lookup x
+  return t
+build (Const x tps) = do
+  ts <- mapM build tps
+  return $ Term x ts
