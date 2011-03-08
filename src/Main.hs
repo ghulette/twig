@@ -21,7 +21,7 @@ runOne :: RuleEnv -> Term -> IO ()
 runOne env t = do
   putStr (show t)
   case run "main" env t of
-    Just (t',ms) -> do
+    Just (t',_) -> do
       putStr " -> "
       print t'
       --mapM_ putStrLn ms

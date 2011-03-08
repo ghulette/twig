@@ -29,7 +29,7 @@ type Strategy a b = a -> Maybe (a,b)
 
 type Id = String
 type Trace = String
-type Factor = (Term,Env)
+type Factor = Term
 type TwigStrategy = Strategy Factor [Trace]
 data Proc = Proc [Id] RuleExpr deriving (Eq,Show)
 
@@ -41,8 +41,8 @@ data RuleEnv = RuleEnv
   , envVars :: Map Id (TwigStrategy)
   }
 
-buildEnv :: [(Id,Proc)] -> RuleEnv
-buildEnv xs = RuleEnv (Map.fromList xs) Map.empty 
+buildRuleEnv :: [(Id,Proc)] -> RuleEnv
+buildRuleEnv xs = RuleEnv (Map.fromList xs) Map.empty 
 
 lookupProc :: Id -> RuleEnv -> Maybe Proc
 lookupProc x = Map.lookup x . envProcs
@@ -69,18 +69,18 @@ data RuleExpr = RuleCall Id [RuleExpr]
               | LeftChoice RuleExpr RuleExpr
               | Choice RuleExpr RuleExpr
               | Path Integer RuleExpr
-              | BranchAll RuleExpr
               | BranchOne RuleExpr
+              | BranchAll RuleExpr
               | BranchSome RuleExpr
               | Congruence [RuleExpr]
               deriving (Eq,Show)
 
 eval :: RuleExpr -> RuleEnv -> TwigStrategy
-eval (RuleLit rule m) _ (t,b) = do
+eval (RuleLit rule m) _ t = do
   t' <- apply rule t
-  return ((t',b),[m])
-eval (Match pat) _ t = undefined
-eval (Build pat) _ t = undefined
+  return (t',[m])
+eval (Match _) _ _ = undefined
+eval (Build _) _ _ = undefined
 eval Success _ t = Just (t,mempty)
 eval Failure _ _ = Nothing
 eval (Test e) env t = 
@@ -117,31 +117,30 @@ eval (Choice e1 e2) env t =
     (Nothing,Just (t',m)) -> Just (t',m)
     (Nothing,Nothing) -> Nothing
 eval (Path 0 e) env t = eval e env t -- #0(s) just applies s to root
--- eval (Path i e) env (t,b) = do
---   let ts = children t
---   let s = eval e env
---   (tbs',m) <- path (fromInteger i) s (zip ts (repeat b))
---   let (ts',bs) = unzip tbs'
---   return ((t `withChildren` ts',emptyEnv),m)
--- eval (BranchAll e) env t = do
---   let ts = children t
---   (ts',m) <- mapAll (eval e env) ts
---   return (t `withChildren` ts',m)
--- eval (BranchOne e) env t = do
---   let ts = children t
---   (ts',m) <- mapOne (eval e env) ts
---   return (t `withChildren` ts',m)
--- eval (BranchSome e) env t = do
---   let ts = children t
---   (ts',m) <- mapSome (eval e env) ts
---   return (t `withChildren` ts',m)
--- eval (Congruence es) env t = do
---   let ts = children t
---   let rs = map (\e -> eval e env) es
---   guard $ length ts == length rs
---   mts' <- sequence (zipWith ($) rs ts)
---   let (ts',ms) = unzip mts'
---   return (t `withChildren` ts',mconcat ms)
+eval (Path i e) env t = do
+  let ts = children t
+  let s = eval e env
+  (ts',m) <- path (fromInteger i) s ts
+  return (t `withChildren` ts',m)
+eval (BranchOne e) env t = do
+  let ts = children t
+  (ts',m) <- mapOne (eval e env) ts
+  return (t `withChildren` ts',m)
+eval (BranchAll e) env t = do
+  let ts = children t
+  (ts',m) <- mapAll (eval e env) ts
+  return (t `withChildren` ts',m)
+eval (BranchSome e) env t = do
+  let ts = children t
+  (ts',m) <- mapSome (eval e env) ts
+  return (t `withChildren` ts',m)
+eval (Congruence es) env t = do
+  let ts = children t
+  let rs = map (\e -> eval e env) es
+  guard $ length ts == length rs
+  mts' <- sequence (zipWith ($) rs ts)
+  let (ts',ms) = unzip mts'
+  return (t `withChildren` ts',mconcat ms)
 eval (RuleVar x) env t =
   case lookupVar x env of
     Nothing -> eval (RuleCall x []) env t
@@ -160,7 +159,7 @@ run :: Id -> RuleEnv -> Strategy Term [Trace]
 run entry env t = 
   case lookupProc entry env of 
     Just (Proc [] e) -> do
-      ((t',_),ms) <- eval e env (t,emptyEnv)
+      (t',ms) <- eval e env t
       return (t',ms)
     Just (Proc _ _) -> runtimeErr (entry ++ " cannot have args")
     Nothing -> runtimeErr (entry ++ " is not defined")

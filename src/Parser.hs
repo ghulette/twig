@@ -10,37 +10,34 @@ import Rule
 import Term
 import RuleExpr
 
--- Terms and rule literals
+-- Term patterns and rule literals
 
-constId :: Parser Id
-constId = do 
+termId :: Parser Id
+termId = do 
   x <- lower
   xs <- many alphaNum
   return (x:xs)
 
-variable :: Parser Term
+variable :: Parser TermPattern
 variable = lexeme $ do
   x <- upper
   xs <- many alphaNum
   return $ Var (x:xs)
 
-constant :: Parser Term
+constant :: Parser TermPattern
 constant = do
-  x <- lexeme constId
-  ts <- option [] termList
+  x <- lexeme termId
+  ts <- option [] $ parens (termPattern `sepBy` comma)
   return $ Const x ts
 
-term :: Parser Term
-term = variable <|> constant <?> "term"
-
-termList :: Parser [Term]
-termList = parens (term `sepBy` comma)
+termPattern :: Parser TermPattern
+termPattern = variable <|> constant <?> "term pattern"
 
 rule :: Parser Rule
 rule = do 
-  t1 <- term
+  t1 <- termPattern
   reservedOp "->"
-  t2 <- term
+  t2 <- termPattern
   return $ Rule t1 t2
 
 trace :: Parser String
@@ -49,16 +46,14 @@ trace = do
   m <- stringLiteral
   return m
 
--- ConstTerms (no variables)
 
-constTerm :: Parser Term
-constTerm = do
-  x <- lexeme constId
-  ts <- option [] constTermList
-  return $ Const x ts
+-- Terms (no variables)
 
-constTermList :: Parser [Term]
-constTermList = parens (constTerm `sepBy` comma)
+term :: Parser Term
+term = do
+  x <- lexeme termId
+  ts <- option [] $ parens (term `sepBy` comma)
+  return $ Term x ts
 
 
 -- Rule expressions
@@ -142,7 +137,7 @@ ruleProc = do
 ruleDefs :: Parser RuleEnv
 ruleDefs = do
   procs <- many ruleProc
-  return (buildEnv procs)
+  return (buildRuleEnv procs)
 
 
 -- Wrappers
@@ -151,4 +146,4 @@ parseRules :: String -> Either ParseError RuleEnv
 parseRules = parse (allOf ruleDefs) "Rules"
 
 parseTerms :: String -> Either ParseError [Term]
-parseTerms = parse (allOf (many constTerm)) "Terms"
+parseTerms = parse (allOf (many term)) "Terms"
