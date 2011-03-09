@@ -58,7 +58,7 @@ bindVars (RuleEnv procs _) = RuleEnv procs . Map.fromList
 
 data RuleExpr = RuleCall Id [RuleExpr]
               | RuleVar Id
-              | RuleLit Rule Trace
+              | RuleLit Rule [Trace]
               | Success
               | Failure
               | Test RuleExpr
@@ -76,7 +76,7 @@ data RuleExpr = RuleCall Id [RuleExpr]
 eval :: RuleExpr -> RuleEnv -> TwigStrategy
 eval (RuleLit rule m) _ t = do
   (t',_) <- apply rule t
-  return (t',[m])
+  return (t',m)
 eval Success _ t = Just (t,mempty)
 eval Failure _ _ = Nothing
 eval (Test e) env t = 

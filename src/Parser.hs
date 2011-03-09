@@ -40,11 +40,11 @@ rule = do
   t2 <- termPattern
   return $ Rule t1 t2
 
-trace :: Parser String
+trace :: Parser [String]
 trace = do
   reservedOp ":"
   m <- stringLiteral
-  return m
+  return [m]
 
 
 -- Terms (no variables)
@@ -76,7 +76,7 @@ ruleLit :: Parser RuleExpr
 ruleLit = do
   (r,m) <- brackets $ do
     r <- rule
-    m <- option "" trace
+    m <- option [] trace
     return (r,m)
   return (RuleLit r m)
 

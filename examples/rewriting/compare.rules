@@ -3,10 +3,10 @@
 try(s) = s | T
 repeat(s) = try(s;repeat(s))
 
-cmp0 = [ cmp(z, z) -> eq ]
-cmp1 = [ cmp(z, s(X)) -> gt ]
-cmp2 = [ cmp(s(X), z) -> lt ]
-cmp3 = [ cmp(s(X), s(Y)) -> cmp(X, Y) ]
+cmp0 = [ cmp(z, z) -> eq : "0 = 0" ]
+cmp1 = [ cmp(z, s(X)) -> gt : "0 < s(X)"]
+cmp2 = [ cmp(s(X), z) -> lt : "s(X) > 0"]
+cmp3 = [ cmp(s(X), s(Y)) -> cmp(X, Y) : "s(X) <?> s(Y)" ]
 cmp = cmp0 | cmp1 | cmp2 | cmp3
 
 main = repeat(cmp)
