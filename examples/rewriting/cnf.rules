@@ -14,6 +14,6 @@ cnf = dblNeg | demorgan | dist3 | dist4
 
 try(s) = s | T
 repeat(s) = try(s;repeat(s))
-oncetd(s) = s | one oncetd(s)
+oncetd(s) = s | One oncetd(s)
 
 main = repeat(oncetd(cnf))

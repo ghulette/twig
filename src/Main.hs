@@ -25,7 +25,7 @@ runOne env t = do
       putStr " -> "
       print t'
       mapM_ putStrLn ms
-    Nothing -> putStrLn " No match"
+    Nothing -> putStrLn " -> No match"
   `catch` \(RuntimeException msg) -> do 
     putStrLn $ " -> Error: " ++ msg
 

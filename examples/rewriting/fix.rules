@@ -1,0 +1,6 @@
+prev = [s(X) -> X]
+
+try(s) = s | T
+repeat(s) = Fix(x,try(s;x))
+
+main = repeat(prev)

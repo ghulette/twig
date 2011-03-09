@@ -8,7 +8,7 @@ import Control.Monad (guard,when)
 import Data.Monoid
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Rule
+import Rule (Rule,apply)
 import Term
 import Util
 import StringSub
@@ -54,16 +54,21 @@ lookupVar x = Map.lookup x . envVars
 bindVars :: RuleEnv -> [(Id,TwigStrategy)] -> RuleEnv
 bindVars (RuleEnv procs _) = RuleEnv procs . Map.fromList
 
+extendVars :: RuleEnv -> Id -> TwigStrategy -> RuleEnv
+extendVars (RuleEnv procs vars) x v = 
+  RuleEnv procs (Map.insert x v vars)
+
 
 -- Expressions
 
 data RuleExpr = RuleCall Id [RuleExpr]
-              | RuleVar Id
               | RuleLit Rule [Trace]
               | Success
               | Failure
               | Test RuleExpr
               | Neg RuleExpr
+              | Fix Id RuleExpr
+              | Var Id
               | Seq RuleExpr RuleExpr
               | LeftChoice RuleExpr RuleExpr
               | Choice RuleExpr RuleExpr
@@ -139,7 +144,10 @@ eval (Congruence es) env t = do
   mts' <- sequence (zipWith ($) rs ts)
   let (ts',ms) = unzip mts'
   return (t `withChildren` ts',mconcat ms)
-eval (RuleVar x) env t =
+eval (Fix x e) env t = s t
+  where s = eval e env'
+        env' = extendVars env x s
+eval (Var x) env t =
   case lookupVar x env of
     Nothing -> eval (RuleCall x []) env t
     Just s -> s t

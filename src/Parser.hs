@@ -6,7 +6,8 @@ module Parser
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Expr as Ex
 import Lexer
-import Rule
+import Rule (Rule (..))
+import qualified Rule as Rule
 import Term
 import RuleExpr
 
@@ -18,19 +19,19 @@ termId = do
   xs <- many alphaNum
   return (x:xs)
 
-variable :: Parser TermPattern
+variable :: Parser Rule.TermPattern
 variable = lexeme $ do
   x <- upper
   xs <- many alphaNum
-  return $ Var (x:xs)
+  return $ Rule.Var (x:xs)
 
-constant :: Parser TermPattern
+constant :: Parser Rule.TermPattern
 constant = do
   x <- lexeme termId
   ts <- option [] $ parens (termPattern `sepBy` comma)
-  return $ Const x ts
+  return $ Rule.Const x ts
 
-termPattern :: Parser TermPattern
+termPattern :: Parser Rule.TermPattern
 termPattern = variable <|> constant <?> "term pattern"
 
 rule :: Parser Rule
@@ -64,7 +65,7 @@ ruleId = identifier
 var :: Parser RuleExpr
 var = do
   x <- ruleId
-  return (RuleVar x)
+  return (Var x)
 
 call :: Parser RuleExpr
 call = do
@@ -82,13 +83,22 @@ ruleLit = do
 
 ruleSuccess :: Parser RuleExpr
 ruleSuccess = do
-  reserved "T"
+  reservedOp "T"
   return Success
 
 ruleFailure :: Parser RuleExpr
 ruleFailure = do
-  reserved "F"
+  reservedOp "F"
   return Failure
+
+ruleFix :: Parser RuleExpr
+ruleFix = do
+  reservedOp "Fix"
+  parens $ do
+    x <- ruleId
+    comma
+    e <- ruleExpr
+    return (Fix x e)
 
 rulePath :: Parser (RuleExpr -> RuleExpr)
 rulePath = do
@@ -108,9 +118,9 @@ ruleExpr = Ex.buildExpressionParser table factor
         table = [[prefixOp "?" Test,
                   prefixOp "~" Neg,
                   Ex.Prefix rulePath,
-                  prefixOp "one" BranchOne,
-                  prefixOp "some" BranchSome,
-                  prefixOp "all" BranchAll ],
+                  prefixOp "One" BranchOne,
+                  prefixOp "Some" BranchSome,
+                  prefixOp "All" BranchAll],
                  [infixOp ";" Seq Ex.AssocLeft ],
                  [infixOp "|" LeftChoice Ex.AssocLeft,
                   infixOp "+" Choice Ex.AssocLeft ]]
@@ -118,6 +128,7 @@ ruleExpr = Ex.buildExpressionParser table factor
               <|> try call
               <|> var
               <|> ruleLit
+              <|> ruleFix
               <|> ruleSuccess 
               <|> ruleFailure
               <|> ruleCongruence
