@@ -83,17 +83,17 @@ ruleLit = do
 
 ruleSuccess :: Parser RuleExpr
 ruleSuccess = do
-  reservedOp "T"
+  reserved "T"
   return Success
 
 ruleFailure :: Parser RuleExpr
 ruleFailure = do
-  reservedOp "F"
+  reserved "F"
   return Failure
 
 ruleFix :: Parser RuleExpr
 ruleFix = do
-  reservedOp "Fix"
+  reserved "Fix"
   parens $ do
     x <- ruleId
     comma
@@ -114,13 +114,14 @@ ruleCongruence = do
 ruleExpr :: Parser RuleExpr
 ruleExpr = Ex.buildExpressionParser table factor
   where prefixOp x f = Ex.Prefix (reservedOp x >> return f)
+        prefixName x f = Ex.Prefix (reserved x >> return f)
         infixOp x f = Ex.Infix (reservedOp x >> return f)
         table = [[prefixOp "?" Test,
                   prefixOp "~" Neg,
                   Ex.Prefix rulePath,
-                  prefixOp "One" BranchOne,
-                  prefixOp "Some" BranchSome,
-                  prefixOp "All" BranchAll],
+                  prefixName "One" BranchOne,
+                  prefixName "Some" BranchSome,
+                  prefixName "All" BranchAll],
                  [infixOp ";" Seq Ex.AssocLeft ],
                  [infixOp "|" LeftChoice Ex.AssocLeft,
                   infixOp "+" Choice Ex.AssocLeft ]]

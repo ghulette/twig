@@ -6,8 +6,8 @@ a2 = [ ack(s(M),z) -> ack(M,s(z))]
 a3 = [ ack(s(M),s(N)) -> ack(M,ack(s(M),N))]
 
 try(s) = s | T
-repeat(s) = try(s;repeat(s))
-oncetd(s) = s | One(oncetd(s))
+repeat(s) = Fix(x,try(s ; x))
+oncetd(s) = Fix(x,s | One(x))
 reduce(s) = repeat(oncetd(s))
 
 main = reduce(a3 | a2 | a1)
