@@ -6,7 +6,8 @@ import Term
 import Env (Env,EnvState)
 import qualified Env as Env
 
--- Terms
+
+-- Term patterns
 
 data TermPattern = Var String
                  | Const String [TermPattern]
