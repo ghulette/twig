@@ -7,36 +7,53 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Monad.State
 
-type EnvState k v = Map k v
+type Id = String
+type Env a = Map Id a
 
-newtype Env k v a = Env (StateT (EnvState k v) Maybe a) 
+empty :: Env a
+empty = Map.empty
+
+bind :: Eq a => Id -> a -> Env a -> Maybe (Env a)
+bind k x m =
+  -- If k is already bound, make sure we are rebinding it to the same value
+  case lookup k m of
+    Just x' -> do
+      guard (x' == x)
+      return m
+    Nothing -> do
+      return $ Map.insert k x m
+
+unbind :: Id -> Env a -> Env a
+unbind = Map.delete
+
+lookup :: Id -> Env a -> Maybe a
+lookup = Map.lookup
+
+
+-- Monad for Env operations
+
+newtype EnvState v a = EnvState (StateT (Env v) Maybe a)
   deriving (Functor,Monad,MonadPlus)
 
-bind :: (Ord k,Eq v) => k -> v -> Env k v ()
-bind k x = Env $ do
+bindM :: Eq v => Id -> v -> EnvState v ()
+bindM k x = EnvState $ do
   m <- get
-  -- If k is already bound, make sure we are rebinding it to the same value
-  m' <- case Map.insertLookupWithKey (\_ a _ -> a) k x m of
-    (Just x',m') -> do
-      guard (x' == x)
-      return m'
-    (Nothing,m') -> return m'
+  m' <- lift (bind k x m)
   put m'
 
-unbind :: Ord k => k -> Env k v ()
-unbind k = Env $ do
+unbindM :: Id -> EnvState v ()
+unbindM k = EnvState $ do
   m <- get
-  let m' = Map.delete k m
+  let m' = unbind k m
   put m'
 
-lookup :: Ord k => k -> Env k v v
-lookup k = Env $ do
+lookupM :: Id -> EnvState v v
+lookupM k = EnvState $ do
   m <- get
-  v <- lift $ Map.lookup k m
-  return v
+  lift (lookup k m)
 
-runEnv :: Env k v a -> EnvState k v -> Maybe (a,EnvState k v)
-runEnv (Env m) st = runStateT m st
+runEnvState :: EnvState v a -> Maybe (a,Env v)
+runEnvState (EnvState m) = runStateT m empty
 
-evalEnv :: Env k v a -> Maybe a
-evalEnv m = liftM fst $ runEnv m Map.empty
+evalEnvState :: EnvState v a -> Maybe a
+evalEnvState m = liftM fst $ runEnvState m

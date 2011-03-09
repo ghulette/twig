@@ -3,7 +3,7 @@ module Rule (Rule (..),TermPattern (..),apply,match,build) where
 import Control.Monad
 import Data.List (intercalate)
 import Term
-import Env (Env)
+import Env (Env,EnvState)
 import qualified Env as Env
 
 -- Terms
@@ -22,29 +22,28 @@ instance Show TermPattern where
 
 data Rule = Rule TermPattern TermPattern deriving Eq
 
-type TermEnv a = Env String Term a
-
 instance Show Rule where
   show (Rule t1 t2) = (show t1) ++ " -> " ++ (show t2)
 
 -- Match against outermost term and rewrite
-apply :: Rule -> Term -> Maybe Term
-apply (Rule p q) x = Env.evalEnv $ do
+apply :: Rule -> Term -> Maybe (Term,Env Term)
+apply (Rule p q) x = Env.runEnvState $ do
   _ <- p `match` x
   build q
 
-match :: TermPattern -> Term -> TermEnv Term
-match (Const y tps) (Term x ts) = do 
-  guard (x == y)
-  ts' <- mapM (\(t1,t2) -> match t1 t2) (zip tps ts)
-  return (Term x ts')
+match :: TermPattern -> Term -> EnvState Term Term
+match (Const p ps) (Term t ts) = do
+  guard (p == t)
+  guard (length ps == length ts)
+  ts' <- mapM (uncurry match) (zip ps ts)
+  return (Term t ts')
 match (Var x) t = do
-  Env.bind x t
+  Env.bindM x t
   return t
 
-build :: TermPattern -> TermEnv Term
+build :: TermPattern -> EnvState Term Term
 build (Var x) = do
-  t <- Env.lookup x
+  t <- Env.lookupM x
   return t
 build (Const x tps) = do
   ts <- mapM build tps
