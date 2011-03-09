@@ -11,6 +11,7 @@ import qualified Data.Map as Map
 import Rule
 import Term
 import Util
+import StringSub
 
 
 -- Runtime exceptions
@@ -74,9 +75,10 @@ data RuleExpr = RuleCall Id [RuleExpr]
               deriving (Eq,Show)
 
 eval :: RuleExpr -> RuleEnv -> TwigStrategy
-eval (RuleLit rule m) _ t = do
-  (t',_) <- apply rule t
-  return (t',m)
+eval (RuleLit rule ms) _ t = do
+  (t',binds) <- apply rule t
+  ms' <- mapM (stringSub binds) ms
+  return (t',ms')
 eval Success _ t = Just (t,mempty)
 eval Failure _ _ = Nothing
 eval (Test e) env t = 
