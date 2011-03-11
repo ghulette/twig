@@ -32,8 +32,13 @@ constant = do
   ts <- option [] $ parens (termPattern `sepBy` comma)
   return $ Rule.Const x ts
 
+tuplePattern :: Parser Rule.TermPattern
+tuplePattern = do
+  ts <- braces (termPattern `sepBy1` comma)
+  return $ Rule.Const tupleConstructor ts
+
 termPattern :: Parser Rule.TermPattern
-termPattern = variable <|> constant <?> "term pattern"
+termPattern = tuplePattern <|> variable <|> constant <?> "term pattern"
 
 rule :: Parser Rule
 rule = do 
@@ -51,12 +56,19 @@ trace = do
 
 -- Terms (no variables)
 
-term :: Parser Term
-term = do
+basicTerm :: Parser Term
+basicTerm = do
   x <- lexeme termId
   ts <- option [] $ parens (term `sepBy` comma)
   return $ Term x ts
 
+tupleTerm :: Parser Term
+tupleTerm = do
+  ts <- braces (term `sepBy1` comma)
+  return $ Term tupleConstructor ts
+
+term :: Parser Term
+term = tupleTerm <|> basicTerm <?> "term"
 
 -- Rule expressions
 
