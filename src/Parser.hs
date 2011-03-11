@@ -7,9 +7,10 @@ import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Expr as Ex
 import Lexer
 import Rule (Rule (..))
-import qualified Rule as Rule
+import qualified Rule
 import Term
 import RuleExpr
+import Env (Env,Id,fromList)
 
 -- Term patterns and rule literals
 
@@ -146,15 +147,15 @@ ruleProc = do
   e <- ruleExpr
   return (x,Proc params e)
 
-ruleDefs :: Parser RuleEnv
+ruleDefs :: Parser (Env Proc)
 ruleDefs = do
   procs <- many ruleProc
-  return (buildRuleEnv procs)
+  return (Env.fromList procs)
 
 
 -- Wrappers
 
-parseRules :: String -> Either ParseError RuleEnv
+parseRules :: String -> Either ParseError (Env Proc)
 parseRules = parse (allOf ruleDefs) "Rules"
 
 parseTerms :: String -> Either ParseError [Term]

@@ -39,7 +39,7 @@ match (Const p ps) (Term t ts) = do
   ts' <- mapM (uncurry match) (zip ps ts)
   return (Term t ts')
 match (Var x) t = do
-  Env.bindM x t
+  Env.uniqueBindM x t
   return t
 
 build :: TermPattern -> EnvState Term Term
