@@ -102,7 +102,9 @@ eval (Choice e1 e2) defs env t =
     (Just (t',m),Nothing) -> Just (t',m)
     (Nothing,Just (t',m)) -> Just (t',m)
     (Nothing,Nothing) -> Nothing
-eval (Path 0 e) defs env t = eval e defs env t -- #0(s) just applies s to root
+eval (Path 0 e) defs env t = 
+  -- #0(s) just applies s to root
+  eval e defs env t 
 eval (Path i e) defs env t = do
   let ts = children t
   let s = eval e defs env
