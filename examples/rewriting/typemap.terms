@@ -1,1 +1,2 @@
 {cfunc(cint,{cint,cint}),{jint,jint}}
+cfunc(cint,{cint,cint})

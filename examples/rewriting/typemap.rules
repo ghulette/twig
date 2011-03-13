@@ -1,8 +1,19 @@
-r1 = [cptr(cchar) -> jstring]
-r2 = [cint -> jint]
-r3 = [jstring -> cptr(cchar)]
-r4 = [jint -> cint]
+-- C stuff
+ccall = [{cfunc(Ret,Args),Args} -> Ret : "ccall"]
+cfuncargs = [cfunc(Ret,Args) -> Args]
+cfuncret = [cfunc(Ret,Args) -> Ret]
+
+-- Java stuff
+jentry(s) = {wrap,All(wrap)}
+
+-- Convert C to Java
+r1 = [cptr(cchar) -> jstring : "r1"]
+r2 = [cint -> jint : "r2"]
 wrap = r1 | r2
+
+-- Convert Java to C
+r3 = [jstring -> cptr(cchar) : "r3"]
+r4 = [jint -> cint : "r4"]
 unwrap = r3 | r4
-ccall = [{cfunc(Ret,Args),Args} -> Ret]
-main = {T,{unwrap,unwrap}};ccall;wrap
+
+main = jentry({T,{unwrap,unwrap}};ccall;wrap)
