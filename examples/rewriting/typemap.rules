@@ -1,10 +1,12 @@
 -- C stuff
 ccall = [{cfunc(Ret,Args),Args} -> Ret : "ccall"]
-cfuncargs = [cfunc(Ret,Args) -> Args]
-cfuncret = [cfunc(Ret,Args) -> Ret]
 
 -- Java stuff
-jentry(s) = {wrap,All(wrap)}
+jentry(s) = [X -> jmethod(X,X)];
+  {
+    [cfunc(Ret,Args) -> {cfunc(Ret,Args),Args}]; #2(All(wrap));s,
+    [cfunc(Ret,Args) -> Args]; All(wrap)
+  }
 
 -- Convert C to Java
 r1 = [cptr(cchar) -> jstring : "r1"]

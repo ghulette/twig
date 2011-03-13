@@ -3,6 +3,7 @@ module Term
 , children
 , withChildren
 , isLeaf
+, isTuple
 , tupleConstructor
 ) where
 
