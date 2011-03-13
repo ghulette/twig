@@ -1,6 +1,5 @@
 module Term
 ( Term (..)
-, children
 , withChildren
 , isLeaf
 , isTuple
@@ -11,27 +10,28 @@ import Data.List (intercalate)
 
 -- Terms
 
-data Term = Term String [Term] deriving Eq
+data Term = Term
+  { constr :: String
+  , tag :: String
+  , children :: [Term]
+  } deriving Eq
 
 instance Show Term where
-  show (Term f []) = f
-  show (Term f ts) | f == tupleConstructor = 
+  show (Term c x []) = x ++ " : " ++ c
+  show (Term c _ ts) | c == tupleConstructor = 
     "{" ++ (intercalate "," (map show ts)) ++ "}"
-  show (Term f ts) = 
-    f ++ "(" ++ (intercalate "," (map show ts)) ++ ")"
+  show (Term c x ts) = 
+    x ++ ":" ++ c ++ "(" ++ (intercalate "," (map show ts)) ++ ")"
 
 tupleConstructor :: String
 tupleConstructor = "Tuple"
 
-children :: Term -> [Term]
-children (Term _ ts) = ts
-
 withChildren :: Term -> [Term] -> Term
-withChildren (Term x _) ts = Term x ts
+withChildren (Term c x _) ts = Term c x ts
 
 isLeaf :: Term -> Bool
-isLeaf (Term _ []) = True
-isLeaf (Term _ _) = False
+isLeaf (Term _ _ []) = True
+isLeaf (Term _ _ _) = False
 
 isTuple :: Term -> Bool
-isTuple (Term f _) = f == tupleConstructor
+isTuple (Term c _ _) = c == tupleConstructor

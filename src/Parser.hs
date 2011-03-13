@@ -56,16 +56,23 @@ trace = do
 
 -- Terms (no variables)
 
+termTag :: Parser String
+termTag = do
+  x <- stringLiteral
+  reservedOp ":"
+  return x
+
 basicTerm :: Parser Term
 basicTerm = do
-  x <- lexeme termId
+  x <- option "?" $ termTag
+  k <- lexeme termId
   ts <- option [] $ parens (term `sepBy` comma)
-  return $ Term x ts
+  return $ Term k x ts
 
 tupleTerm :: Parser Term
 tupleTerm = do
   ts <- braces (term `sepBy1` comma)
-  return $ Term tupleConstructor ts
+  return $ Term tupleConstructor "tuple" ts
 
 term :: Parser Term
 term = tupleTerm <|> basicTerm <?> "term"
