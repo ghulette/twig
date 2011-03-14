@@ -33,11 +33,11 @@ apply (Rule p q) x = Env.runEnvState $ do
   build q
 
 match :: TermPattern -> Term -> EnvState Term Term
-match (Const p ps) (Term t ts) = do
-  guard (p == t)
+match (Const p ps) (Term f x ts) = do
+  guard (p == f)
   guard (length ps == length ts)
   ts' <- mapM (uncurry match) (zip ps ts)
-  return (Term t ts')
+  return (Term f x ts')
 match (Var x) t = do
   Env.uniqueBindM x t
   return t
@@ -46,6 +46,6 @@ build :: TermPattern -> EnvState Term Term
 build (Var x) = do
   t <- Env.lookupM x
   return t
-build (Const x tps) = do
+build (Const f tps) = do
   ts <- mapM build tps
-  return $ Term x ts
+  return $ Term f Nothing ts

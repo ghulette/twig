@@ -58,14 +58,14 @@ trace = do
 
 basicTerm :: Parser Term
 basicTerm = do
-  x <- lexeme termId
+  f <- lexeme termId
   ts <- option [] $ parens (term `sepBy` comma)
-  return $ Term x ts
+  return $ Term f Nothing ts
 
 tupleTerm :: Parser Term
 tupleTerm = do
   ts <- braces (term `sepBy1` comma)
-  return $ Term tupleConstructor ts
+  return $ Term tupleConstructor Nothing ts
 
 term :: Parser Term
 term = tupleTerm <|> basicTerm <?> "term"
