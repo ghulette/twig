@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module GenSym 
+module CodeGen.GenSym 
   ( GenSym
   , Sym
   , EnvKey

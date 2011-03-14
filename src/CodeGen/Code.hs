@@ -1,4 +1,4 @@
-module Code where
+module CodeGen.Code where
 
 import Data.Monoid
 

@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module CodeGen
+module CodeGen.CodeGen
   ( Ident
   , CodeGen
   , CodeGenProc (..)
@@ -13,10 +13,10 @@ module CodeGen
   , var
   ) where
 
-import Code
+import CodeGen.Code
 import Data.Monoid
 import qualified GenSym
-import GenSym (GenSym,Sym,evalGenSym)
+import CodeGen.GenSym (GenSym,Sym,evalGenSym)
 import Control.Monad
 
 type Ident = Sym
