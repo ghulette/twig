@@ -92,7 +92,7 @@ ruleLit = do
     r <- rule
     m <- option [] trace
     return (r,m)
-  return (RuleLit r m)
+  return $ RuleLit r (return m)
 
 ruleSuccess :: Parser RuleExpr
 ruleSuccess = do

@@ -5,6 +5,7 @@ import Parser
 import RuleExpr
 import Term
 import Env (Env)
+import Supply
 
 -- Front end
 
@@ -18,14 +19,20 @@ parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
 
+outputTrace :: Trace -> IO ()
+outputTrace m = do
+  let ns = [1..] :: [Int]
+  let ss = evalSupply ["gen" ++ (show x) | x <- ns] m
+  mapM_ putStrLn ss
+
 runOne :: (Env Proc) -> Term -> IO ()
 runOne env t = do
   putStr (show t)
   case run "main" env t of
-    Just (t',ms) -> do
+    Just (t',m) -> do
       putStr " -> "
       print t'
-      mapM_ putStrLn ms
+      outputTrace m
     Nothing -> putStrLn " -> No match"
   `catch` \(RuntimeException msg) -> do 
     putStrLn $ " -> Error: " ++ msg

@@ -6,6 +6,7 @@ module StringSub (VarString,stringSub) where
 import Text.ParserCombinators.Parsec
 import Env (Env)
 import qualified Env as Env
+import Data.Maybe (fromJust)
 
 type VarString = String
 
@@ -51,10 +52,10 @@ parseText :: VarString -> Either ParseError [Text]
 parseText "" = Right []
 parseText s = parse (allOf (many text)) "Text" s
 
-stringSub :: Show a => Env a -> VarString -> Maybe String
-stringSub env x = 
+stringSub :: Show a => Env a -> VarString -> String
+stringSub env x = fromJust $
   case parseText x of
-    Left _ -> Nothing
+    Left _ -> error "String sub parse error - should not happen!"
     Right ts -> do
       ss <- mapM (toString env) ts
       return (concat ss)

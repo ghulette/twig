@@ -13,6 +13,7 @@ import qualified Env
 import Term
 import Util
 import StringSub
+import Supply
 
 
 -- Runtime exceptions
@@ -29,9 +30,9 @@ runtimeErr msg = throw (RuntimeException msg)
 
 type AbstractStrategy a b = a -> Maybe (a,b)
 
-type Trace = String
-data Proc = Proc [Id] RuleExpr deriving (Eq,Show)
-type Strategy = AbstractStrategy Term [Trace]
+type Trace = Supply Id [String]
+data Proc = Proc [Id] RuleExpr
+type Strategy = AbstractStrategy Term Trace
 
 
 -- Environment
@@ -45,7 +46,7 @@ makeRuleEnv = Env.fromList
 -- Expressions
 
 data RuleExpr = RuleCall Id [RuleExpr]
-              | RuleLit Rule [Trace]
+              | RuleLit Rule Trace
               | Success
               | Failure
               | Test RuleExpr
@@ -60,13 +61,12 @@ data RuleExpr = RuleCall Id [RuleExpr]
               | BranchAll RuleExpr
               | BranchSome RuleExpr
               | Congruence [RuleExpr]
-              deriving (Eq,Show)
 
 eval :: RuleExpr -> Env Proc -> Env Strategy -> Strategy
-eval (RuleLit rule ms) _ _ t = do
+eval (RuleLit rule m) _ _ t = do
   (t',binds) <- apply rule t
-  ms' <- mapM (stringSub binds) ms
-  return (t',ms')
+  let m' = fmap (fmap (stringSub binds)) $ m
+  return (t',m')
 eval Success _ _ t = Just (t,mempty)
 eval Failure _ _ _ = Nothing
 eval (Test e) defs env t = 
