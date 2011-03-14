@@ -17,7 +17,7 @@ data Term = Term
   } deriving Eq
 
 instance Show Term where
-  show (Term c x []) = x ++ " : " ++ c
+  show (Term c x []) = x ++ ":" ++ c
   show (Term c _ ts) | c == tupleConstructor = 
     "{" ++ (intercalate "," (map show ts)) ++ "}"
   show (Term c x ts) = 

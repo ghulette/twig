@@ -3,9 +3,8 @@ ccall = [{cfunc(Ret,Args),Args} -> Ret : "ccall"]
 
 -- Java stuff
 jentry(s) = [X -> jmethod(X,X)];
-  {
-    [cfunc(Ret,Args) -> {cfunc(Ret,Args),Args}]; #2(All(wrap));s,
-    [cfunc(Ret,Args) -> Args]; All(wrap)
+  { [cfunc(Ret,Args) -> {cfunc(Ret,Args),Args}]; #2(All(wrap));s
+  , [cfunc(Ret,Args) -> Args]; All(wrap)
   }
 
 -- Convert C to Java
