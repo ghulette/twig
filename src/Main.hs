@@ -28,8 +28,8 @@ outputTrace m = do
 runOne :: (Env Proc) -> Term -> IO ()
 runOne env t = do
   putStr (show t)
-  case run "main" env t of
-    Just (t',m) -> do
+  case run "main" env (t,"x") of
+    Just ((t',l),m) -> do
       putStr " -> "
       print t'
       outputTrace m

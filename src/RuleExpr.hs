@@ -29,10 +29,10 @@ runtimeErr msg = throw (RuntimeException msg)
 -- Values
 
 type AbstractStrategy a b = a -> Maybe (a,b)
-
 type Trace = Supply Id [String]
 data Proc = Proc [Id] RuleExpr
-type Strategy = AbstractStrategy Term Trace
+type Factor = (Term,Id)
+type Strategy = AbstractStrategy Factor Trace
 
 
 -- Environment
@@ -40,8 +40,6 @@ type Strategy = AbstractStrategy Term Trace
 bindVars :: Env Strategy -> [(Id,Strategy)] -> Env Strategy
 bindVars = foldl' $ flip $ uncurry Env.bind
 
-makeRuleEnv :: [(Id,Proc)] -> Env Proc
-makeRuleEnv = Env.fromList
 
 -- Expressions
 
@@ -63,10 +61,11 @@ data RuleExpr = RuleCall Id [RuleExpr]
               | Congruence [RuleExpr]
 
 eval :: RuleExpr -> Env Proc -> Env Strategy -> Strategy
-eval (RuleLit rule m) _ _ t = do
+eval (RuleLit rule m) _ _ (t,l) = do
   (t',binds) <- apply rule t
   let m' = fmap (fmap (stringSub binds)) $ m
-  return (t',m')
+  let x' = (t',l)
+  return (x',m')
 eval Success _ _ t = Just (t,mempty)
 eval Failure _ _ _ = Nothing
 eval (Test e) defs env t = 
@@ -105,30 +104,31 @@ eval (Choice e1 e2) defs env t =
 eval (Path 0 e) defs env t = 
   -- #0(s) just applies s to root
   eval e defs env t 
-eval (Path i e) defs env t = do
-  let ts = children t
+eval (Path i e) defs env (t,l) = do
+  let ts = zip (children t) (repeat l)
   let s = eval e defs env
-  (ts',m) <- path (fromInteger i) s ts
-  return (t `withChildren` ts',m)
-eval (BranchOne e) defs env t = do
-  let ts = children t
-  (ts',m) <- mapOne (eval e defs env) ts
-  return (t `withChildren` ts',m)
-eval (BranchAll e) defs env t = do
-  let ts = children t
-  (ts',m) <- mapAll (eval e defs env) ts
-  return (t `withChildren` ts',m)
-eval (BranchSome e) defs env t = do
-  let ts = children t
-  (ts',m) <- mapSome (eval e defs env) ts
-  return (t `withChildren` ts',m)
-eval (Congruence es) defs env t = do
-  let ts = children t
-  let rs = map (\e -> eval e defs env) es
-  guard $ length ts == length rs
-  mts' <- sequence (zipWith ($) rs ts)
-  let (ts',ms) = unzip mts'
-  return (t `withChildren` ts',mconcat ms)
+  (tls',m) <- path (fromInteger i) s ts
+  let (ts',ls') = unzip tls'
+  return ((t `withChildren` ts',l),m)
+-- eval (BranchOne e) defs env t = do
+--   let ts = children t
+--   (ts',m) <- mapOne (eval e defs env) ts
+--   return (t `withChildren` ts',m)
+-- eval (BranchAll e) defs env t = do
+--   let ts = children t
+--   (ts',m) <- mapAll (eval e defs env) ts
+--   return (t `withChildren` ts',m)
+-- eval (BranchSome e) defs env t = do
+--   let ts = children t
+--   (ts',m) <- mapSome (eval e defs env) ts
+--   return (t `withChildren` ts',m)
+-- eval (Congruence es) defs env t = do
+--   let ts = children t
+--   let rs = map (\e -> eval e defs env) es
+--   guard $ length ts == length rs
+--   mts' <- sequence (zipWith ($) rs ts)
+--   let (ts',ms) = unzip mts'
+--   return (t `withChildren` ts',mconcat ms)
 eval (Fix x e) defs env t = s t
   where s = eval e defs env'
         env' = Env.bind x s env
