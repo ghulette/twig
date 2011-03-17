@@ -22,4 +22,4 @@ reduceConsts = reduceConstsNot | reduceConstsAnd | reduceConstsOr
 
 reduceTruism = and5 | and6 | or5 | or6
 
-main = reduceConsts | reduceTruism
+reduce = reduceConsts | reduceTruism

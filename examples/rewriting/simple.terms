@@ -1,2 +1,4 @@
-ptr(char)
-ptr(int)
+r4 ptr(char)
+r4 ptr(int)
+r5 ptr(char)
+r5 ptr(int)

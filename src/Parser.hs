@@ -165,10 +165,18 @@ ruleDefs = do
   return (Env.fromList procs)
 
 
+-- Term inputs
+
+application :: Parser (Id,Term)
+application = do
+  x <- ruleId
+  t <- term
+  return (x,t)
+
 -- Wrappers
 
 parseRules :: String -> Either ParseError (Env Proc)
 parseRules = parse (allOf ruleDefs) "Rules"
 
-parseTerms :: String -> Either ParseError [Term]
-parseTerms = parse (allOf (many term)) "Terms"
+parseTerms :: String -> Either ParseError [(Id,Term)]
+parseTerms = parse (allOf (many application)) "Terms"

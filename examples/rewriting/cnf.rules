@@ -10,10 +10,8 @@ dist2 = [ and(or(P,Q),R) -> or(and(P,R),and(Q,R)) ]
 dist3 = [ or(P,and(Q,R)) -> and(or(P,Q),or(P,R)) ]
 dist4 = [ or(and(P,Q),R) -> and(or(P,R),or(Q,R)) ]
 
-cnf = dblNeg | demorgan | dist3 | dist4
-
 try(s) = s | T
 repeat(s) = try(s;repeat(s))
 oncetd(s) = s | One oncetd(s)
 
-main = repeat(oncetd(cnf))
+cnf = repeat(oncetd(dblNeg | demorgan | dist3 | dist4))

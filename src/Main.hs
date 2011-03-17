@@ -4,7 +4,7 @@ import System.Environment (getArgs)
 import Parser
 import RuleExpr
 import Term
-import Env (Env)
+import Env (Env,Id)
 import Supply
 
 -- Front end
@@ -14,7 +14,7 @@ parse x = case parseRules x of
   Left err -> fail (show err)
   Right env -> return env
 
-parseInput :: String -> IO [Term]
+parseInput :: String -> IO [(Id,Term)]
 parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
@@ -25,15 +25,16 @@ outputTrace m = do
   let ss = evalSupply ["gen" ++ (show x) | x <- ns] m
   mapM_ putStrLn ss
 
-runOne :: (Env Proc) -> Term -> IO ()
-runOne env t = do
-  putStr (show t)
-  case run "main" env t of
+runOne :: (Env Proc) -> (Id,Term) -> IO ()
+runOne env (x,t) = do
+  putStrLn $ "Applying rule " ++ x ++ " to term " ++ (show t)
+  putStr $ show t
+  case run x env t of
     Just (t',m) -> do
       putStr " -> "
       print t'
       outputTrace m
-    Nothing -> putStrLn " -> No match"
+    Nothing -> putStrLn " -> *** No match ***"
   `catch` \(RuntimeException msg) -> do 
     putStrLn $ " -> Error: " ++ msg
 
@@ -44,4 +45,4 @@ main = do
   env <- parse rulesInput
   termsInput <- getContents
   terms <- parseInput termsInput
-  mapM_ (runOne env) terms
+  mapM_ (\x -> runOne env x >> putStrLn "") terms

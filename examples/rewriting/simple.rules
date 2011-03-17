@@ -1,8 +1,6 @@
-r1 = [ptr(char) -> string]
-r2 = [ptr(X) -> array(X)]
-r3 = [string -> double]
+r1 = [ptr(char) -> string   : "r1"]
+r2 = [ptr(X)    -> array(X) : "r2"]
+r3 = [string    -> double   : "r3"]
 
 r4 = r1 | r2  -- Convert a ptr to either a string or an array
 r5 = r1 ; r3  -- Convert a char * to a string, then to a double
-
-main = r4
