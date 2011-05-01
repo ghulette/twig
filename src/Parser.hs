@@ -6,11 +6,10 @@ module Parser
 import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Expr as Ex
 import Lexer
-import Rule (Rule (..))
-import qualified Rule
+import Pattern (Pattern (..))
 import Term
 import RuleExpr
-import Env (Env,Id,fromList)
+import Env (Env,fromList)
 
 -- Term patterns and rule literals
 
@@ -20,32 +19,25 @@ termId = do
   xs <- many alphaNum
   return (x:xs)
 
-variable :: Parser Rule.TermPattern
+variable :: Parser Pattern
 variable = lexeme $ do
   x <- upper
   xs <- many alphaNum
-  return $ Rule.Var (x:xs)
+  return $ Var (x:xs)
 
-constant :: Parser Rule.TermPattern
+constant :: Parser Pattern
 constant = do
   x <- lexeme termId
   ts <- option [] $ parens (termPattern `sepBy` comma)
-  return $ Rule.Const x ts
+  return $ Const x ts
 
-tuplePattern :: Parser Rule.TermPattern
+tuplePattern :: Parser Pattern
 tuplePattern = do
   ts <- braces (termPattern `sepBy1` comma)
-  return $ Rule.Const tupleConstructor ts
+  return $ Const tupleConstructor ts
 
-termPattern :: Parser Rule.TermPattern
+termPattern :: Parser Pattern
 termPattern = tuplePattern <|> variable <|> constant <?> "term pattern"
-
-rule :: Parser Rule
-rule = do 
-  t1 <- termPattern
-  reservedOp "->"
-  t2 <- termPattern
-  return $ Rule t1 t2
 
 trace :: Parser [String]
 trace = do
@@ -78,7 +70,7 @@ ruleId = identifier
 var :: Parser RuleExpr
 var = do
   x <- ruleId
-  return (Var x)
+  return (VarExpr x)
 
 call :: Parser RuleExpr
 call = do
@@ -87,12 +79,12 @@ call = do
   return (RuleCall x args)
 
 ruleLit :: Parser RuleExpr
-ruleLit = do
-  (r,m) <- brackets $ do
-    r <- rule
+ruleLit = brackets $ do
+    lhs <- termPattern
+    reservedOp "->"
+    rhs <- termPattern
     m <- option [] trace
-    return (r,m)
-  return $ RuleLit r (return m)
+    return (Rule lhs rhs (return m))
 
 ruleSuccess :: Parser RuleExpr
 ruleSuccess = do

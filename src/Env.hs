@@ -1,27 +1,47 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
-module Env where
+module Env 
+  ( Env
+  , fromList
+  , empty
+  , singleton
+  , bind
+  , unbind
+  , lookup
+  , unions
+  , bindUnique
+  , unionsUnique
+  ) where
 
 import Prelude hiding (lookup)
+import Control.Monad (guard,foldM)
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Control.Monad.State
 
-type Id = String
-type Env a = Map Id a
+type Env a = Map String a
 
-fromList :: [(Id,a)] -> Env a
+fromList :: [(String,a)] -> Env a
 fromList = Map.fromList
 
 empty :: Env a
 empty = Map.empty
 
-bind :: Id -> a -> Env a -> Env a
+singleton :: String -> a -> Env a
+singleton = Map.singleton
+
+bind :: String -> a -> Env a -> Env a
 bind = Map.insert
 
+unbind :: String -> Env a -> Env a
+unbind = Map.delete
+
+lookup :: String -> Env a -> Maybe a
+lookup = Map.lookup
+
+unions :: Eq a => [Env a] -> Env a
+unions = Map.unions
+
 -- If k is already bound, make sure we are rebinding it to the same value
-uniqueBind :: Eq a => Id -> a -> Env a -> Maybe (Env a)
-uniqueBind k x m =
+bindUnique :: Eq a => String -> a -> Env a -> Maybe (Env a)
+bindUnique k x m =
   case lookup k m of
     Just x' -> do
       guard (x' == x)
@@ -29,42 +49,10 @@ uniqueBind k x m =
     Nothing -> do
       return $ Map.insert k x m
 
-unbind :: Id -> Env a -> Env a
-unbind = Map.delete
+unionUnique :: Eq a => Env a -> Env a -> Maybe (Env a)
+unionUnique m1 m2 =
+  foldM (\m (k,v) -> bindUnique k v m) m1 (Map.assocs m2)
 
-lookup :: Id -> Env a -> Maybe a
-lookup = Map.lookup
-
-
--- Monad for Env operations
-
-newtype EnvState v a = EnvState (StateT (Env v) Maybe a)
-  deriving (Functor,Monad,MonadPlus)
-
-bindM :: Id -> v -> EnvState v ()
-bindM k x = EnvState $ do
-  m <- get
-  put (bind k x m)
-
-uniqueBindM :: Eq v => Id -> v -> EnvState v ()
-uniqueBindM k x = EnvState $ do
-  m <- get
-  m' <- lift (uniqueBind k x m)
-  put m'
-
-unbindM :: Id -> EnvState v ()
-unbindM k = EnvState $ do
-  m <- get
-  let m' = unbind k m
-  put m'
-
-lookupM :: Id -> EnvState v v
-lookupM k = EnvState $ do
-  m <- get
-  lift (lookup k m)
-
-runEnvState :: EnvState v a -> Maybe (a,Env v)
-runEnvState (EnvState m) = runStateT m empty
-
-evalEnvState :: EnvState v a -> Maybe a
-evalEnvState m = liftM fst $ runEnvState m
+unionsUnique :: Eq a => [Env a] -> Maybe (Env a)
+unionsUnique [] = Just empty
+unionsUnique (m:ms) = foldM unionUnique m ms

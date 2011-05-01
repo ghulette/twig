@@ -7,14 +7,16 @@ import Data.Typeable (Typeable)
 import Data.List (foldl')
 import Control.Monad (guard,when)
 import Data.Monoid
-import Rule (Rule,apply)
-import Env (Env,Id)
+import Pattern (Pattern,match,build)
+import Env (Env)
 import qualified Env
 import Term
 import Util
 import StringSub
 import Supply
 
+
+type Id = String
 
 -- Runtime exceptions
 
@@ -46,13 +48,13 @@ makeRuleEnv = Env.fromList
 -- Expressions
 
 data RuleExpr = RuleCall Id [RuleExpr]
-              | RuleLit Rule Trace
+              | Rule Pattern Pattern Trace
               | Success
               | Failure
               | Test RuleExpr
               | Neg RuleExpr
               | Fix Id RuleExpr
-              | Var Id
+              | VarExpr Id
               | Seq RuleExpr RuleExpr
               | LeftChoice RuleExpr RuleExpr
               | Choice RuleExpr RuleExpr
@@ -63,9 +65,10 @@ data RuleExpr = RuleCall Id [RuleExpr]
               | Congruence [RuleExpr]
 
 eval :: RuleExpr -> Env Proc -> Env Strategy -> Strategy
-eval (RuleLit rule m) _ _ t = do
-  (t',binds) <- apply rule t
-  let m' = fmap (fmap (stringSub binds)) $ m
+eval (Rule lhs rhs m) _ _ t = do
+  bindings <- match lhs t
+  t' <- build bindings rhs
+  let m' = fmap (fmap (stringSub bindings)) $ m
   return (t',m')
 eval Success _ _ t = Just (t,mempty)
 eval Failure _ _ _ = Nothing
@@ -132,7 +135,7 @@ eval (Congruence es) defs env t = do
 eval (Fix x e) defs env t = s t
   where s = eval e defs env'
         env' = Env.bind x s env
-eval (Var x) defs env t =
+eval (VarExpr x) defs env t =
   case Env.lookup x env of
     Nothing -> eval (RuleCall x []) defs env t
     Just s -> s t

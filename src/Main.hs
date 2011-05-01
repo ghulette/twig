@@ -4,7 +4,7 @@ import System.Environment (getArgs)
 import Parser
 import RuleExpr
 import Term
-import Env (Env,Id)
+import Env (Env)
 import Supply
 
 -- Front end
