@@ -1,0 +1,13 @@
+Name:           Inv
+Version:        0.3
+Cabal-Version:  >= 1.2
+License:        BSD3
+Author:         Geoff Hulette
+Synopsis:       Invertible typemap demo
+Build-Type:     Simple
+  
+Executable inv
+  Main-Is:        Main.hs
+  Hs-Source-Dirs: src
+  Build-Depends:  base >= 4,parsec >= 2,containers,mtl
+  GHC-Options:    -O2 -Wall
