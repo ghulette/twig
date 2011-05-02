@@ -5,13 +5,13 @@ module RuleExpr where
 import Control.Exception
 import Data.Typeable (Typeable)
 import Data.List (foldl')
-import Control.Monad (guard,when)
+import Control.Monad (when)
+import MonadWriter ()
 import Data.Monoid
 import Pattern (Pattern,match,build)
 import Env (Env)
 import qualified Env
 import Term
-import Util
 import StringSub
 import Supply
 
@@ -33,7 +33,7 @@ runtimeErr msg = throw (RuntimeException msg)
 type Trace = Supply Id [String]
 data Proc = Proc [Id] RuleExpr
 
-type AbstractStrategy w a = a -> Maybe (a,w)
+type AbstractStrategy w a = a -> Maybe (w,a)
 type Strategy = AbstractStrategy Trace Term
 
 
@@ -69,23 +69,23 @@ eval (Rule lhs rhs m) _ _ t = do
   bindings <- match lhs t
   t' <- build bindings rhs
   let m' = fmap (fmap (stringSub bindings)) $ m
-  return (t',m')
-eval Success _ _ t = Just (t,mempty)
+  return (m',t')
+eval Success _ _ t = Just (mempty,t)
 eval Failure _ _ _ = Nothing
 eval (Test e) defs env t = 
   case eval e defs env t of
-    Just _ -> Just (t,mempty)
+    Just _ -> Just (mempty,t)
     Nothing -> Nothing
 eval (Neg e) defs env t = 
   case eval e defs env t of
     Just _ -> Nothing
-    Nothing -> Just (t,mempty)
+    Nothing -> Just (mempty,t)
 eval (Seq e1 e2) defs env t =
   case eval e1 defs env t of
     Nothing -> Nothing
-    Just (t',m1) -> 
+    Just (m1,t') -> 
       case eval e2 defs env t' of
-        Just (t'',m2) -> Just (t'',m1 `mappend` m2)
+        Just (m2,t'') -> Just (m1 `mappend` m2,t'')
         Nothing -> Nothing
 eval (LeftChoice e1 e2) defs env t =
   case eval e1 defs env t of
@@ -94,44 +94,32 @@ eval (LeftChoice e1 e2) defs env t =
       case eval e2 defs env t of
         Just (t',m) -> Just (t',m)
         Nothing -> Nothing
-eval (Choice e1 e2) defs env t =
-  -- Probably we don't want non-det choice for Twig, but it is interesting
-  -- as a general rewriting expression.
-  case (eval e1 defs env t,eval e2 defs env t) of
-    (Just (x,m1),Just (x',_)) -> 
-      if x == x' 
-        then Just (x,m1) -- Note: arbitrarily choose first trace!
-        else runtimeErr "Non-confluence"
-    (Just (t',m),Nothing) -> Just (t',m)
-    (Nothing,Just (t',m)) -> Just (t',m)
-    (Nothing,Nothing) -> Nothing
+eval (Choice _ _) _ _ _ = undefined
+-- eval (Choice e1 e2) defs env t =
+-- -- Probably we don't want non-det choice for Twig, but it is interesting
+-- -- as a general rewriting expression.
+-- case (eval e1 defs env t,eval e2 defs env t) of
+--   (Just (x,m1),Just (x',_)) -> 
+--     if x == x' 
+--       then Just (x,m1) -- Note: arbitrarily choose first trace!
+--       else runtimeErr "Non-confluence"
+--   (Just (t',m),Nothing) -> Just (t',m)
+--   (Nothing,Just (t',m)) -> Just (t',m)
+--   (Nothing,Nothing) -> Nothing
 eval (Path 0 e) defs env t = 
   -- #0(s) just applies s to root
   eval e defs env t 
-eval (Path i e) defs env t = do
-  let ts = children t
-  let s = eval e defs env
-  (ts',m) <- path (fromInteger i) s ts
-  return (t `withChildren` ts',m)
-eval (BranchOne e) defs env t = do
-  let ts = children t
-  (ts',m) <- mapOne (eval e defs env) ts
-  return (t `withChildren` ts',m)
-eval (BranchAll e) defs env t = do
-  let ts = children t
-  (ts',m) <- mapAll (eval e defs env) ts
-  return (t `withChildren` ts',m)
-eval (BranchSome e) defs env t = do
-  let ts = children t
-  (ts',m) <- mapSome (eval e defs env) ts
-  return (t `withChildren` ts',m)
+eval (Path i e) defs env t = 
+  pathM (fromInteger i) (eval e defs env) t
+eval (BranchOne e) defs env t =
+  oneM (eval e defs env) t
+eval (BranchAll e) defs env t =
+  allM (eval e defs env) t
+eval (BranchSome e) defs env t =
+  someM (eval e defs env) t
 eval (Congruence es) defs env t = do
-  let ts = children t
-  let rs = map (\e -> eval e defs env) es
-  guard $ length ts == length rs
-  mts' <- sequence (zipWith ($) rs ts)
-  let (ts',ms) = unzip mts'
-  return (t `withChildren` ts',mconcat ms)
+  let fs = map (\e -> eval e defs env) es
+  congruenceM fs t  
 eval (Fix x e) defs env t = s t
   where s = eval e defs env'
         env' = Env.bind x s env

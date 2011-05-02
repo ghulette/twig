@@ -30,7 +30,7 @@ runOne env (x,t) = do
   putStrLn $ "Applying rule " ++ x ++ " to term " ++ (show t)
   putStr $ show t
   case run x env t of
-    Just (t',m) -> do
+    Just (m,t') -> do
       putStr " -> "
       print t'
       outputTrace m
