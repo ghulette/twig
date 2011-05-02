@@ -30,11 +30,11 @@ runtimeErr msg = throw (RuntimeException msg)
 
 -- Values
 
-type AbstractStrategy a b = a -> Maybe (a,b)
-
 type Trace = Supply Id [String]
 data Proc = Proc [Id] RuleExpr
-type Strategy = AbstractStrategy Term Trace
+
+type AbstractStrategy w a = a -> Maybe (a,w)
+type Strategy = AbstractStrategy Trace Term
 
 
 -- Environment
@@ -47,7 +47,7 @@ makeRuleEnv = Env.fromList
 
 -- Expressions
 
-data RuleExpr = RuleCall Id [RuleExpr]
+data RuleExpr = Call Id [RuleExpr]
               | Rule Pattern Pattern Trace
               | Success
               | Failure
@@ -137,9 +137,9 @@ eval (Fix x e) defs env t = s t
         env' = Env.bind x s env
 eval (VarExpr x) defs env t =
   case Env.lookup x env of
-    Nothing -> eval (RuleCall x []) defs env t
+    Nothing -> eval (Call x []) defs env t
     Just s -> s t
-eval (RuleCall x args) defs env t =
+eval (Call x args) defs env t =
   case Env.lookup x defs of
     Nothing -> runtimeErr $ "Variable " ++ x ++ " not in scope"
     Just (Proc params e) -> do

@@ -7,12 +7,10 @@ import Text.ParserCombinators.Parsec.Language (haskellStyle)
 -- Tokens
 
 lexer :: Tok.TokenParser ()
-lexer = Tok.makeTokenParser style
-  where style = haskellStyle {Tok.reservedOpNames = ops,
-                              Tok.reservedNames = names}
-        ops = [";","|","+","?","~","->","=","#",":"]
-        names = ["T","F","Fix","One","Some","All"]
-        
+lexer = Tok.makeTokenParser haskellStyle 
+  { Tok.reservedOpNames = [";","|","+","?","~","->","=","#",":"]
+  , Tok.reservedNames   = ["T","F","Fix","One","Some","All"]
+  }
 
 lexeme :: Parser a -> Parser a
 lexeme = Tok.lexeme lexer

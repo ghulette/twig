@@ -76,7 +76,7 @@ call :: Parser RuleExpr
 call = do
   x <- ruleId
   args <- parens (ruleExpr `sepBy1` comma)
-  return (RuleCall x args)
+  return (Call x args)
 
 ruleLit :: Parser RuleExpr
 ruleLit = brackets $ do
