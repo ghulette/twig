@@ -3,7 +3,7 @@
 module MonadWriter where
 
 import Data.Monoid
-import Control.Monad
+import Control.Monad ()
 
 instance Monoid m => Monad ((,)m) where
   return x = (mempty,x)

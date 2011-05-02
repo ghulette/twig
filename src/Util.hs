@@ -1,4 +1,13 @@
-module Util where
+module Util 
+  ( path
+  , mapAll
+  , mapOne
+  , mapSome
+  , pathM
+  , mapAllM
+  , mapOneM
+  , mapSomeM
+  ) where
 
 path :: Int -> (a -> Maybe a) -> [a] -> Maybe [a]
 path i _ _ | i < 1 = Nothing
