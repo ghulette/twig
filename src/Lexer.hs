@@ -30,6 +30,9 @@ brackets = Tok.brackets lexer
 braces :: Parser a -> Parser a
 braces = Tok.braces lexer
 
+angles :: Parser a -> Parser a
+angles = Tok.angles lexer
+
 reserved :: String -> Parser ()
 reserved = Tok.reserved lexer
 

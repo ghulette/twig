@@ -30,9 +30,9 @@ runtimeErr msg = throw (RuntimeException msg)
 
 -- Values
 
-type Trace = Supply Id [String]
 data Proc = Proc [Id] RuleExpr
 
+type Trace = Supply Id [String]
 type AbstractStrategy w a = a -> Maybe (w,a)
 type Strategy = AbstractStrategy Trace Term
 

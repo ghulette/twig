@@ -33,7 +33,7 @@ constant = do
 
 tuplePattern :: Parser Pattern
 tuplePattern = do
-  ts <- braces (termPattern `sepBy1` comma)
+  ts <- angles (termPattern `sepBy1` comma)
   return $ Const tupleConstructor ts
 
 termPattern :: Parser Pattern
