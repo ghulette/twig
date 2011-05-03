@@ -119,7 +119,7 @@ eval (BranchSome e) defs env t =
   someM (eval e defs env) t
 eval (Congruence es) defs env t = do
   let fs = map (\e -> eval e defs env) es
-  congruenceM fs t  
+  congruenceM fs t
 eval (Fix x e) defs env t = s t
   where s = eval e defs env'
         env' = Env.bind x s env

@@ -141,7 +141,7 @@ ruleExpr = Ex.buildExpressionParser table factor
               <?> "factor"
 
 
--- Rule definitions and constructors
+-- Rule definitions
 
 ruleProc :: Parser (Id,Proc)
 ruleProc = do
