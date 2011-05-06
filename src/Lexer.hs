@@ -1,51 +1,53 @@
 module Lexer where
 
-import Text.ParserCombinators.Parsec
-import qualified Text.ParserCombinators.Parsec.Token as Tok
-import Text.ParserCombinators.Parsec.Language (haskellStyle)
+import Text.Parsec
+import qualified Text.Parsec.Token as Tok
+import Text.Parsec.Language (haskellStyle)
+
+type Lexer s a = Parsec [Char] s a
 
 -- Tokens
 
-lexer :: Tok.TokenParser ()
+lexer :: Tok.TokenParser s
 lexer = Tok.makeTokenParser haskellStyle 
   { Tok.reservedOpNames = [";","|","+","?","~","->","=","#",":"]
-  , Tok.reservedNames   = ["T","F","Fix","One","Some","All"]
+  , Tok.reservedNames   = ["inv","rule","def","T","F","Fix","One","Some","All"]
   }
 
-lexeme :: Parser a -> Parser a
+lexeme :: Lexer s u -> Lexer s u
 lexeme = Tok.lexeme lexer
 
-natural :: Parser Integer
+natural :: Lexer s Integer
 natural = Tok.natural lexer
 
-parens :: Parser a -> Parser a
+parens :: Lexer s u -> Lexer s u
 parens = Tok.parens lexer
 
-comma :: Parser ()
+comma :: Lexer s ()
 comma = Tok.comma lexer >> return ()
 
-brackets :: Parser a -> Parser a
+brackets :: Lexer s u -> Lexer s u
 brackets = Tok.brackets lexer
 
-braces :: Parser a -> Parser a
+braces :: Lexer s u -> Lexer s u
 braces = Tok.braces lexer
 
-angles :: Parser a -> Parser a
+angles :: Lexer s u -> Lexer s u
 angles = Tok.angles lexer
 
-reserved :: String -> Parser ()
+reserved :: String -> Lexer s ()
 reserved = Tok.reserved lexer
 
-reservedOp :: String -> Parser ()
+reservedOp :: String -> Lexer s ()
 reservedOp = Tok.reservedOp lexer
 
-identifier :: Parser String
+identifier :: Lexer s String
 identifier = Tok.identifier lexer
 
-stringLiteral :: Parser String
+stringLiteral :: Lexer s String
 stringLiteral = Tok.stringLiteral lexer
 
-allOf :: Parser a -> Parser a
+allOf :: Lexer s u -> Lexer s u
 allOf p = do
   Tok.whiteSpace lexer
   r <- p

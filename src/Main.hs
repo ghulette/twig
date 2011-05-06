@@ -6,13 +6,14 @@ import RuleExpr
 import Term
 import Env (Env)
 import Supply
+import AST
 
 -- Front end
 
 parse :: String -> IO (Env Proc)
-parse x = case parseRules x of
+parse x = case parseAST x of
   Left err -> fail (show err)
-  Right env -> return env
+  Right ast -> return (compile ast)
 
 parseInput :: String -> IO [(Id,Term)]
 parseInput x = case parseTerms x of

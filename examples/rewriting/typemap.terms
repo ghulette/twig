@@ -1,1 +1,1 @@
-main cfunc(cint,{cint,cint})
+main cfunc(cint,<cint,cint>)

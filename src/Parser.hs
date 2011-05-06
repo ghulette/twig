@@ -1,45 +1,47 @@
 module Parser 
-( parseRules
+( parseAST
 , parseTerms
 ) where
 
-import Text.ParserCombinators.Parsec
-import qualified Text.ParserCombinators.Parsec.Expr as Ex
+import Text.Parsec
+import qualified Text.Parsec.Expr as Ex
 import Lexer
-import Pattern (Pattern (..))
+import AST
+import Pattern
 import Term
 import RuleExpr
-import Env (Env,fromList)
 
--- Term patterns and rule literals
+type TwigParser a = Parsec [Char] () a
 
-termId :: Parser Id
-termId = do 
+-- Term patterns
+
+termId :: TwigParser Id
+termId = lexeme $ do 
   x <- lower
   xs <- many alphaNum
   return (x:xs)
 
-variable :: Parser Pattern
+variable :: TwigParser Pattern
 variable = lexeme $ do
   x <- upper
   xs <- many alphaNum
   return $ Var (x:xs)
 
-constant :: Parser Pattern
+constant :: TwigParser Pattern
 constant = do
-  x <- lexeme termId
+  x <- termId
   ts <- option [] $ parens (termPattern `sepBy` comma)
   return $ Const x ts
 
-tuplePattern :: Parser Pattern
+tuplePattern :: TwigParser Pattern
 tuplePattern = do
   ts <- angles (termPattern `sepBy1` comma)
   return $ Const tupleConstructor ts
 
-termPattern :: Parser Pattern
+termPattern :: TwigParser Pattern
 termPattern = tuplePattern <|> variable <|> constant <?> "term pattern"
 
-trace :: Parser [String]
+trace :: TwigParser [String]
 trace = do
   reservedOp ":"
   m <- stringLiteral
@@ -48,37 +50,38 @@ trace = do
 
 -- Terms (no variables)
 
-basicTerm :: Parser Term
+basicTerm :: TwigParser Term
 basicTerm = do
-  x <- lexeme termId
+  x <- termId
   ts <- option [] $ parens (term `sepBy` comma)
   return $ Term x ts
 
-tupleTerm :: Parser Term
+tupleTerm :: TwigParser Term
 tupleTerm = do
-  ts <- braces (term `sepBy1` comma)
+  ts <- angles (term `sepBy1` comma)
   return $ Term tupleConstructor ts
 
-term :: Parser Term
+term :: TwigParser Term
 term = tupleTerm <|> basicTerm <?> "term"
+
 
 -- Rule expressions
 
-ruleId :: Parser Id
+ruleId :: TwigParser Id
 ruleId = identifier
 
-var :: Parser RuleExpr
+var :: TwigParser RuleExpr
 var = do
   x <- ruleId
   return (VarExpr x)
 
-call :: Parser RuleExpr
+call :: TwigParser RuleExpr
 call = do
   x <- ruleId
   args <- parens (ruleExpr `sepBy1` comma)
   return (Call x args)
 
-ruleLit :: Parser RuleExpr
+ruleLit :: TwigParser RuleExpr
 ruleLit = brackets $ do
     lhs <- termPattern
     reservedOp "->"
@@ -86,17 +89,17 @@ ruleLit = brackets $ do
     m <- option [] trace
     return (Rule lhs rhs (return m))
 
-ruleSuccess :: Parser RuleExpr
+ruleSuccess :: TwigParser RuleExpr
 ruleSuccess = do
   reserved "T"
   return Success
 
-ruleFailure :: Parser RuleExpr
+ruleFailure :: TwigParser RuleExpr
 ruleFailure = do
   reserved "F"
   return Failure
 
-ruleFix :: Parser RuleExpr
+ruleFix :: TwigParser RuleExpr
 ruleFix = do
   reserved "Fix"
   parens $ do
@@ -105,18 +108,18 @@ ruleFix = do
     e <- ruleExpr
     return (Fix x e)
 
-rulePath :: Parser (RuleExpr -> RuleExpr)
+rulePath :: TwigParser (RuleExpr -> RuleExpr)
 rulePath = do
   reservedOp "#"
   i <- natural
   return (\s -> Path i s)
 
-ruleCongruence :: Parser RuleExpr
+ruleCongruence :: TwigParser RuleExpr
 ruleCongruence = do
   xs <- braces (ruleExpr `sepBy` comma)
   return (Congruence xs)
 
-ruleExpr :: Parser RuleExpr
+ruleExpr :: TwigParser RuleExpr
 ruleExpr = Ex.buildExpressionParser table factor
   where prefixOp x f = Ex.Prefix (reservedOp x >> return f)
         prefixName x f = Ex.Prefix (reserved x >> return f)
@@ -140,26 +143,49 @@ ruleExpr = Ex.buildExpressionParser table factor
               <|> ruleCongruence
               <?> "factor"
 
+-- AST
 
--- Rule definitions
-
-ruleProc :: Parser (Id,Proc)
-ruleProc = do
+ruleStmt :: TwigParser Stmt
+ruleStmt = do
+  reserved "rule"
   x <- ruleId
-  params <- option [] (parens (ruleId `sepBy1` comma))
   reservedOp "="
   e <- ruleExpr
-  return (x,Proc params e)
+  return (RuleStmt x e)
 
-ruleDefs :: Parser (Env Proc)
-ruleDefs = do
-  procs <- many ruleProc
-  return (Env.fromList procs)
+defStmt :: TwigParser Stmt
+defStmt = do
+  reserved "def"
+  x <- ruleId
+  params <- parens (ruleId `sepBy1` comma)
+  reservedOp "="
+  e <- ruleExpr
+  return (DefStmt x params e)
+
+invStmt :: TwigParser Stmt
+invStmt = do
+  reserved "inv"
+  x1 <- ruleId
+  x2 <- ruleId
+  return (InvStmt x1 x2) 
+
+stmt :: TwigParser Stmt
+stmt = ruleStmt <|> defStmt <|> invStmt <?> "Statement"
+
+unit :: TwigParser Unit
+unit = do
+  stmts <- many stmt
+  return (Unit stmts)
+
+ast :: TwigParser Top
+ast = do
+  u <- unit
+  return (Top [u])
 
 
 -- Term inputs
 
-application :: Parser (Id,Term)
+application :: TwigParser (Id,Term)
 application = do
   x <- ruleId
   t <- term
@@ -167,8 +193,8 @@ application = do
 
 -- Wrappers
 
-parseRules :: String -> Either ParseError (Env Proc)
-parseRules = parse (allOf ruleDefs) "Rules"
+parseAST :: String -> Either ParseError Top
+parseAST = parse (allOf ast) "Twig"
 
 parseTerms :: String -> Either ParseError [(Id,Term)]
 parseTerms = parse (allOf (many application)) "Terms"

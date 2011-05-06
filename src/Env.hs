@@ -36,7 +36,7 @@ unbind = Map.delete
 lookup :: String -> Env a -> Maybe a
 lookup = Map.lookup
 
-unions :: Eq a => [Env a] -> Env a
+unions :: [Env a] -> Env a
 unions = Map.unions
 
 -- If k is already bound, make sure we are rebinding it to the same value
