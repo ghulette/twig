@@ -68,7 +68,7 @@ eval :: RuleExpr -> Env Proc -> Env Strategy -> Strategy
 eval (Rule lhs rhs m) _ _ t = do
   bindings <- match lhs t
   t' <- build bindings rhs
-  let m' = fmap (fmap (stringSub bindings)) $ m
+  let m' = fmap (fmap (replace (Env.toList bindings))) $ m
   return (m',t')
 eval Success _ _ t = Just (mempty,t)
 eval Failure _ _ _ = Nothing

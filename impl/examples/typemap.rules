@@ -1,21 +1,20 @@
 -- C stuff
-rule ccall = [<cfunc(Ret,Args),Args> -> Ret : "ccall"]
+ccall = [<cfunc(Ret,Args),Args> -> Ret : "ccall"]
 
 -- Java stuff
-def jentry(s) = [X -> jmethod(X,X)];
-  {
-    [cfunc(Ret,Args) -> <cfunc(Ret,Args),Args>]; #2(All(wrap));s,
-    [cfunc(Ret,Args) -> Args]; All(wrap)
+jentry(s) = [X -> jmethod(X,X)];
+  { [cfunc(Ret,Args) -> <cfunc(Ret,Args),Args>]; #2(#all(wrap));s
+  , [cfunc(Ret,Args) -> Args]; #all(wrap)
   }
 
 -- Convert C to Java
-rule r1 = [cptr(cchar) -> jstring : "r1"]
-rule r2 = [cint -> jint : "r2"]
-rule wrap = r1 | r2
+r1   = [cptr(cchar) -> jstring : "r1"]
+r2   = [cint -> jint : "r2"]
+wrap = r1 | r2
 
 -- Convert Java to C
-rule r3 = [jstring -> cptr(cchar) : "r3"]
-rule r4 = [jint -> cint : "r4"]
-rule unwrap = r3 | r4
+r3 = [jstring -> cptr(cchar) : "r3"]
+r4 = [jint -> cint : "r4"]
+unwrap = r3 | r4
 
-rule main = jentry({T,{unwrap,unwrap}};ccall;wrap)
+main = jentry({T,{unwrap,unwrap}};ccall;wrap)

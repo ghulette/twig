@@ -11,7 +11,7 @@ type Lexer s a = Parsec [Char] s a
 lexer :: Tok.TokenParser s
 lexer = Tok.makeTokenParser haskellStyle 
   { Tok.reservedOpNames = [";","|","+","?","~","->","=","#",":"]
-  , Tok.reservedNames   = ["inv","rule","def","T","F","Fix","One","Some","All"]
+  , Tok.reservedNames = ["inv","rule","def","T","F","fix","one","some","all"]
   }
 
 lexeme :: Lexer s u -> Lexer s u

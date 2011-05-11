@@ -31,12 +31,12 @@ constant :: TwigParser Pattern
 constant = do
   x <- termId
   ts <- option [] $ parens (termPattern `sepBy` comma)
-  return $ Const x ts
+  return (Const x ts)
 
 tuplePattern :: TwigParser Pattern
 tuplePattern = do
-  ts <- angles (termPattern `sepBy1` comma)
-  return $ Const tupleConstructor ts
+  ts <- parens (termPattern `sepBy1` comma)
+  return (Const tupleConstructor ts)
 
 termPattern :: TwigParser Pattern
 termPattern = tuplePattern <|> variable <|> constant <?> "term pattern"
@@ -58,7 +58,7 @@ basicTerm = do
 
 tupleTerm :: TwigParser Term
 tupleTerm = do
-  ts <- angles (term `sepBy1` comma)
+  ts <- parens (term `sepBy1` comma)
   return $ Term tupleConstructor ts
 
 term :: TwigParser Term
@@ -89,65 +89,62 @@ ruleLit = brackets $ do
     m <- option [] trace
     return (Rule lhs rhs (return m))
 
-ruleSuccess :: TwigParser RuleExpr
-ruleSuccess = do
+success :: TwigParser RuleExpr
+success = do
   reserved "T"
   return Success
 
-ruleFailure :: TwigParser RuleExpr
-ruleFailure = do
+failure :: TwigParser RuleExpr
+failure = do
   reserved "F"
   return Failure
 
-ruleFix :: TwigParser RuleExpr
-ruleFix = do
-  reserved "Fix"
+fix :: TwigParser RuleExpr
+fix = do
+  reserved "fix"
   parens $ do
     x <- ruleId
     comma
     e <- ruleExpr
     return (Fix x e)
 
-rulePath :: TwigParser (RuleExpr -> RuleExpr)
-rulePath = do
+branch :: TwigParser (RuleExpr -> RuleExpr)
+branch = do
   reservedOp "#"
-  i <- natural
-  return (\s -> Path i s)
+  branchOp
+  where branchOp =  (reserved "all"  >> return BranchAll)
+                <|> (reserved "some" >> return BranchSome)
+                <|> (reserved "one"  >> return BranchOne)
+                <|> (natural >>= \i  -> return (Path i))
+                <?> "branch operator"
 
-ruleCongruence :: TwigParser RuleExpr
-ruleCongruence = do
+congruence :: TwigParser RuleExpr
+congruence = do
   xs <- braces (ruleExpr `sepBy` comma)
   return (Congruence xs)
 
 ruleExpr :: TwigParser RuleExpr
 ruleExpr = Ex.buildExpressionParser table factor
   where prefixOp x f = Ex.Prefix (reservedOp x >> return f)
-        prefixName x f = Ex.Prefix (reserved x >> return f)
-        infixOp x f = Ex.Infix (reservedOp x >> return f)
-        table = [[prefixOp "?" Test,
-                  prefixOp "~" Neg,
-                  Ex.Prefix rulePath,
-                  prefixName "One" BranchOne,
-                  prefixName "Some" BranchSome,
-                  prefixName "All" BranchAll],
-                 [infixOp ";" Seq Ex.AssocLeft ],
-                 [infixOp "|" LeftChoice Ex.AssocLeft,
-                  infixOp "+" Choice Ex.AssocLeft ]]
+        infixOp  x f = Ex.Infix  (reservedOp x >> return f)
+        table = [[prefixOp "?" Test,prefixOp "~" Neg],
+                 [Ex.Prefix branch],
+                 [infixOp ";" Seq Ex.AssocLeft],
+                 [infixOp "|" LeftChoice Ex.AssocLeft]]
         factor =  parens ruleExpr
               <|> try call
               <|> var
               <|> ruleLit
-              <|> ruleFix
-              <|> ruleSuccess 
-              <|> ruleFailure
-              <|> ruleCongruence
+              <|> fix
+              <|> success 
+              <|> failure
+              <|> congruence
               <?> "factor"
 
 -- AST
 
 ruleStmt :: TwigParser Stmt
 ruleStmt = do
-  reserved "rule"
   x <- ruleId
   reservedOp "="
   e <- ruleExpr
@@ -155,7 +152,6 @@ ruleStmt = do
 
 defStmt :: TwigParser Stmt
 defStmt = do
-  reserved "def"
   x <- ruleId
   params <- parens (ruleId `sepBy1` comma)
   reservedOp "="
@@ -170,7 +166,7 @@ invStmt = do
   return (InvStmt x1 x2) 
 
 stmt :: TwigParser Stmt
-stmt = ruleStmt <|> defStmt <|> invStmt <?> "Statement"
+stmt = try defStmt <|> ruleStmt <|> invStmt <?> "Statement"
 
 unit :: TwigParser Unit
 unit = do

@@ -1,0 +1,10 @@
+pack   = [ (ptr(X),int) -> array(X) ]
+
+length = [ array(X) -> int ] :
+{
+  $result = strlen($input);
+}
+
+elts = [ array(X) -> ptr(X) ]
+
+map(s) = [ array(X) ]

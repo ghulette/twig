@@ -22,7 +22,7 @@ data Term = Term String [Term] deriving Eq
 instance Show Term where
   show (Term f []) = f
   show (Term f ts) | f == tupleConstructor = 
-    "{" ++ (intercalate "," (map show ts)) ++ "}"
+    "(" ++ (intercalate "," (map show ts)) ++ ")"
   show (Term f ts) = 
     f ++ "(" ++ (intercalate "," (map show ts)) ++ ")"
 

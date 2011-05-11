@@ -1,6 +1,7 @@
 module Env 
   ( Env
   , fromList
+  , toList
   , empty
   , singleton
   , bind
@@ -20,6 +21,9 @@ type Env a = Map String a
 
 fromList :: [(String,a)] -> Env a
 fromList = Map.fromList
+
+toList :: Env a -> [(String,a)]
+toList = Map.toList
 
 empty :: Env a
 empty = Map.empty
