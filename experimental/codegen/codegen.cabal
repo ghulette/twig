@@ -1,0 +1,13 @@
+Name:           Codegen
+Version:        0.1
+Cabal-Version:  >= 1.2
+License:        BSD3
+Author:         Geoff Hulette
+Synopsis:       Code generation monoid
+Build-Type:     Simple
+  
+Executable cgen
+  Main-Is:        Main.hs
+  Hs-Source-Dirs: src
+  Build-Depends:  base >= 4,containers,mtl
+  GHC-Options:    -O2 -Wall
