@@ -1,0 +1,37 @@
+Discussed two paper goals for dissertation. First, type-mapping GPU
+computations. A good example of where this might be beneficial is the boids
+code, where we have several sequenced functions on the same data. We would
+like to avoid copying back and forth between each - just fold the functions
+together into a single kernel and only copy once in and once out.
+
+The second idea is to present Twig as an alternative to Swig etc for
+multi-language wrapper generation. This will require understanding how Twig is
+better. Reppy’s paper might be a good start, since we are generalizing his
+technique.
+
+Paper 1: Generating multi-language bindings using typemap composition
+
+Abstract: Typemaps are a well-known approach to generating multi-language
+bindings. We describe a language for building typemap expressions from simple
+rewriting rules, and some algebraic manipulations which can be performed on
+these expressions. Then we show how this type of manipulation may be applied
+to automatically remove intermediate mappings that result from using bindings
+to two or more languages in a single application.
+
+Extend the algebra with general isomorphisms, e.g. replace A;B with C
+
+Compare to:
+* SWIG - no composition, bindings quadratic in the number of languages;
+* Babel - inefficient IOR
+* CORBA - Orbit?
+* Siloon - ?
+
+Paper 2: Generating efficient GPU code
+
+Writing GPU code by hand is tedious, so it would be nice to generate it
+automatically. Unfortunately, this may kill performance with unnecessary
+operations (e.g. copies).
+
+Instead of wrapping existing code, we want to generate tedious GPU code from a
+template. But we also want that code to be reasonably efficient, in particular
+avoid unnecessary device memcopies and blocking.
