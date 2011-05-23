@@ -1,3 +1,8 @@
+Haskell Symposium: June 6
+SBLP April 29
+GPCE/Onward May 16
+ECOOP: April 15
+
 Discussed two paper goals for dissertation. First, type-mapping GPU
 computations. A good example of where this might be beneficial is the boids
 code, where we have several sequenced functions on the same data. We would
