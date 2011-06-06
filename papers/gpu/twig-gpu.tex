@@ -4,7 +4,7 @@
 \usepackage{url}
 \usepackage{parskip}
 
-\title{Twig for GPUs...}
+\title{Twig for GPUs}
 \author{Geoffrey C. Hulette}
 
 \begin{document}
@@ -12,6 +12,40 @@
 \thispagestyle{empty}
 
 \section{Introduction}
+
+Programmers are often constrained by engineering requirements to produce work
+in a mainstream language such as C. At the same time, there is an increasing
+awareness of the benefits of \emph{domain-specific} programming languages
+(DSLs). The goal of DSLs is to closely model the problem domain, which has at
+least two benefits. First, programs that would be complicated or convoluted in
+a traditional language may be expressed clearly and succinctly. Second, DSLs
+may admit automated reasoning about programs, e.g. optimization for efficiency
+in running time or space requirements. Where a DSL provides these benefits and
+also generates C (or some other mainstream language) as output, it may be
+useful and relatively easy to integrate with existing engineering processes.
+
+The power of DSLs comes at a cost, however. DSLs typically have a unique
+syntax and semantics that may be known primarily to the language's author. The
+interpreter and other tools may be difficult to support or extend if the
+original author becomes unavailable. It can also be difficult to extend DSLs
+to support new constructs or rules. 
+
+We introduce Twig, a DSL intended for ``ad-hoc'' modeling of a variety of
+high-level program semantics, and admitting simple reasoning via equivalence
+rules. The evaluation of a Twig program generates code in C (and potentially
+other languages), lending it to integration in software existing projects. By
+``ad-hoc'' we mean that Twig can be configured rather easily by application
+programmers to serve as a DSL for different purposes, even within the same
+application. This may alleviate some of the resistance to the adoption of
+Twig-based DSLs in projects.
+
+In this paper, we demonstrate how Twig can be used to describe some simple
+kinds of GPU programming. GPU programming is a good example of the kinds of
+problems we anticipate Twig being useful for -- it has a fairly simple
+high-level structure (described below) but is tedious and complicated to write
+by hand.
+
+\section{Example Problem: GPGPU Programming}
 
 Programming for GPUs can be a challenging task. There is a considerable amount
 of protocol that must be invoked in order to set up and release the device,
@@ -38,9 +72,52 @@ them (e.g. ignore the possibility for multiple devices), but they cannot hide
 them altogether.
 
 Another approach is to design a domain-specific language for GPUs. Examples
-include PyCUDA or MPI for GPUs. Domain-specific languages are typically not
+include PyCUDA and OpenMPC. Domain-specific languages are typically not
 customizable for higher-level application logic.
 
+\section{Related Work}
+
+Discuss PyCUDA and OpenMPC. 
+
+Yampa?
+
+Other general-purpose DSLs?
+
+\section{Twig}
+
+Overview of how Twig works, basic semantics, code generation, simple example.
+
+Focus on importance of generating C - integration with existing methods, type-directed generation.
+
+\subsection{Reductions}
+
+Explain reductions and how they can be used in domain- or application-specific
+ways.
+
+Explain built-in reductions. Maybe discuss idea of a normal form, although
+this might be better in a later paper.
+
+\section{Implementation}
+
+Talk briefly about how Twig is implemented, and how to use it to generate
+code.
+
+\section{Evaluation}
+
+Show some GPU algorithm encoded in Twig. Discuss advantages over simple APIs
+(restricted flexibility equals improved ability to reason).
+
+Show how reductions eliminate redundant copies.
+
+Compare performance versus naive generation.
+
+Also compare against PyCUDA or another system?
+
+\section{Future work}
+
+Future work.
+
+\section{Conclusion}
 
 
 % \section{Section Title}
