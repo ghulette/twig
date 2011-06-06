@@ -11,12 +11,37 @@
 \maketitle
 \thispagestyle{empty}
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+\section{Introduction}
+
+Programming for GPUs can be a challenging task. There is a considerable amount
+of protocol that must be invoked in order to set up and release the device,
+move data to and from the device, synchronize processing at barriers. Yet for
+many problems, the logic is fairly simple -- perform some function on a vector
+or array.
+
+This pattern suggests that programmers should consider abstracting the
+interface to the GPU, so that they can focus on domain logic and ignore the
+tedious details of interacting with the device. There are numerous ways to
+approach this problem.
+
+First, programmers could build a library of functions or objects which hide as
+many details as possible. In fact this has already been done to a large
+extent, with frameworks such as CUDA or OpenCL, and these libraries are the
+primary way in which programmers already program for GPUs. This approach
+mitigates many difficult issues, but provides only a minimal abstraction --
+the library abstraction cannot hide the need to coordinate GPU activities such
+as set up and memory management. Programmers might try to create their own
+libraries on top of CUDA or OpenCL, but in most languages the object or
+library facilities will not allow them to reason at a high semantic level. In
+other words, they might be able to simplify some operations by specializing
+them (e.g. ignore the possibility for multiple devices), but they cannot hide
+them altogether.
+
+Another approach is to design a domain-specific language for GPUs. Examples
+include PyCUDA or MPI for GPUs. Domain-specific languages are typically not
+customizable for higher-level application logic.
+
+
 
 % \section{Section Title}
 % \input{section_file}
