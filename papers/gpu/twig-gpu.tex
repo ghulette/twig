@@ -57,11 +57,32 @@ application. This may alleviate some of the resistance to the adoption of
 Twig-based DSLs in projects. %% Matt - this paragraph needs more work.  Why
 %% does twig help fix the problems pointed out above?
 
-In this paper, we demonstrate how Twig can be used to describe some simple
-kinds of GPU programming. GPU programming is a good example of the kinds of
-problems we anticipate Twig being useful for -- it has a fairly simple
-high-level structure (described below) but is tedious and complicated to write
-by hand. % Matt - this is weak as well.
+In this paper, we demonstrate how Twig can be used to build a domain specific
+extension to traditional languages like C to address what we believe are
+limitations to existing type systems that complicate the programming of
+hybrid architectures such as those based on GPGPUs.  All mainstream
+languages are based on an assumption that the underlying architecture, either
+via hardware assistance or software runtime support, provides the illusion
+of a single addressable memory accessible by all cores within a computer.
+Hybrid systems violate this by partitioning memory between processors of 
+different types (such as a CPU and GPU), and forcing data movement between
+these memories to be explicitly stated.  Traditional languages must be
+extended to abstract away the management of this data movement.  This paper
+shows how Twig can be used to move this into the type system of a traditional
+language via a domain specific extension.  % Too wordy, but ...
+
+%% NOTE: for related work, definitely call out HPF.  HPF was interesting
+%% because it explored extending the type system of Fortran 90 to add
+%% data distribution information, which feels similar to the twig gpu idea.
+%% definitely need to talk about that at some point in the paper.
+
+%% old text
+%In this paper, we demonstrate how Twig can be used to describe some simple
+%kinds of GPU programming. GPU programming is a good example of the kinds of
+%problems we anticipate Twig being useful for -- it has a fairly simple
+%high-level structure (described below) but is tedious and complicated to write
+%by hand. % Matt - this is weak as well.
+%% old text
 
 \section{Example Problem: GPGPU Programming}
 
