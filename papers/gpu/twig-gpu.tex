@@ -5,7 +5,9 @@
 \usepackage{parskip}
 
 \title{Twig for GPUs}
-\author{Geoffrey C. Hulette}
+\author{Geoffrey C. Hulette}  %% and Matt, and probably Al -- he should
+%% have input on this once we're at a state where the ideas are all here.
+%% he has a strong interest in GPUs, so I bet this will get his attention.
 
 \begin{document}
 \maketitle
@@ -13,22 +15,37 @@
 
 \section{Introduction}
 
-Programmers are often constrained by engineering requirements to produce work
-in a mainstream language such as C. At the same time, there is an increasing
-awareness of the benefits of \emph{domain-specific} programming languages
-(DSLs). The goal of DSLs is to closely model the problem domain, which has at
-least two benefits. First, programs that would be complicated or convoluted in
-a traditional language may be expressed clearly and succinctly. Second, DSLs
-may admit automated reasoning about programs, e.g. optimization for efficiency
-in running time or space requirements. Where a DSL provides these benefits and
-also generates C (or some other mainstream language) as output, it may be
-useful and relatively easy to integrate with existing engineering processes.
+Programmers are often constrained by engineering requirements to
+produce work in a mainstream language such as C or Java.  At the same
+time, there is an increasing awareness of the benefits of
+\emph{domain-specific} programming languages (DSLs) for letting
+programmers focus on the problem they are solving instead of tedious
+fine-grained implementation details. The goal of DSLs is to closely
+model the problem domain that a programmer is working within, which
+has a number of benefits. First, the reduction in abstraction from
+algorithm statement to a corresponding implementation that is required
+by traditional languages is avoided, allowing them to be expressed
+clearly and succinctly in a DSL. Second, DSLs may admit automated
+reasoning about programs, such as optimization for efficiency in
+running time or space requirements, or proving that the program
+adheres to required constraints such as variable value ranges. Where a
+DSL provides these benefits and also generates C (or some other
+mainstream language) as output, it may be useful and relatively easy
+to integrate with existing engineering processes.  Furthermore, domain
+specific languages reside at a higher level of abstraction than
+traditional languages, allowing them to be more easily retargeted to
+new architectures due to a lack of specificity regarding how high
+level algorithms should be mapped to specific architectures.  This
+final benefit is particularly attractive for non-traditional processor
+architectures emerging in the market at present.
 
 The power of DSLs comes at a cost, however. DSLs typically have a unique
 syntax and semantics that may be known primarily to the language's author. The
 interpreter and other tools may be difficult to support or extend if the
 original author becomes unavailable. It can also be difficult to extend DSLs
-to support new constructs or rules. 
+to support new constructs or rules. This has been a long standing argument
+in favor of continued preference for traditional general purpose programming
+languages.
 
 We introduce Twig, a DSL intended for ``ad-hoc'' modeling of a variety of
 high-level program semantics, and admitting simple reasoning via equivalence
@@ -37,26 +54,36 @@ other languages), lending it to integration in software existing projects. By
 ``ad-hoc'' we mean that Twig can be configured rather easily by application
 programmers to serve as a DSL for different purposes, even within the same
 application. This may alleviate some of the resistance to the adoption of
-Twig-based DSLs in projects.
+Twig-based DSLs in projects. %% Matt - this paragraph needs more work.  Why
+%% does twig help fix the problems pointed out above?
 
 In this paper, we demonstrate how Twig can be used to describe some simple
 kinds of GPU programming. GPU programming is a good example of the kinds of
 problems we anticipate Twig being useful for -- it has a fairly simple
 high-level structure (described below) but is tedious and complicated to write
-by hand.
+by hand. % Matt - this is weak as well.
 
 \section{Example Problem: GPGPU Programming}
 
-Programming for GPUs can be a challenging task. There is a considerable amount
-of protocol that must be invoked in order to set up and release the device,
-move data to and from the device, synchronize processing at barriers. Yet for
-many problems, the logic is fairly simple -- perform some function on a vector
-or array.
+Programming for GPUs can be a challenging task. There is a
+considerable amount of protocol that must be invoked in order to set
+up and release the device, move data to and from the device,
+synchronize processing at barriers. Yet for many problems, the
+\emph{computational logic} of a program is fairly simple to state --
+perform some function on a vector or array.  Current GPGPU programming
+techniques require this computational logic to be intermixed with the
+\emph{protocol logic}, resulting in programs that are complex to write,
+maintain, and tune for performance.  Composition of independently developed
+program units that use the GPGPU is similarly complex due to limited (or
+nonexistent) methods for reasoning about the result of this composition in
+terms of lower level memory usage and task creation.
 
 This pattern suggests that programmers should consider abstracting the
-interface to the GPU, so that they can focus on domain logic and ignore the
-tedious details of interacting with the device. There are numerous ways to
-approach this problem.
+interface to the GPU that constitutes the protocol logic of the
+program, so that they can focus on the domain oriented computational
+logic of the program.  This will allow them to avoid obfuscating their
+computatuonal logic with the tedious details of interacting with the
+device. There are numerous ways to approach this problem.
 
 First, programmers could build a library of functions or objects which hide as
 many details as possible. In fact this has already been done to a large
@@ -75,13 +102,61 @@ Another approach is to design a domain-specific language for GPUs. Examples
 include PyCUDA and OpenMPC. Domain-specific languages are typically not
 customizable for higher-level application logic.
 
+\subsection{The Twig Approach}
+
+% what is the twig approach?  Give a little info here.
+
+A key milestone in the history of programming languages was the
+introduction of high level types into early languages.  The ability of
+programmers to separate the representation of a value of different
+types (e.g., floating point versus integer; record types; arrays)
+allowed program code to be written in terms of the mathematical
+abstractions that bits in memory represented without exposing how the
+values were laid out in memory.  We believe that a similar type-level
+abstraction is possible in modern hybrid computer architectures.  The
+abstraction that must be moved to the type system is that of the location
+of data within the system.  
+
+Changes in representation of basic values, such as integers or floats, is
+often as simple as a type casting operator or an implicit type conversion
+as allowed by the language.  If residence information about data is part of
+the type system, then movement of data within the memory hierarchy of a hybrid
+machine can also be made as simple to express as traditional type coercions.
+For the domain of GPGPU programming, Twig allows a domain specific type
+system to be created in which this additional location information can be 
+added to the type of variables with corresponding type coercion operatiors
+that map to lower level memory movement logic that defines the protocol between
+the host and GPU device.
+
+In addition, by abstracting the protocol operations away to high level
+type coercion operators, Twig can support automated reasoning about
+programs that allows optimizations to be performed related to the underlying
+protocol logic.  For example, if a programmer defines a sequence of
+statements that, based on their type, state that data will move back and forth
+between the host and device without modification on the host side, unnecessary
+copies of data can be removed.  This will increase program performance by
+reducing unnecessary burden on the memory subsystem.
+
+Current systems like CUDA and OpenCL allow the programmer to explicitly
+allocate memory on one of the many devices that control some portion of 
+the memory within a machine, but require copies to be explicitly implemented
+by the programmer.  The result is fine grained control of the machine at the
+cost of limited analysis and optimization of data movement within the memory
+hierarchy.  This makes writing complex programs difficult, particularly with
+respect to performance.  We believe that a Twig-based DSL for GPU programming
+based on extending the type system of existing languages is a step towards
+removing this burden from the programmer.
+
 \section{Related Work}
 
-Discuss PyCUDA and OpenMPC. 
+Discuss PyCUDA and OpenMPC. What about Jacket and other GPU-type interfaces
+for languages like Matlab?
 
 Yampa?
 
 Other general-purpose DSLs?
+
+Accelerate GPU language in Haskell is similar.  
 
 \section{Twig}
 
