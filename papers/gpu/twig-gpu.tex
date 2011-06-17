@@ -18,21 +18,22 @@ in a mainstream language such as C or Java. At the same time, there is an
 increasing awareness of the benefits of \emph{domain-specific} programming
 languages (DSLs) for letting programmers focus on the problem they are solving
 instead of tedious fine-grained implementation details. The goal of DSLs is to
-closely model the problem domain that a programmer is working within, which
-has a number of benefits. First, the reduction in abstraction from algorithm
-statement to a corresponding implementation that is required by traditional
-languages is avoided, allowing them to be expressed clearly and succinctly in
-a DSL. Second, DSLs may admit automated reasoning about programs, such as
-optimization for efficiency in running time or space requirements, or proving
-that the program adheres to required constraints such as variable value
-ranges. Where a DSL provides these benefits and also generates C (or some
-other mainstream language) as output, it may be useful and relatively easy to
-integrate with existing engineering processes. Furthermore, domain specific
-languages reside at a higher level of abstraction than traditional languages,
-allowing them to be more easily retargeted to new architectures due to a lack
-of specificity regarding how high level algorithms should be mapped to
-specific architectures. This final benefit is particularly attractive for
-non-traditional processor architectures emerging in the market at present.
+closely model the problem domain that a programmer is working within, and this
+brings a number of benefits. First, the reduction in abstraction from
+algorithm statement to a corresponding implementation that is required by
+traditional languages is avoided, allowing them to be expressed clearly and
+succinctly in a DSL. Second, DSLs may admit automated reasoning about
+programs, such as optimization for efficiency in running time or space
+requirements, or proving that the program adheres to required constraints such
+as variable value ranges. Where a DSL provides these benefits and also
+generates C (or some other mainstream language) as output, it may be useful
+and relatively easy to integrate with existing engineering processes.
+Furthermore, domain specific languages reside at a higher level of abstraction
+than traditional languages, allowing them to be more easily retargeted to new
+architectures due to a lack of specificity regarding how high level algorithms
+should be mapped to specific architectures. This final benefit is particularly
+attractive for non-traditional processor architectures emerging in the market
+at present.
 
 The power of DSLs comes at a cost, however. DSLs typically have a unique
 syntax and semantics that may be known primarily to the language's author. The
@@ -51,8 +52,11 @@ rules. The evaluation of a Twig program generates code in C (and potentially
 other languages), lending it to integration in software existing projects. By
 ``ad-hoc'' we mean that Twig can be configured rather easily by application
 programmers to serve as a DSL for different purposes, even within the same
-application. This may alleviate some of the resistance to the adoption of
-Twig-based DSLs in projects.
+application. 
+
+
+This may alleviate some of the resistance to the adoption of Twig-based DSLs
+in projects.
 
 In this paper, we demonstrate how Twig can be used to build a domain specific
 extension to traditional languages like C to address what we believe are
