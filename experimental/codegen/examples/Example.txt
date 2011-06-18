@@ -1,0 +1,11 @@
+r1 = [(Int,Int) -> Float] {
+  $out = $in1 + $in2;
+}
+
+r2 = [Float -> String] {
+  $out = char[128];
+  sprintf($out,"%f",$in);
+}
+
+render(r1) = "tmp01 = tmp02 + tmp03;" [tmp02,tmp03] [tmp01]
+render(r2) = "tmp04 = char[128]; sprintf(tmp04,"%f",tmp05);" [tmp05] [tmp04]
