@@ -7,5 +7,7 @@ r2 = [Float -> String] {
   sprintf($out,"%f",$in);
 }
 
-render(r1) = "tmp01 = tmp02 + tmp03;" [tmp02,tmp03] [tmp01]
-render(r2) = "tmp04 = char[128]; sprintf(tmp04,"%f",tmp05);" [tmp05] [tmp04]
+render r1 = "tmp01 = tmp02 + tmp03;" [tmp02,tmp03] [tmp01]
+render r2 = "tmp04 = char[128]; sprintf(tmp04,"%f",tmp05);" [tmp05] [tmp04]
+
+
