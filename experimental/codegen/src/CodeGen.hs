@@ -1,12 +1,11 @@
-module CodeGen where
+module CodeGen (Code,Type(..),Snip(..),code,seqn,par,render) where
 
 import Control.Monad (guard)
 import Supply
 
-data Type = Int | Float | Double | Ptr Type deriving (Eq,Show)
-
 type Id = String
 
+data Type = Int | Float | Double | Ptr Type deriving (Eq,Show)
 type InputType = Type
 type OutputType = Type
 
