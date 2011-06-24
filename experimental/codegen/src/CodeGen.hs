@@ -2,14 +2,13 @@ module CodeGen (Code,Type(..),Snip(..),code,seqn,par,render) where
 
 import Control.Monad (guard)
 import Supply
+import Snip
 
 type Id = String
 
 data Type = Int | Float | Double | Ptr Type deriving (Eq,Show)
 type InputType = Type
 type OutputType = Type
-
-data Snip = Snip String | InVar Int | OutVar Int
 
 data Code = Code [InputType] [OutputType] [Snip]
           | Seqn Code Code
