@@ -9,5 +9,5 @@ Build-Type:     Simple
 Executable cgen
   Main-Is:        Main.hs
   Hs-Source-Dirs: src
-  Build-Depends:  base >= 4,containers,mtl
+  Build-Depends:  base >= 4,containers,mtl,parsec >= 3
   GHC-Options:    -O2 -Wall

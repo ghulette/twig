@@ -1,4 +1,4 @@
-module CodeGen (Code,Type(..),Snip(..),code,seqn,par,render) where
+module CodeGen (Code,Type(..),Snip,parseSnip,code,seqn,par,render) where
 
 import Control.Monad (guard)
 import Supply
@@ -24,9 +24,8 @@ outputTypes (Code _ outs _) = outs
 outputTypes (Seqn _ c2) = outputTypes c2
 outputTypes (Par c1 c2) = outputTypes c1 ++ outputTypes c2
 
-code :: [InputType] -> [OutputType] -> [Snip] -> Maybe Code
-code inputs outputs snip = do
-  return (Code inputs outputs snip)
+code :: [InputType] -> [OutputType] -> [Snip] -> Code
+code = Code
 
 seqn :: Code -> Code -> Maybe Code
 seqn c1 c2 = do
@@ -43,7 +42,7 @@ renderSnip inputs _  (InVar i)  = inputs  !! i
 renderSnip _ outputs (OutVar i) = outputs !! i
 
 renderWithIds :: Code -> [Id] -> [Id] -> Supply Id String
-renderWithIds (Code inTypes outTypes xs) inputs outputs = do
+renderWithIds (Code _ _ xs) inputs outputs = do
   return $ concatMap (renderSnip inputs outputs) xs
 renderWithIds (Seqn c1 c2) inputs outputs = do
   xs <- supplies (length (outputTypes c1))
