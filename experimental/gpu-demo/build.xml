@@ -2,7 +2,8 @@
   <property name="src"     location="src"/>
   <property name="build"   location="build"/>
   <property name="classes" location="${build}/classes"/>
-  <property name="jar"     location="${build}/jar"/>
+  <property name="include" location="${build}/include"/>
+  <property name="lib"     location="${build}/lib"/>
   
   <target name="init">
     <mkdir dir="${build}"/>
@@ -15,9 +16,14 @@
            includeantruntime="false"/>
   </target>
 
-  <target name="dist" depends="compile">
-    <mkdir dir="${jar}"/>
-    <jar jarfile="${jar}/demo.jar" basedir="${classes}">
+  <target name="compile-jni" depends="compile">
+    <mkdir dir="${include}"/>
+    <javah destdir="${include}" class="Convolution" classpath="${classes}"/>
+  </target>
+
+  <target name="dist" depends="compile,compile-jni">
+    <mkdir dir="${lib}"/>
+    <jar jarfile="${lib}/demo.jar" basedir="${classes}">
       <manifest>
         <attribute name="Main-Class" value="Main"/>
       </manifest>
