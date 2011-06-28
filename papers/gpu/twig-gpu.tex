@@ -54,9 +54,7 @@ Programmers are often constrained by engineering requirements to produce work
 in a mainstream language such as C or Java. At the same time, there is an
 increasing awareness of the benefits of \emph{domain-specific} programming
 languages (DSLs) for letting programmers focus on the problem they are solving
-instead of tedious fine-grained implementation details. An exemplar of this approach
-in the computational science domain is the Tensor Contraction Engine, which generates
-low-level Fortran code from high-level mathematical notation~\cite{tce}.  The goal of DSLs is to
+instead of tedious fine-grained implementation details.  The goal of DSLs is to
 closely model the problem domain that a programmer is working within, and this
 brings a number of benefits. First, the reduction in abstraction from
 algorithm statement to a corresponding implementation that is required by
@@ -203,8 +201,40 @@ removing this burden from the programmer.
 
 \section{Related Work}
 
-In all cases, why are they insufficient or why don't they address the problem
-that twig addresses?
+Kennedy's \emph{telescoping languages} work sought to provide a similar
+ability to build high-level problem-solving languages that used scripting languages
+to coordinate functionality present in domain-specific libraries~\cite{kennedy00telescoping}.  This work took a different approach to
+the problem, focusing on compiler optimization methods and targeting potentially
+distributed, grid-based environments.  Interestingly, one of the compilation
+techniques that was called out as part of the telescoping languages strategy was
+that of automated recognition and exploitation of identities.  This would allow
+a compilation tool to recognize instances when compositions of functions could 
+be replaced with more efficient equivalent implementations.  Our work adopts a
+similar strategy in identifying compositions of rules that are inverses of each
+other and can therefore be eliminated.
+
+Domain-specific language approaches have had notable success in the computational
+science field, an exemplar being the Tensor Contraction Engine (TCE)~\cite{baumgartner05synthesis}.  The TCE allows computational chemists to write tensor contraction operations in
+a high level language similar to Mathematica, leaving it up to the TCE
+tool to generate the corresponding collections of loops that implement the
+operations.  The advantage of this approach is that tedious and often error-prone
+nested loops over many large arrays with a correspondingly large number of indices can be both machine generated and optimized.  Optimizations such as loop fusion,
+memory locality management, and data distribution and partitioning in a parallel
+machine can all be automated, versus previous approaches that required very labor
+intensive hand written code.  The TCE is not a general tool, and is only of use to
+programmers working with similar tensor-based computations.
+
+The closest work to that which we describe is Reppy's Application Specific Foreign Function Interface Generator, FIG~\cite{reppy06fig}.  In that case, a similar
+term rewriting approach was taken specifically in relation to the generation of
+bindings between programs in two different programming languages.  Our work builds
+upon that of Reppy and Song, and aims to provide a more generalizable method 
+that focuses solely on type-level mappings.  These mappings subsume the FFI generation case (in which mappings are between two different type systems), and other interesting applications like mapping between two different libraries written in the same language.  This second case is of particular interest when dealing with the
+problem of composing complex software from smaller program units, where developers working independently may have chosen different representations for data types that are semantically identical.
+
+With respect to the GPU programming context specifically, a number of language
+approaches have been investigated to alleviate programmers of the tedious burden
+of programming in languages like CUDA or OpenCL.  For example, ...
+
 
 Discuss PyCUDA and OpenMPC. What about Jacket and other GPU-type interfaces
 for languages like Matlab?
@@ -258,12 +288,16 @@ Future work.
 
 \section{Conclusion}
 
+\section{Acknowledgements}
+
+This work was supported in part by the Department of Energy Office of Science,
+Advanced Scientific Computing Research.
 
 % \section{Section Title}
 % \input{section_file}
 
 % \pagebreak
-\bibliographystyle{plain}
-\bibliography{references}
+\bibliographystyle{abbrv}
+\bibliography{twig-gpu}
 
 \end{document}
