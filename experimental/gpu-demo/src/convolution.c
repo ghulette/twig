@@ -66,6 +66,32 @@ void copy_java_array_to_gpu(GPU *gpu,JNIEnv *env,jdoubleArray jsrc) {
 jdoubleArray copy_java_array_from_gpu(GPU *gpu,JNIEnv *env) {
   jdoubleArray jdst = (*env)->NewDoubleArray(env,gpu->len);
   (*env)->SetDoubleArrayRegion(env,jdst,0,gpu->len,gpu->data);
+  return jdst;
+}
+
+JNIEXPORT jdoubleArray JNICALL Java_Convolution_applyOpt
+  (JNIEnv *env,jobject obj,jdoubleArray jsrc)
+{
+  // Get array length
+  int len = (*env)->GetArrayLength(env,jsrc);
+  
+  // Initialize GPU
+  GPU *gpu = init_gpu();
+  
+  // Copy array from Java to GPU
+  copy_java_array_to_gpu(gpu,env,jsrc);
+  
+  // Invoke kernel
+  run_kernel(gpu,"convolve");
+  
+  // Copy array from GPU to Java
+  jdoubleArray jdst = copy_java_array_from_gpu(gpu,env);
+  
+  // Cleanup GPU
+  cleanup_gpu(gpu);
+  
+  // Clean up and return
+  return jdst;
 }
 
 JNIEXPORT jdoubleArray JNICALL Java_Convolution_apply

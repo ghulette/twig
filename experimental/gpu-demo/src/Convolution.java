@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 public class Convolution {
   public native double[] apply(double[] data);
+  public native double[] applyOpt(double[] data);
   
   static {
     // This is not ideal, assumes a very particular directory structure.
