@@ -26,7 +26,7 @@ void cleanup_gpu(GPU *gpu) {
   free(gpu);
 }
 
-void copy_to_gpu(GPU *gpu,double *src,int len) {
+void copy_array_to_gpu(GPU *gpu,double *src,int len) {
   if(gpu->data != NULL) {
     free(gpu->data);
   }
@@ -38,7 +38,7 @@ void copy_to_gpu(GPU *gpu,double *src,int len) {
   }
 }
 
-void copy_from_gpu(GPU *gpu,double *dst,int len) {
+void copy_array_from_gpu(GPU *gpu,double *dst,int len) {
   int i;
   for(i=0; i < gpu->len; i++) {
     dst[i] = gpu->data[i];
@@ -53,8 +53,23 @@ void run_kernel(GPU *gpu,char *kernel) {
   }
 }
 
+void copy_java_array_to_gpu(GPU *gpu,JNIEnv *env,jdoubleArray jsrc) {
+  if(gpu->data != NULL) {
+    free(gpu->data);
+  }
+  int len = (*env)->GetArrayLength(env,jsrc);
+  gpu->data = malloc(len * sizeof(double));
+  gpu->len = len;
+  (*env)->GetDoubleArrayRegion(env,jsrc,0,len,gpu->data);
+}
+
+jdoubleArray copy_java_array_from_gpu(GPU *gpu,JNIEnv *env) {
+  jdoubleArray jdst = (*env)->NewDoubleArray(env,gpu->len);
+  (*env)->SetDoubleArrayRegion(env,jdst,0,gpu->len,gpu->data);
+}
+
 JNIEXPORT jdoubleArray JNICALL Java_Convolution_apply
-  (JNIEnv *env, jobject obj, jdoubleArray jsrc)
+  (JNIEnv *env,jobject obj,jdoubleArray jsrc)
 {
   // Get array length
   int len = (*env)->GetArrayLength(env,jsrc);
@@ -67,14 +82,14 @@ JNIEXPORT jdoubleArray JNICALL Java_Convolution_apply
   GPU *gpu = init_gpu();
   
   // Copy array from C to GPU
-  copy_to_gpu(gpu,src,len);
+  copy_array_to_gpu(gpu,src,len);
   
   // Invoke kernel
   run_kernel(gpu,"convolve");
   
   // Copy array from GPU to C
   double *dst = malloc(len * sizeof(double));
-  copy_from_gpu(gpu,dst,len);
+  copy_array_from_gpu(gpu,dst,len);
   
   // Cleanup GPU
   cleanup_gpu(gpu);
