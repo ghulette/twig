@@ -11,6 +11,6 @@ LIBDIR = "build/lib"
 
 `mkdir -p #{OBJDIR}`
 `mkdir -p #{LIBDIR}`
-FILES.each {|f| print `gcc -I#{HEADERS} -c #{SRCDIR}/#{f}.c -o #{OBJDIR}/#{f}.o`}
+FILES.each {|f| print `gcc -I#{HEADERS} -Ibuild/include -c #{SRCDIR}/#{f}.c -o #{OBJDIR}/#{f}.o`}
 FILES.each {|f| print `gcc -dynamiclib -o #{LIBDIR}/lib#{f}.jnilib #{OBJDIR}/#{f}.o`}
 puts "ok"

@@ -17,7 +17,6 @@ public class Main {
       BufferedImage srcImg = Util.imageFromArray(w,h,srcData);
       ImageFrame f1 = new ImageFrame("Before",srcImg);
       Convolution c = new Convolution();
-      c.test();
       double[] postData = c.apply(srcData);
       BufferedImage postImg = Util.imageFromArray(w,h,postData);
       ImageFrame f2 = new ImageFrame("After",postImg);

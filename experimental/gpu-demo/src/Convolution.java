@@ -3,11 +3,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class Convolution {
-  public native void test();
-  
-  public double[] apply(double[] data) {
-    return Arrays.copyOf(data,data.length);
-  }
+  public native double[] apply(double[] data);
   
   static {
     // This is not ideal, assumes a very particular directory structure.
