@@ -2,3 +2,5 @@ twig-gpu.pdf
 *.synctex.gz
 *.aux
 *.log
+*.bbl
+*.blg

@@ -1,0 +1,73 @@
+initGPU = [ () -> gpu ] {
+  GPU *$out = malloc(sizeof(GPU));
+  strcpy($out->id,"Psuedo GPU");
+  $out->data = NULL;
+  $out->len = 0;
+}
+
+cleanupGPU = [ gpu -> () ] {
+  if($in->data != NULL) {
+    free($in->data);
+  }
+  free($in);
+}
+
+arrayJniLength = [ jni(array(X)) -> int ] {
+  $out = (*env)->GetArrayLength(env,$in);
+}
+
+arrayJniToC = [ jni(array(double)) -> (array(double),int) ] {
+  $out2 = (*env)->GetArrayLength(env,$in);
+  $out1 = malloc($out2 * sizeof(double));
+  (*env)->GetDoubleArrayRegion(env,jsrc,0,len,src);
+} {
+  free($out1);
+}
+
+arrayCToJni = [ (array(double),int) -> jni(array(double)) ] {
+  $out = (*env)->NewDoubleArray(env,$in2);
+  (*env)->SetDoubleArrayRegion(env,$out,0,$in2,$in1);
+}
+
+arrayGpuToC = [ gpu(array(double)) -> (array(double),int) ] {
+  $out2 = $in->len;
+  $out1 = malloc($in->len * sizeof(double));
+  int $i;
+  for($i = 0; $i < $in->len; $i++) {
+    $out1[$i] = $in->data[$i];
+  }
+} {
+  free($out1);
+}
+
+arrayCToGpu = [ (array(double),int) -> gpu(array(double)) ] {
+  $out = malloc(sizeof(GPU));
+  strcpy($out->id,"Psuedo GPU");
+  $out->len = $in2;
+  $out->data = malloc($in2 * sizeof(double));
+  int $i;
+  for($i=0; $i < $in2; $i++) {
+    $out->data[$i] = $in1[$i];
+  }
+} {
+  if($out->data != NULL) {
+    free($out->data);
+  }
+  free($out);
+}
+
+arrayJniToGpu = [ jni(array(double)) -> gpu(array(double)) ] {
+  if(gpu->data != NULL) {
+    free(gpu->data);
+  }
+  int len = (*env)->GetArrayLength(env,jsrc);
+  gpu->data = malloc(len * sizeof(double));
+  gpu->len = len;
+  (*env)->GetDoubleArrayRegion(env,jsrc,0,len,gpu->data);
+}
+
+arrayGpuToJni = [ gpu(array(double)) -> jni(array(double)) ] {
+  jdoubleArray jdst = (*env)->NewDoubleArray(env,gpu->len);
+  (*env)->SetDoubleArrayRegion(env,jdst,0,gpu->len,gpu->data);
+  return jdst;
+}
