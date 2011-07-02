@@ -16,6 +16,10 @@ arrayJniLength = [ jni(array(X)) -> int ] {
   $out = (*env)->GetArrayLength(env,$in);
 }
 
+arrayGpuLength = [ gpu(array(X)) -> int ] {
+  $out = $in->len;
+}
+
 arrayJniToC = [ jni(array(double)) -> (array(double),int) ] {
   $out2 = (*env)->GetArrayLength(env,$in);
   $out1 = malloc($out2 * sizeof(double));
@@ -24,12 +28,13 @@ arrayJniToC = [ jni(array(double)) -> (array(double),int) ] {
   free($out1);
 }
 
-kernel = [ gpu(array(double)) -> gpu(array(double)) ] {
+kernel! = [ gpu(array(double)) -> gpu(array(double)) ] {
   int $i;
   for($i=0; $i < $in->len; $i++) {
     // useless kernel operation
     $in->data[$i] /= 2.0;
   }
+  $out = $in;
 }
 
 arrayCToJni = [ (array(double),int) -> jni(array(double)) ] {

@@ -1,5 +1,6 @@
 <project name="demo" default="dist" basedir=".">
-  <property name="src"     location="src"/>
+  <property name="src"     location="src/java"/>
+  <property name="csrc"    location="src/c"/>
   <property name="build"   location="build"/>
   <property name="classes" location="${build}/classes"/>
   <property name="include" location="${build}/include"/>
@@ -19,6 +20,7 @@
   <target name="compile-jni" depends="compile">
     <mkdir dir="${include}"/>
     <javah destdir="${include}" class="Convolution" classpath="${classes}"/>
+    <exec executable="make" dir="${csrc}"/>
   </target>
 
   <target name="dist" depends="compile,compile-jni">
@@ -32,5 +34,8 @@
 
   <target name="clean">
     <delete dir="${build}"/>
+    <exec executable="make" dir="${csrc}">
+      <arg value="clean"/>
+    </exec>
   </target>
 </project>
