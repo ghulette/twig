@@ -1,25 +1,25 @@
+%!TEX root = twig-gpu.tex
+
 \section{Accelerator Programming}
 
-Programming for GPUs can be a challenging task, in large part due to
-the partitioned memory model that they impose on programmers.  Unlike
-a basic SMP, data must be explicitly moved within the memory hierarchy
-such that the appropriate processing device can access it.  There is a
-considerable amount of protocol that must be invoked in order to set
-up and release the device, move data to and from the device, and
-synchronize processing at barriers.  This protocol logic becomes more
-complex when tuning for performance by using asynchronous memory
-transfers to overlap computation and data movement.  Yet for many
-problems, the \emph{computational logic} of a program related to the
-goals of the application is fairly simple to state -- perform some set
-of functions on vector or array data.  Current GPU programming
-techniques in common languages for high performance computing (such as
-C, C++, and Fortran) require this computational logic to be intermixed
-with the \emph{protocol logic}, resulting in programs that are complex
-to write, maintain, and tune for performance. Composition of
-independently developed program units that use the GPU is similarly
-complex due to limited (or nonexistent) methods for reasoning about
-the result of this composition in terms of lower level memory usage
-and task creation.
+Programming for GPUs can be a challenging task, in large part due to the
+partitioned memory model that they impose on programmers. Unlike a basic SMP,
+data must be explicitly moved within the memory hierarchy such that the
+appropriate processing device can access it. There is a considerable amount of
+protocol that must be invoked in order to set up and release the device, move
+data to and from the device, and synchronize processing at barriers. This
+protocol logic becomes more complex when tuning for performance by using
+asynchronous memory transfers to overlap computation and data movement. Yet
+for many problems, the \emph{computational logic} of a program related to the
+goals of the application is fairly simple to state -- perform some set of
+functions on vector or array data. Current GPU programming techniques in
+common languages for high performance computing (such as C, C++, and Fortran)
+require this computational logic to be intermixed with the \emph{protocol
+logic}, resulting in programs that are complex to write, maintain, and tune
+for performance. Composition of independently developed program units that use
+the GPU is similarly complex due to limited (or nonexistent) methods for
+reasoning about the result of this composition in terms of lower level memory
+usage and task creation.
 
 This pattern suggests that programmers should consider abstracting the
 interface to the GPU that constitutes the protocol logic of the program, so
@@ -45,15 +45,15 @@ Another approach is to design a domain-specific language for GPUs. Examples
 include PyCUDA and OpenMPC. Domain-specific languages are typically not
 customizable for higher-level application logic.
 
-A technique that is becoming popular and is based on the OpenMP model
-of directive-based code annotations hides much of the protocol logic
-by leaving it to a compiler and runtime system to implement it.  The
-PGI Accelerate~\cite{pgi-accelerate} model and the HMPP programming
-system~\cite{hmpp} are examples of this in compiler products.  This
-approach will, like OpenMP, make significant progress on lowering the
-barrier of entry for programmers.  Unfortunately, these methods
-provide too much a black-box to the programmer, limiting their ability
-to customize the underlying GPU protocol logic.
+A technique that is becoming popular and is based on the OpenMP model of
+directive-based code annotations hides much of the protocol logic by leaving
+it to a compiler and runtime system to implement it. The PGI
+Accelerate~\cite{pgi-accelerate} model and the HMPP programming
+system~\cite{hmpp} are examples of this in compiler products. This approach
+will, like OpenMP, make significant progress on lowering the barrier of entry
+for programmers. Unfortunately, these methods provide too much a black-box to
+the programmer, limiting their ability to customize the underlying GPU
+protocol logic.
 
 \subsection{The Twig Approach}
 

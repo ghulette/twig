@@ -1,22 +1,51 @@
+%!TEX root = twig-gpu.tex
+
 \section{Twig}
 
-Overview of how Twig works, basic semantics, code generation, simple example.
+% Overview of how Twig works, basic semantics, code generation, simple
+% example. Focus on importance of generating C - integration with existing
+% methods, type-directed generation.
 
-Focus on importance of generating C - integration with existing methods, type-directed generation.
+Twig is based a core semantics called System S~\cite{Visser:1998p333}. System
+S was originally designed for specifying term rewriting systems (described
+briefly in \ref{section:term-rewriting}). In Twig, we use the operators of
+System S to combine primitive \emph{rules} into more complex transformations
+on types. These transformations are then applied to a given type in order to
+generate code. In this section we describe Twig's language.
 
-\subsection{Term rewriting and how it fits here}
+\subsection{Rules}
 
-This is not the real subsection title.
+The basic building blocks of a Twig program are called \emph{rules}. A rule simply specifies that a given type can be transformed into another type, and provides a snippet of code which performs the transformation. The snippets are essentially strings
+
+\subsection{Values}
+
+Values in Twig are types in the target language.
+
+\subsection{Combinators}
+
+Rules can be combined into more complex expressions using a fixed set of
+operators.
+
+\subsection{Code generation}
+
+Our implementation of Twig generates C code, but in principle almost any
+language could be generated instead.
 
 \subsection{Reductions}
 
-Explain reductions and how they can be used in domain- or application-specific
-ways.
+Reductions are a way to transform Twig expressions. Reductions may exploit
+some application or domain knowledge about the nature of the rules, and as
+such are usually developed alongside a set of rules.
 
-Explain built-in reductions. Maybe discuss idea of a normal form, although
-this might be better in a later paper.
+% Explain reductions and how they can be used in domain- or
+% application-specific ways.
+
+\subsection{Term rewriting}
+\label{section:term-rewriting}
+
+% Brief overview of term rewriting and how it is used in reductions.
 
 \subsection{Implementation}
 
-Talk briefly about how Twig is implemented, and how to use it to generate
-code.
+% Talk briefly about how Twig is implemented, and how to use it to generate
+% code.
