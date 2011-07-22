@@ -60,24 +60,19 @@ rewrites any pointer type to its referent.
 
 \subsection{Combinators}
 
-Rules can be combined into more complex expressions using a fixed set of
-operators. The most important is the \emph{sequence} binary operator, which
-chains the application of two rules together, feeding the output of the first
-into the input of the second, and failing if either rule fails. With this
-operator, simple rules can be composed into multi-step transformations.
+Rules can be combined into more complex expressions using a set of provided
+operators. In the formal semantics, let $t$ range over terms, and $s_i$ range
+over rule expressions (i.e. a primitive rule, or another rule expression built
+with operators). Recall that $\bot$ denotes failure of rule application.
 
-Another important binary operator is \emph{left-biased choice}. This operator
-will try the first rule expression, and if it succeeds then its output is the
-result. If it fails (i.e. results in $\bot$), then the second rule is tried.
-This operator allows different paths to be taken, and different code to be
-generated, depending on the input type being passed.
+The most important operator is \emph{sequence}, which chains the application
+of two rules together, feeding the output of the first into the input of the
+second, and failing if either rule fails (see
+Figure~\ref{semantics:sequence}). With this operator, simple rules can be
+composed into multi-step transformations.
 
-In the semantics for Twig's operators, given below, let $t$ ranges over terms,
-and $s_i$ ranges over rule expressions (i.e. a primitive rule, or another rule
-expression built with operators).
-
-Sequence:
-
+\begin{figure}[h]
+\label{semantics:sequence}
 \[
 \infer{t \arr{s_1;s_2} t''}{t \arr{s_1} t' \quad t' \arr{s_2} t''}
 \qquad 
@@ -85,9 +80,18 @@ Sequence:
 \qquad
 \infer{t \arr{s_1;s_2} \bot}{t \arr{s_1} t' \quad t' \arr{s_2} \bot}
 \]
+\caption{Semantics for sequence operator}
+\end{figure}
 
-Left-biased choice:
+Another important binary operator is \emph{left-biased choice}. This operator
+will try the first rule expression, and if it succeeds then its output is the
+result (see Figure~\ref{semantics:choice}). If it fails (i.e. results in
+$\bot$), then the second rule is tried. This operator allows different paths
+to be taken, and different code to be generated, depending on the input type
+being passed.
 
+\begin{figure}[h]
+\label{semantics:choice}
 \[
 \infer{t \arr{s_1|s_2} t'}{t \arr{s_1} t'}
 \qquad 
@@ -95,16 +99,20 @@ Left-biased choice:
 \qquad
 \infer{t \arr{s_1|s_2} \bot}{t \arr{s_1} \bot \quad t \arr{s_2} \bot}
 \]
+\caption{Semantics for left-biased choice}
+\end{figure}
 
-Constants:
+Figure~\ref{semantics:basic} gives the formal semantics for Twig's other
+operators. These include constant operators, operators which discard their
+results, and a fix point operator for recursion.
 
+\begin{figure}[h]
+\label{semantics:basic}
 \[
 \infer{t \arr{\mathtt{id}} t}{}
 \qquad
 \infer{t \arr{\mathtt{fail}} \bot}{}
 \]
-
-Discard result:
 
 \[
 \infer{t \arr{?s} t}{t \arr{s} t'}
@@ -116,13 +124,13 @@ Discard result:
 \infer{t \arr{\lnot s} t}{t \arr{s} \bot}
 \]
 
-Fix-point:
-
 \[
 \infer{t \arr{\mu x(s)} t'}{t \arr{s[x := \mu x(s)]} t'}
 \qquad 
 \infer{t \arr{\mu x(s)} \bot}{t \arr{s[x := \mu x(s)]} \bot}
 \]
+\caption{Semantics for basic operators}
+\end{figure}
 
 All the following tuple combinators share these failure semantics:
 
