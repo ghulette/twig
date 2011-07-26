@@ -11,9 +11,21 @@ System S was originally designed for specifying term rewriting systems
 (described briefly in \ref{section:term-rewriting}). In Twig, we use the
 operators of System S to combine primitive \emph{rules} into more complex
 transformations on types. These transformations are then applied to a given
-type, which performs the transformation and generates code as a side effect.
-In this way, domain specific code can be generated depending on the input
-types. In this section we describe the basics of Twig's language.
+type, which performs the transformation. We extend the semantics of System S
+in order to have the evaluation of the transformation generate code as a side
+effect. In this way, domain specific code can be generated depending on the
+input types. In this section we describe the basics of Twig's language.
+
+\subsection{Code generation}
+
+Twig provides a basic but effective set of operations to perform code
+generation. Our model is abstract, although we also discuss our concrete
+implementation below. For our purposes, ``code'' is an abstract data type,
+with two attributes: a list of inputs and a list of outputs. Each input and
+output is described by a pair of a unique name, and also a term (described
+below). There are two operations that are defined on code.
+
+First
 
 \subsection{Values}
 
@@ -22,16 +34,20 @@ with labeled internal nodes. Examples of terms include simple values like
 \texttt{int} and \texttt{float}, as well as compound types like
 \texttt{ptr(int)}, which represents a pointer to an integer.
 
-Note that terms in Twig are intended to correspond to types in the target
+Note that terms in Twig are intended to represent types in the target
 language. The programmer can control the mapping via a configuration file.
 Furthermore, the mapping need not be injective, i.e. you can have multiple
-values in Twig map to the same type in C. For example, you might have distinct
-Twig values \texttt{string} and \texttt{ptr(char)}, but both represent a
-\texttt{char *} in C. 
+values in Twig map to the same type in C. For example, you might use distinct
+Twig values \texttt{string} and \texttt{ptr(char)}, but have both represent a
+\texttt{char *} in C.
 
-In Twig, terms may also represent tuples. For example, \texttt{(string,int)}
-represents the product of two types in C, a \texttt{string} and an
-\texttt{int}.
+In Twig, terms may also represent tuples. Tuples are represented with either a
+special constructor \texttt{tuple}, or equivalently (and preferably) with no
+constructor at all. For example, \texttt{(string,int)} (or, equivalently
+\texttt{tuple(string,int)}) represents a pair of two types in C, a
+\texttt{string} and an \texttt{int}. The \texttt{tuple} constructor syntax is
+convenient mainly for our presentation of formal semantics for tuple
+operators, given below.
 
 \subsection{Rules}
 
@@ -71,7 +87,7 @@ second, and failing if either rule fails (see
 Figure~\ref{semantics:sequence}). With this operator, simple rules can be
 composed into multi-step transformations.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \label{semantics:sequence}
 \[
 \infer{t \arr{s_1;s_2} t''}{t \arr{s_1} t' \quad t' \arr{s_2} t''}
@@ -90,7 +106,7 @@ $\bot$), then the second rule is tried. This operator allows different paths
 to be taken, and different code to be generated, depending on the input type
 being passed.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \label{semantics:choice}
 \[
 \infer{t \arr{s_1|s_2} t'}{t \arr{s_1} t'}
@@ -106,7 +122,7 @@ Figure~\ref{semantics:basic} gives the formal semantics for Twig's other
 operators. These include constant operators, operators which discard their
 results, and a fix point operator for recursion.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \label{semantics:basic}
 \[
 \infer{t \arr{\mathtt{id}} t}{}
@@ -132,36 +148,29 @@ results, and a fix point operator for recursion.
 \caption{Semantics for basic operators}
 \end{figure}
 
-All the following tuple combinators share these failure semantics:
+Twig also provides some special operators for tuples. The semantics in
+Figure~\ref{semantics:all-tuples} apply to all the tuple operators, and state
+simply that tuple operators will fail if the input term is not a tuple, or if
+the rule references a tuple element out of bounds.
 
+\begin{figure}[ht]
+\label{semantics:all-tuples}
 \[
 \infer{f(\ldots) \arr{s} \bot}
 {f \neq \mathtt{tuple}}
 \qquad
 \infer{\mathtt{tuple}(t_1,\ldots,t_n) \arr{s(i)} \bot}{i > n}
 \]
+\caption{Common semantics for tuple operators}
+\end{figure}
 
-Projection:
+One important tuple operator is \emph{congruence}, which applies a tuple of
+rules to a tuple of values, and returns a tuple of results or failure if any
+one rule application fails. The semantics are given in
+Figure~\ref{semantics:congruence}.
 
-\[
-\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} t_i}{}
-\]
-
-Path:
-
-\[
-\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} 
-\mathtt{tuple}(\ldots,t_i',\ldots)}
-{t_i \arr{s} t_i'}
-\]
-
-\[
-\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} \bot}
-{t_i \arr{s} \bot}
-\]
-
-Congruence:
-
+\begin{figure}[ht]
+\label{semantics:congruence}
 \[
 \infer{
 \mathtt{tuple}(t_1,\ldots,t_n)
@@ -176,6 +185,28 @@ Congruence:
 \arr{(\ldots,s_i,\ldots)}
 \bot}
 {t_i \arr{s_i} \bot}
+\]
+\caption{Semantics for congruence operator}
+\end{figure}
+
+Projection:
+
+\[
+\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} t_i}{}
+\]
+
+
+Path:
+
+\[
+\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} 
+\mathtt{tuple}(\ldots,t_i',\ldots)}
+{t_i \arr{s} t_i'}
+\]
+
+\[
+\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} \bot}
+{t_i \arr{s} \bot}
 \]
 
 Branch:
