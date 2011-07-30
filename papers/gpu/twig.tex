@@ -20,12 +20,57 @@ input types. In this section we describe the basics of Twig's language.
 
 Twig provides a basic but effective set of operations to perform code
 generation. Our model is abstract, although we also discuss our concrete
-implementation below. For our purposes, ``code'' is an abstract data type,
-with two attributes: a list of inputs and a list of outputs. Each input and
-output is described by a pair of a unique name, and also a term (described
-below). There are two operations that are defined on code.
+implementation below. For our purposes, ``code'' is represented by an abstract
+data type $M$. For all $x$ in $M$, the value of the function
+$\mathtt{valence}(x)$ is defined as a pair of natural numbers $(n,m)$, where
+$n$ represents the number of \emph{inputs} and $m$ the number of
+\emph{outputs}. The function $\mathtt{in}(x) = (t_1,t_2, \hdots t_n)$
+describes the \emph{inputs}, where each $t_i$ are terms (i.e. Twig's
+\emph{values}, described below) representing the individual input types.
+Similarly, each $m$ also has $\mathtt{out}(m) = (r_1,r_2, \hdots r_m)$, where
+each $r_i$ is a term, describing the type of each output.
 
-First
+Given this structure, we provide two fundamental operations on code. The first
+is \emph{sequential composition}, intended to represent the case where the
+output of one code block is fed into the inputs of another. Formally,
+we use the plus (\texttt{+}) operator and say that
+
+\[
+\infer
+{x+y \in M}
+{x \in M \quad y \in M \quad \mathtt{out}(x) = \mathtt{in}(y)}
+\]
+
+and define $\mathtt{in}(x+y) = \mathtt{in}(x)$ and $\mathtt{out}(x+y) =
+\mathtt{out}(y)$.
+
+The second operator is \emph{parallel composition}, intended to represent two
+blocks of code executing independently of each other. Here we use the times
+operator (\texttt{*}) and say that
+
+\[
+\infer
+{x*y \in M}
+{x \in M \quad y \in M}
+\]
+
+and, given that 
+
+\begin{eqnarray*}
+\mathtt{in}(x) =& (t^x_1,t^x_2,\hdots,t^x_n)\\
+\mathtt{in}(y) =& (t^y_1,t^y_2,\hdots,t^y_m)
+\end{eqnarray*}
+
+we define 
+
+\[
+\mathtt{in}(x*y) = (t^x_1,t^x_2, \hdots t^x_n,t^y_1,t^y_2, \hdots t^y_m)
+\]
+
+
+
+
+
 
 \subsection{Values}
 
