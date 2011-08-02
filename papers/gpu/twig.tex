@@ -17,23 +17,24 @@ effect. In this way, domain specific code can be generated depending on the
 input types. In this section we describe the basics of Twig's language.
 
 \subsection{Code generation}
+\label{twig:code-gen}
 
 Twig provides a basic but effective set of operations to perform code
 generation. Our model is abstract, although we also discuss our concrete
 implementation below. For our purposes, ``code'' is represented by an abstract
-data type $M$. For all $x$ in $M$, the value of the function
-$\mathtt{valence}(x)$ is defined as a pair of natural numbers $(n,m)$, where
-$n$ represents the number of \emph{inputs} and $m$ the number of
-\emph{outputs}. The function $\mathtt{in}(x) = (t_1,t_2, \hdots t_n)$
-describes the \emph{inputs}, where each $t_i$ are terms (i.e. Twig's
-\emph{values}, described below) representing the individual input types.
-Similarly, each $m$ also has $\mathtt{out}(m) = (r_1,r_2, \hdots r_m)$, where
-each $r_i$ is a term, describing the type of each output.
+data type $M$. For all $x$ in $M$, the value of $\mathtt{valence}(x)$ is
+defined as a pair of natural numbers $(n,m)$, where $n$ represents the number
+of \emph{inputs} and $m$ the number of \emph{outputs}. The value of
+$\mathtt{in}(x)$ is a tuple $(t_1,t_2, \hdots t_n)$ describing the type of
+each input, in order. In fact, each $t_i$ is a term (i.e. Twig's
+\emph{values}), as described below. Similarly, each $m$ also defines
+$\mathtt{out}(m)$ as a tuple $(r_1,r_2, \hdots r_m)$, where each $r_i$ is a
+term that describes the type of each output.
 
 Given this structure, we provide two fundamental operations on code. The first
 is \emph{sequential composition}, intended to represent the case where the
 output of one code block is fed into the inputs of another. Formally,
-we use the plus (\texttt{+}) operator and say that
+we use the plus ($+$) operator and say that
 
 \[
 \infer
@@ -46,11 +47,11 @@ and define $\mathtt{in}(x+y) = \mathtt{in}(x)$ and $\mathtt{out}(x+y) =
 
 The second operator is \emph{parallel composition}, intended to represent two
 blocks of code executing independently of each other. Here we use the times
-operator (\texttt{*}) and say that
+operator ($\times$) and say that
 
 \[
 \infer
-{x*y \in M}
+{x \times y \in M}
 {x \in M \quad y \in M}
 \]
 
@@ -61,16 +62,28 @@ and, given that
 \mathtt{in}(y) =& (t^y_1,t^y_2,\hdots,t^y_m)
 \end{eqnarray*}
 
-we define 
+we define
 
 \[
-\mathtt{in}(x*y) = (t^x_1,t^x_2, \hdots t^x_n,t^y_1,t^y_2, \hdots t^y_m)
+\mathtt{in}(x \times y) = 
+(t^x_1,t^x_2, \hdots t^x_n,t^y_1,t^y_2, \hdots t^y_m)
 \]
 
+We also introduce a special element in $M$, the empty element. We refer to
+this element as $e$, and it functions as an identity element for both
+sequential and parallel composition. Intuitively, $e$ corresponds to
+``no-op.'' Thus
 
+\[
+\infer{x \in M}{x + e \in M} \qquad \infer{x \in M}{e + x \in M}
+\]
 
+\[
+\infer{x \in M}{x \times e \in M} \qquad \infer{x \in M}{e \times x \in M}
+\]
 
-
+Using this simple system for composition, a wide variety of code can be
+generated from a few primitives.
 
 \subsection{Values}
 
@@ -117,18 +130,58 @@ example the rule
 [ptr(X) -> X]
 \end{verbatim}
 
-rewrites any pointer type to its referent.
+rewrites any pointer type to its referent. The variable \texttt{X} is bound to
+the corresponding value of the matched input on the right, and that value is
+then substituted for the variable where it appears on the left. Variables
+match whole sub-terms only; e.g., rules such as \texttt{[X(int) -> X]} are
+invalid.
+
+Finally, primitive rules may generate code as a side effect of successful
+application. To include code with a rule, you put it immediately after the
+rule definition and surround it with braces, like so:
+
+\begin{verbatim}
+[int -> float] {
+  $out = (float)$in;
+}
+\end{verbatim}
+
+As part of the code generation, Twig will assign \texttt{\$in} and
+\texttt{\$out} elements generated C variable names, and ensure that they are
+declared with the appropriate type. If there are multiple inputs or outputs,
+then the relevant placeholders are enumerated; e.g., \texttt{\$in1} and
+\texttt{\$in2}.
+
+It is important to understand that Twig does not check the code in any way,
+and the generation procedure is strictly syntactic. This scheme is similar to
+that used by SWIG~\cite{swig}.
 
 \subsection{Combinators}
 
-Rules can be combined into more complex expressions using a set of provided
-operators. In the formal semantics, let $t$ range over terms, and $s_i$ range
-over rule expressions (i.e. a primitive rule, or another rule expression built
-with operators). Recall that $\bot$ denotes failure of rule application.
+Rules can be combined into more complex expressions using Twig's operators. In
+the formal semantics, let $t$ range over terms, $m$ range over code
+expressions and $s_i$ range over rule expressions (i.e. a primitive rule, or
+another rule expression built with operators).
 
-The most important operator is \emph{sequence}, which chains the application
-of two rules together, feeding the output of the first into the input of the
-second, and failing if either rule fails (see
+A primitive rule $s$ transforms $t$ to $t'$ with generated code $m$:
+
+\[
+t \arr{s} (t',m)
+\]
+
+if the application of rule $s$ to value $t$ succeeds. If no code is given for
+the rule, then $m$ is the ``no-op'' element, $e$. If the application of $s$ to
+$t$ fails, e.g., if $t$ does not match the pattern in $s$, then we say
+
+\[
+t \arr{s} \bot
+\]
+
+Note that no code is generated in this case.
+
+The most important is the \emph{sequence} operator, which chains the
+application of two rules together, providing the output of the first to the
+input of the second, and failing if either rule fails (see
 Figure~\ref{semantics:sequence}). With this operator, simple rules can be
 composed into multi-step transformations.
 
