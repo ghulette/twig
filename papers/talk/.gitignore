@@ -3,3 +3,7 @@ twig-talk.pdf
 *.snm
 *.toc
 *.vrb
+*.aux
+*.log
+*.out
+*.synctex.gz
