@@ -7,14 +7,14 @@
 % methods, type-directed generation.
 
 Twig is based on a core semantics called System S~\cite{Visser:1998p333}.
-System S was originally designed for specifying term rewriting systems
-(described briefly in \ref{section:term-rewriting}). In Twig, we use the
-operators of System S to combine primitive \emph{rules} into more complex
-transformations on types. These transformations are then applied to a given
-type, which performs the transformation. We extend the semantics of System S
-in order to have the evaluation of the transformation generate code as a side
-effect. In this way, domain specific code can be generated depending on the
-input types. In this section we describe the basics of Twig's language.
+System S was originally designed for specifying term rewriting
+systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to
+combine primitive \emph{rules} into more complex transformations on types.
+These transformations are then applied to a given type, which performs the
+transformation. We extend the semantics of System S in order to have the
+evaluation of the transformation generate code as a side effect. In this way,
+domain specific code can be generated depending on the input types. In this
+section we describe the basics of Twig's language.
 
 \subsection{Code generation}
 \label{twig:code-gen}
@@ -149,8 +149,8 @@ rule definition and surround it with braces, like so:
 As part of the code generation, Twig will assign \texttt{\$in} and
 \texttt{\$out} elements generated C variable names, and ensure that they are
 declared with the appropriate type. If there are multiple inputs or outputs,
-then the relevant placeholders are enumerated; e.g., \texttt{\$in1} and
-\texttt{\$in2}.
+then the relevant placeholders are enumerated; e.g., \texttt{\$in1},
+\texttt{\$in2}, and so on.
 
 It is important to understand that Twig does not check the code in any way,
 and the generation procedure is strictly syntactic. This scheme is similar to
@@ -356,26 +356,110 @@ Figure~\ref{semantics:path}.
 % {t_i \arr{s} \bot}
 % \]
 
-\subsection{Code generation}
+\subsection{Expression names}
 
-Our implementation of Twig generates C code, but in principle almost any
-language could be generated instead.
+For convenience, Twig allows rules and rule expressions to be assigned names,
+like so:
+
+\begin{verbatim}
+intToFloat = [int -> float] {
+  $out = (float)$in;
+}
+\end{verbatim}
+
+This assigns a primitive rule to the name \texttt{intToFloat}. Names must
+begin with lower-case letters, and can only be used once. Now that name can be
+used in place of the rule itself in expressions, like this:
+
+\begin{verbatim}
+pairOfIntsToFloats = (intToFloat,intToFloat)
+\end{verbatim}
+
+A Twig program is a list of such name/expression assignments. There is a
+special expression name, \texttt{main}, which designates the top-level
+expression for the program.
+
+\subsection{Integration with C}
+
+Twig is capable of generating any procedural language, but in practice
+implementations must take the target language into account. Our current
+implementation of Twig is targeted to generate C code. For convenience, our
+implementation will handle tasks such as declaring variables, generating
+unique names, and ensuring that for sequencing blocks the outputs are assigned
+to the inputs in the appropriate way. 
+
+Optionally, generated code may be wrapped in a C function body, with
+parameters corresponding to the inputs, and return value corresponding to the
+output. In this case, Twig insists that the code block have a non-tuple output
+type, since C functions cannot return multiple values.
 
 \subsection{Reductions}
 
-Reductions are a way to transform Twig expressions. Reductions may exploit
-some application or domain knowledge about the nature of the rules, and as
-such are usually developed alongside a set of rules.
+Reductions are a mechanism provided within Twig as a way to automatically
+simplify expressions. Reductions usually exploit some application or domain
+knowledge about the nature of the primitive rules, and as such are usually
+developed alongside a set of rules.
 
-% Explain reductions and how they can be used in domain- or
-% application-specific ways.
+As an example, consider the following two rules.
 
-\subsection{Term rewriting}
-\label{section:term-rewriting}
+\begin{verbatim}
+intToFloat = [int -> float] {
+  $out = (float)$in;
+}
+
+floatToInt = [float -> int] {
+  $out = (int)$in;
+}
+\end{verbatim}
+
+and the expression
+
+\begin{verbatim}
+intToFloat;floatToInt
+\end{verbatim}
+
+This conversion is redundant and, if we encounter it, we might as well
+eliminate it. This can be accomplished with the following reduction:
+
+\begin{verbatim}
+reduce intToFloat;floatToInt => id
+\end{verbatim}
+
+This statement introduces a new reduction rule which instructs Twig to replace
+any subexpression \texttt{intToFloat;floatToInt} with the identity rule,
+\texttt{id}. Recall that \texttt{id} is the identity rule; it simply passes
+the value through unchanged.
+
+Twig also comes with some default reductions. These special reductions use
+knowledge of Twig's combinators to perform further reductions. One example is
+identity elimination, which will replace subexpressions of the form
+\texttt{id;X} with \texttt{X}, where \texttt{X} is a variable representing any
+subexpression.
+
+Reductions must be developed carefully to avoid infinite loops. This is
+surprisingly easy to do accidentally, even with simple rules. For example,
+Twig will not terminate if it is given these two reductions
+
+\begin{verbatim}
+reduce foo;bar => baz
+reduce baz => foo;bar
+\end{verbatim}
+
+and one of them applies within the program. It will continually rewrite
+\texttt{foo;bar} to \texttt{baz}, and then back again, ad infinitum.
+
+Twig's reductions are based on the formal theory of term
+rewriting~\cite{baader98rewriting}. In this case Twig's expressions, not its
+values, are the terms being rewritten.
+
+% Talk about finding a normal form for Twig expressions? Probably beyond the
+% scope of this paper.
+
+% \subsection{Term rewriting}
+% \label{section:term-rewriting}
 
 % Brief overview of term rewriting and how it is used in reductions.
 
 \subsection{Implementation}
 
-% Talk briefly about how Twig is implemented, and how to use it to generate
-% code.
+Our implementation of Twig is written in Haskell.
