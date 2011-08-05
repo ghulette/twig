@@ -71,8 +71,8 @@ we define
 
 We also introduce a special element in $M$, the empty element. We refer to
 this element as $e$, and it functions as an identity element for both
-sequential and parallel composition. Intuitively, $e$ corresponds to
-``no-op.'' Thus
+sequential and parallel composition. Intuitively, $e$ corresponds to a
+``no-op,'' and it behaves thus:
 
 \[
 \infer{x \in M}{x + e \in M} \qquad \infer{x \in M}{e + x \in M}
@@ -179,20 +179,20 @@ t \arr{s} \bot
 
 Note that no code is generated in this case.
 
-The most important is the \emph{sequence} operator, which chains the
-application of two rules together, providing the output of the first to the
-input of the second, and failing if either rule fails (see
+The most important of Twig's combinators is the \emph{sequence} operator,
+which chains the application of two rules together, providing the output of
+the first to the input of the second, and failing if either rule fails (see
 Figure~\ref{semantics:sequence}). With this operator, simple rules can be
 composed into multi-step transformations.
 
 \begin{figure}[ht]
 \label{semantics:sequence}
 \[
-\infer{t \arr{s_1;s_2} t''}{t \arr{s_1} t' \quad t' \arr{s_2} t''}
+\infer{t \arr{s_1;s_2} (t'',m_1+m_2)}{t \arr{s_1} (t',m_1) \quad t' \arr{s_2} (t'',m_2)}
 \qquad 
 \infer{t \arr{s_1;s_2} \bot}{t \arr{s_1} \bot}
 \qquad
-\infer{t \arr{s_1;s_2} \bot}{t \arr{s_1} t' \quad t' \arr{s_2} \bot}
+\infer{t \arr{s_1;s_2} \bot}{t \arr{s_1} (t',m) \quad t' \arr{s_2} \bot}
 \]
 \caption{Semantics for sequence operator}
 \end{figure}
@@ -207,9 +207,9 @@ being passed.
 \begin{figure}[ht]
 \label{semantics:choice}
 \[
-\infer{t \arr{s_1|s_2} t'}{t \arr{s_1} t'}
+\infer{t \arr{s_1|s_2} (t',m)}{t \arr{s_1} (t',m)}
 \qquad 
-\infer{t \arr{s_1|s_2} t'}{t \arr{s_1} \bot \quad t \arr{s_2} t'}
+\infer{t \arr{s_1|s_2} (t',m)}{t \arr{s_1} \bot \quad t \arr{s_2} (t',m)}
 \qquad
 \infer{t \arr{s_1|s_2} \bot}{t \arr{s_1} \bot \quad t \arr{s_2} \bot}
 \]
@@ -223,26 +223,27 @@ results, and a fix point operator for recursion.
 \begin{figure}[ht]
 \label{semantics:basic}
 \[
-\infer{t \arr{\mathtt{id}} t}{}
+\infer{t \arr{\mathtt{id}} (t,e)}{}
 \qquad
 \infer{t \arr{\mathtt{fail}} \bot}{}
 \]
 
 \[
-\infer{t \arr{?s} t}{t \arr{s} t'}
+\infer{t \arr{?s} (t,e)}{t \arr{s} (t',m)}
 \qquad 
 \infer{t \arr{?s} \bot}{t \arr{s} \bot}
 \qquad
-\infer{t \arr{\lnot s} \bot}{t \arr{s} t'}
+\infer{t \arr{\lnot s} \bot}{t \arr{s} (t',m)}
 \qquad 
-\infer{t \arr{\lnot s} t}{t \arr{s} \bot}
+\infer{t \arr{\lnot s} (t,e)}{t \arr{s} \bot}
 \]
 
-\[
-\infer{t \arr{\mu x(s)} t'}{t \arr{s[x := \mu x(s)]} t'}
-\qquad 
-\infer{t \arr{\mu x(s)} \bot}{t \arr{s[x := \mu x(s)]} \bot}
-\]
+% Include fix-point operator?
+% \[
+% \infer{t \arr{\mu x(s)} t'}{t \arr{s[x := \mu x(s)]} t'}
+% \qquad 
+% \infer{t \arr{\mu x(s)} \bot}{t \arr{s[x := \mu x(s)]} \bot}
+% \]
 \caption{Semantics for basic operators}
 \end{figure}
 
@@ -250,6 +251,7 @@ Twig also provides some special operators for tuples. The semantics in
 Figure~\ref{semantics:all-tuples} apply to all the tuple operators, and state
 simply that tuple operators will fail if the input term is not a tuple, or if
 the rule references a tuple element out of bounds.
+
 
 \begin{figure}[ht]
 \label{semantics:all-tuples}
@@ -262,10 +264,12 @@ the rule references a tuple element out of bounds.
 \caption{Common semantics for tuple operators}
 \end{figure}
 
+
 One important tuple operator is \emph{congruence}, which applies a tuple of
 rules to a tuple of values, and returns a tuple of results or failure if any
 one rule application fails. The semantics are given in
 Figure~\ref{semantics:congruence}.
+
 
 \begin{figure}[ht]
 \label{semantics:congruence}
@@ -273,10 +277,9 @@ Figure~\ref{semantics:congruence}.
 \infer{
 \mathtt{tuple}(t_1,\ldots,t_n)
 \arr{(s_1,\ldots,s_n)}
-\mathtt{tuple}(t_1',\ldots,t_n') }
-{t_1 \arr{s_1} t_1' \quad \ldots \quad t_n \arr{s_n} t_n'}
+(\mathtt{tuple}(t_1',\ldots,t_n'),m_1 \times \ldots \times m_n) }
+{t_1 \arr{s_1} (t_1',m_1) \quad \ldots \quad t_n \arr{s_n} (t_n',m_n)}
 \]
-
 \[
 \infer{
 \mathtt{tuple}(\ldots,t_i,\ldots)
@@ -287,56 +290,71 @@ Figure~\ref{semantics:congruence}.
 \caption{Semantics for congruence operator}
 \end{figure}
 
-Projection:
 
-\[
-\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} t_i}{}
-\]
+The \emph{branch} operator on tuples applies a tuple of rules to a single
+term, and produces a tuple of results with one element per rule. The branch
+operator has several possible semantics; we present one interpretation in
+Figure~\ref{semantics:branch} wherein the branch operation fails if any single
+rule fails. We elide the other semantics, as well as the \emph{map} operator,
+which are similar in principle.
 
-
-Path:
-
-\[
-\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} 
-\mathtt{tuple}(\ldots,t_i',\ldots)}
-{t_i \arr{s} t_i'}
-\]
-
-\[
-\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} \bot}
-{t_i \arr{s} \bot}
-\]
-
-Branch:
-
+\begin{figure}[ht]
+\label{semantics:branch}
 \[
 \infer{
   t \arr{\mathtt{\#branch}(s_1,\ldots,s_n)}
-  \mathtt{tuple}(t_1',\ldots,t_n')
-}{t \arr{s_1} t_1' \quad \ldots \quad t \arr{s_n} t_n'}
+  (\mathtt{tuple}(t_1',\ldots,t_n'),m_1 \times \ldots \times m_n)
+}{t \arr{s_1} (t_1',m_1) \quad \ldots \quad t \arr{s_n} (t_n',m_n)}
 \]
-
 \[
 \infer
 {t \arr{\mathtt{\#branch}(\ldots,s_i,\dots)} \bot}
 {t \arr{s_i} \bot}
 \]
+\caption{Semantics for branch operator}
+\end{figure}
 
-Map:
+Finally, we have the \emph{projection} and \emph{path} operators, which
+extract a single element from a tuple, and apply a rule to a single element,
+respectively. The semantics are given in Figure~\ref{semantics:projection} and
+Figure~\ref{semantics:path}.
 
+\begin{figure}[ht]
+\label{semantics:projection}
 \[
-\infer{
-  \mathtt{tuple}(t_1,\ldots,t_n)
-  \arr{\mathtt{\#map}(s)}
-  \mathtt{tuple}(t_1',\ldots,t_n')
-}{t_1 \arr{s} t_1' \quad \ldots \quad t_n \arr{s} t_n'}
+\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} (t_i,e)}{}
 \]
+\caption{Semantics for projection operator}
+\end{figure}
 
+
+\begin{figure}[ht]
+\label{semantics:path}
 \[
-\infer
-{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\mathtt{\#map}(s)} \bot}
+\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)}
+(\mathtt{tuple}(\ldots,t_i',\ldots),m)}
+{t_i \arr{s} (t_i',m)}
+\]
+\[
+\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} \bot}
 {t_i \arr{s} \bot}
 \]
+\caption{Semantics for path operator}
+\end{figure}
+
+% Include map operator?
+% \[
+% \infer{
+%   \mathtt{tuple}(t_1,\ldots,t_n)
+%   \arr{\mathtt{\#map}(s)}
+%   \mathtt{tuple}(t_1',\ldots,t_n')
+% }{t_1 \arr{s} t_1' \quad \ldots \quad t_n \arr{s} t_n'}
+% \]
+% \[
+% \infer
+% {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\mathtt{\#map}(s)} \bot}
+% {t_i \arr{s} \bot}
+% \]
 
 \subsection{Code generation}
 
