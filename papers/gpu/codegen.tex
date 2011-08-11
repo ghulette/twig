@@ -59,7 +59,7 @@ and we define
 
 Note that $M$ is closed under parallel composition.
 
-We introduce a set of special elements in $M$, named $I_n$ where $n \geq 1$
+We introduce a set of special elements in $M$, named $I_n$ where $n \geq 0$
 and define
 
 \begin{eqnarray*}
@@ -81,6 +81,9 @@ That is, $I_1$ acts as a left and right identity when sequenced with a block
 $x$, corresponding to the notion of a ``no-op.'' The requirement that the
 sequence be in $M$ restricts $x$ in the rules such that it must have exactly
 one output or one input, respectively.
+
+The element $I_0$ is also special. It takes one input and produces zero
+outputs, and represents a ``null pipe'' which discards its argument.
 
 Using this simple system for composition, a wide variety of code can be
 generated from a few primitives.

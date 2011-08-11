@@ -16,74 +16,7 @@ evaluation of the transformation generate code as a side effect. In this way,
 domain specific code can be generated depending on the input types. In this
 section we describe the basics of Twig's language.
 
-\subsection{Code generation}
-\label{twig:code-gen}
-
-Twig provides a basic but effective set of operations to perform code
-generation. Our model is abstract, although we also discuss our concrete
-implementation below. For our purposes, ``code'' is represented by an abstract
-data type $M$. For all $x$ in $M$, the value of $\mathtt{valence}(x)$ is
-defined as a pair of natural numbers $(n,m)$, where $n$ represents the number
-of \emph{inputs} and $m$ the number of \emph{outputs}. The value of
-$\mathtt{in}(x)$ is a tuple $(t_1,t_2, \hdots t_n)$ describing the type of
-each input, in order. In fact, each $t_i$ is a term (i.e. Twig's
-\emph{values}), as described below. Similarly, each $m$ also defines
-$\mathtt{out}(m)$ as a tuple $(r_1,r_2, \hdots r_m)$, where each $r_i$ is a
-term that describes the type of each output.
-
-Given this structure, we provide two fundamental operations on code. The first
-is \emph{sequential composition}, intended to represent the case where the
-output of one code block is fed into the inputs of another. Formally,
-we use the plus ($+$) operator and say that
-
-\[
-\infer
-{x+y \in M}
-{x \in M \quad y \in M \quad \mathtt{out}(x) = \mathtt{in}(y)}
-\]
-
-and define $\mathtt{in}(x+y) = \mathtt{in}(x)$ and $\mathtt{out}(x+y) =
-\mathtt{out}(y)$.
-
-The second operator is \emph{parallel composition}, intended to represent two
-blocks of code executing independently of each other. Here we use the times
-operator ($\times$) and say that
-
-\[
-\infer
-{x \times y \in M}
-{x \in M \quad y \in M}
-\]
-
-and, given that 
-
-\begin{eqnarray*}
-\mathtt{in}(x) =& (t^x_1,t^x_2,\hdots,t^x_n)\\
-\mathtt{in}(y) =& (t^y_1,t^y_2,\hdots,t^y_m)
-\end{eqnarray*}
-
-we define
-
-\[
-\mathtt{in}(x \times y) = 
-(t^x_1,t^x_2, \hdots t^x_n,t^y_1,t^y_2, \hdots t^y_m)
-\]
-
-We also introduce a special element in $M$, the empty element. We refer to
-this element as $e$, and it functions as an identity element for both
-sequential and parallel composition. Intuitively, $e$ corresponds to a
-``no-op,'' and it behaves thus:
-
-\[
-\infer{x \in M}{x + e \in M} \qquad \infer{x \in M}{e + x \in M}
-\]
-
-\[
-\infer{x \in M}{x \times e \in M} \qquad \infer{x \in M}{e \times x \in M}
-\]
-
-Using this simple system for composition, a wide variety of code can be
-generated from a few primitives.
+\input{codegen}
 
 \subsection{Values}
 
@@ -223,19 +156,19 @@ results, and a fix point operator for recursion.
 \begin{figure}[ht]
 \label{semantics:basic}
 \[
-\infer{t \arr{\mathtt{id}} (t,e)}{}
+\infer{t \arr{\mathtt{id}} (t,I_1)}{}
 \qquad
 \infer{t \arr{\mathtt{fail}} \bot}{}
 \]
 
 \[
-\infer{t \arr{?s} (t,e)}{t \arr{s} (t',m)}
+\infer{t \arr{?s} (t,I_1)}{t \arr{s} (t',m)}
 \qquad 
 \infer{t \arr{?s} \bot}{t \arr{s} \bot}
 \qquad
 \infer{t \arr{\lnot s} \bot}{t \arr{s} (t',m)}
 \qquad 
-\infer{t \arr{\lnot s} (t,e)}{t \arr{s} \bot}
+\infer{t \arr{\lnot s} (t,I_1)}{t \arr{s} \bot}
 \]
 
 % Include fix-point operator?
@@ -293,7 +226,7 @@ Figure~\ref{semantics:congruence}.
 
 The \emph{branch} operator on tuples applies a tuple of rules to a single
 term, and produces a tuple of results with one element per rule. The branch
-operator has several possible semantics; we present one interpretation in
+operator has several semantic variants; we present one in
 Figure~\ref{semantics:branch} wherein the branch operation fails if any single
 rule fails. We elide the other semantics, as well as the \emph{map} operator,
 which are similar in principle.
@@ -303,7 +236,7 @@ which are similar in principle.
 \[
 \infer{
   t \arr{\mathtt{\#branch}(s_1,\ldots,s_n)}
-  (\mathtt{tuple}(t_1',\ldots,t_n'),m_1 \times \ldots \times m_n)
+  (\mathtt{tuple}(t_1',\ldots,t_n'),I_n + (m_1 \times \ldots \times m_n))
 }{t \arr{s_1} (t_1',m_1) \quad \ldots \quad t \arr{s_n} (t_n',m_n)}
 \]
 \[
@@ -314,15 +247,18 @@ which are similar in principle.
 \caption{Semantics for branch operator}
 \end{figure}
 
+
 Finally, we have the \emph{projection} and \emph{path} operators, which
 extract a single element from a tuple, and apply a rule to a single element,
 respectively. The semantics are given in Figure~\ref{semantics:projection} and
 Figure~\ref{semantics:path}.
 
+
 \begin{figure}[ht]
 \label{semantics:projection}
 \[
-\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} (t_i,e)}{}
+\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} 
+(t_i,I_0 \times \ldots \times I_1 \times \ldots \times I_0)}{}
 \]
 \caption{Semantics for projection operator}
 \end{figure}
@@ -332,7 +268,8 @@ Figure~\ref{semantics:path}.
 \label{semantics:path}
 \[
 \infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)}
-(\mathtt{tuple}(\ldots,t_i',\ldots),m)}
+(\mathtt{tuple}(\ldots,t_i',\ldots),
+I_1 \times \ldots \times m \times \ldots \times I_1)}
 {t_i \arr{s} (t_i',m)}
 \]
 \[
@@ -381,6 +318,7 @@ special expression name, \texttt{main}, which designates the top-level
 expression for the program.
 
 \subsection{Integration with C}
+\label{twig:concrete-code-gen}
 
 Twig is capable of generating any procedural language, but in practice
 implementations must take the target language into account. Our current
