@@ -1,0 +1,86 @@
+%!TEX root = twig-gpu.tex
+
+\subsection{Code generation}
+\label{twig:code-gen}
+
+Twig provides an abstract model of code generation. We discuss our concrete
+implementation, which generates C code, in
+Section~\ref{twig:concrete-code-gen}. For our purposes, ``code'' is
+represented by an abstract data type $M$. Each $x$ in $M$ is intended to
+represent a ``block'' of code; i.e., something that performs some operation on
+a set of inputs and produces a set of outputs. Although this is the intended
+interpretation, our model elides the details and focuses only on the inputs
+and outputs for each block, and how they can be arranged to form larger
+blocks.
+
+For all $x$ in $M$, we define two functions \texttt{in} and \texttt{out},
+which map elements in $M$ to, respectively, the number of inputs and outputs
+of the element. In either case, the number may be zero.
+
+Given this structure, we provide two fundamental operations. The first is
+\emph{sequential composition}, where the outputs of one code block are fed
+into the inputs of another. We represent this operation as addition ($+$) and
+say that
+
+\[
+\infer
+{x+y \in M}
+{x \in M \quad y \in M \quad \mathtt{out}(x) = \mathtt{in}(y)}
+\]
+
+and
+
+\begin{eqnarray*}
+\mathtt{in} (x+y) =& \mathtt{in}(x)\\
+\mathtt{out}(x+y) =& \mathtt{out}(y)
+\end{eqnarray*}
+
+Note that the condition that the number of outputs on the left side equal the
+number of inputs on the right implies that $M$ is not closed under sequential
+composition. We take care in the design of the rest of Twig's semantics to
+ensure that this is never a problem.
+
+The second operation is \emph{parallel composition}, where two blocks execute
+independently of one another. We represent this operation as multiplication
+($\times$) and say that
+
+\[
+\infer
+{x \times y \in M}
+{x \in M \quad y \in M}
+\]
+
+and we define
+
+\begin{eqnarray*}
+\mathtt{in} (x \times y) =& \mathtt{in}(x)  + \mathtt{in}(y)\\
+\mathtt{out}(x \times y) =& \mathtt{out}(x) + \mathtt{out}(y)
+\end{eqnarray*}
+
+Note that $M$ is closed under parallel composition.
+
+We introduce a set of special elements in $M$, named $I_n$ where $n \geq 1$
+and define
+
+\begin{eqnarray*}
+\mathtt{in} (I_n) =& 1\\
+\mathtt{out}(I_n) =& n
+\end{eqnarray*}
+
+The block $I_n$ is intended to represent an identity operation, where the
+single input is copied to the output or outputs. To support this
+interpretation, we assign a special meaning to $I_1$. Namely,
+
+\[
+\infer{x + I_1 \to x}{x + I_1 \in M} 
+\qquad
+\infer{I_1 + x \to x}{I_1 + x \in M}
+\]
+
+That is, $I_1$ acts as a left and right identity when sequenced with a block
+$x$, corresponding to the notion of a ``no-op.'' The requirement that the
+sequence be in $M$ restricts $x$ in the rules such that it must have exactly
+one output or one input, respectively.
+
+Using this simple system for composition, a wide variety of code can be
+generated from a few primitives.
