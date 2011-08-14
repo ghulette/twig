@@ -156,19 +156,19 @@ results, and a fix point operator for recursion.
 \begin{figure}[ht]
 \label{semantics:basic}
 \[
-\infer{t \arr{\mathtt{id}} (t,I_1)}{}
+\infer{t \arr{\mathtt{id}} (t,I)}{}
 \qquad
 \infer{t \arr{\mathtt{fail}} \bot}{}
 \]
 
 \[
-\infer{t \arr{?s} (t,I_1)}{t \arr{s} (t',m)}
+\infer{t \arr{?s} (t,I)}{t \arr{s} (t',m)}
 \qquad 
 \infer{t \arr{?s} \bot}{t \arr{s} \bot}
 \qquad
 \infer{t \arr{\lnot s} \bot}{t \arr{s} (t',m)}
 \qquad 
-\infer{t \arr{\lnot s} (t,I_1)}{t \arr{s} \bot}
+\infer{t \arr{\lnot s} (t,I)}{t \arr{s} \bot}
 \]
 
 % Include fix-point operator?
@@ -258,7 +258,7 @@ Figure~\ref{semantics:path}.
 \label{semantics:projection}
 \[
 \infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} 
-(t_i,I_0 \times \ldots \times I_1 \times \ldots \times I_0)}{}
+(t_i,\Pi_{\{i\}})}{}
 \]
 \caption{Semantics for projection operator}
 \end{figure}
