@@ -31,8 +31,8 @@ say that
 and
 
 \begin{eqnarray*}
-\mathtt{in} (x+y) =& \mathtt{in}(x)\\
-\mathtt{out}(x+y) =& \mathtt{out}(y)
+\mathtt{in} (x+y) &=& \mathtt{in}(x)\\
+\mathtt{out}(x+y) &=& \mathtt{out}(y)
 \end{eqnarray*}
 
 Note that the condition that the number of outputs on the left side equal the
@@ -59,31 +59,48 @@ and we define
 
 Note that $M$ is closed under parallel composition.
 
-We introduce a set of special elements in $M$, named $I_n$ where $n \geq 0$
-and define
+We define a set of special elements in $M$, namely $\Pi_m(i_1,\ldots,i_n)$,
+where $i_1,\ldots,i_n \in \lbrace i | 1 \leq i \leq m \rbrace$. These are
+called \emph{permutation} elements, and represent the primitive operation of
+rearranging $m$ inputs to $n$ outputs, possibly in a different order, and
+possibly duplicating or dropping elements. The elements are only passed
+through, and are otherwise unchanged.
 
-\begin{eqnarray*}
-\mathtt{in} (I_n) =& 1\\
-\mathtt{out}(I_n) =& n
-\end{eqnarray*}
-
-The block $I_n$ is intended to represent an identity operation, where the
-single input is copied to the output or outputs. To support this
-interpretation, we assign a special meaning to $I_1$. Namely,
+Among the permutation elements, there are a set of elements for which we
+provide special rules; namely, a set of \emph{identity} permutations. The
+simplest of these is $\Pi_1(1)$, which acts as an identity transformation with
+one input and one output. We refer to this element as $I_1$. In fact, there
+are an unlimited number of identity transformations, which take $n$ inputs to
+$n$ outputs, unchanged. These are referred to as $I_n$, where $1 \leq n$, and
+$I_n = \Pi_n(1,2,\ldots,n)$. Clearly,
 
 \[
-\infer{x + I_1 \to x}{x + I_1 \in M} 
-\qquad
-\infer{I_1 + x \to x}{I_1 + x \in M}
+\mathtt{in}(I_n) = \mathtt{out}(I_n) = n
 \]
 
-That is, $I_1$ acts as a left and right identity when sequenced with a block
-$x$, corresponding to the notion of a ``no-op.'' The requirement that the
-sequence be in $M$ restricts $x$ in the rules such that it must have exactly
-one output or one input, respectively.
+Since the elements $I_n$ are intended to represent identity operations, we
+assign them a special meaning. Namely,
 
-The element $I_0$ is also special. It takes one input and produces zero
-outputs, and represents a ``null pipe'' which discards its argument.
+\[
+\infer{x + I_n \to x}{\mathtt{out}(x) = n} 
+\qquad
+\infer{I_n + x \to x}{\mathtt{in}(x) = n}
+\]
+
+That is, $I_n$ acts as both a left- and right-identity when sequenced with a
+block $x$. We sometimes use $I_n$ as a kind of ``no-op.''
+
+It is worth noting one further identity, namely
+
+\[
+I_n = (I_1)^n
+\]
+
+That is, $I_n$ is equivalent to the $n$-way parallel composition of $I_1$.
+
+When $n$ is implied from the context we will sometimes write $I$ for $I_n$.
+For example, $x+I$ as a shorthand to refer to $x+I_n$ where $n =
+\mathtt{out}(x)$.
 
 Using this simple system for composition, a wide variety of code can be
-generated from a few primitives.
+generated.
