@@ -20,7 +20,7 @@
 \newcommand{\arr}[1]{\ensuremath\xrightarrow{#1}}
 
 \title{Generating code in a term rewriting framework}
-\author{Geoffrey C. Hulette}
+\author{Geoff Hulette}
 \date{\today}
 
 \begin{document}
@@ -29,88 +29,65 @@
   \titlepage
 \end{frame}
 
-
-%%
-\begin{frame}{About me}
-
-I am currently a Ph.D. student in computer science at the University of
-Oregon, and also a Sandia intern. 
-
-My research interests include:
-
-\begin{itemize}
-
-\item Programming language theory and formal semantics;
-
-\item Tradeoffs between the expressive power of formal systems and automated
-reasoning about them;
-
-\item Methods for ensuring programs are correct by construction (e.g. type
-systems, automated theorem proving, code generation).
-
-\end{itemize}
-
-These interests intersect in the field of \emph{formal methods}.
-
-\end{frame}
-
-
-%%
-\begin{frame}{Twig}
-
-My dissertation research has focused on the design of a formal system for code
-generation called \textbf{Twig}.
-
-Twig's semantics are based on the theory of term rewriting, which is important
-for reasoning about equivalence relationships. This is an important problem in
-formal methods.
-
-\end{frame}
-
-
 %%
 \begin{frame}{Outline}
 
 Today I will be talking about:
 
 \begin{enumerate}
-  \item Why generating code for GPUs is difficult
+  \item Why generating code is difficult
   \item Term rewriting theory
   \item System S
   \item How Twig generates code
-  \item How Twig generates GPU code
-  \item Connections to formal methods
+  \item Example: generating GPU code
 \end{enumerate}
 
 \end{frame}
 
 
 %%
-\begin{frame}{Problem: Programming GPUs}
+\begin{frame}{Motivation: Proper abstractions}
+
+Writing code is easy when programming abstractions match domain logic. For
+example:
+
+\begin{itemize}
+\item Matrix calculations in Matlab
+\item GUIs in OOP languages
+\item Interpreters in ML
+\item Device drivers in C
+\end{itemize}
+
+The converse also holds; consider any pair-wise permutation in the list above.
+
+\end{frame}
+
+
+%%
+\begin{frame}{Problem: Programming for GPUs}
 
 Writing code for GPUs is tedious. In OpenCL, a simple vector operation
-requires more than 200 LOC.
+requires more than 200 LOC. 
+
+The abstraction of OpenCL does not match the logic of GPUs.
 
 One solution is to use a higher-level representation for GPU programs, and
 generate the low-level CUDA or OpenCL code.
 
 \end{frame}
 
-
 %%
-\begin{frame}{Problem: Programming GPUs}
+\begin{frame}{Problem: Programming for GPUs}
 
 Na\"ive GPU code generation may produce inefficient code.
 
 \begin{itemize}
 
-\item Generated code must be generic enough to support different data types
-and operations. Supporting this capability at runtime may introduce complex
-conditional branching.
+\item We should generate code that supports different data types. Supporting
+this capability at runtime may introduce complex conditional branching.
 
-\item High-level representations of GPU operations should abstract
-``book-keeping'' operations (e.g. moving data to and from the device). To
-avoid generating redundant code we need to compose abstractions intelligently.
+\item We must be careful to avoid copying data to and from the device more
+than necessary.
 
 \end{itemize}
 
@@ -120,13 +97,14 @@ avoid generating redundant code we need to compose abstractions intelligently.
 %%
 \begin{frame}{Our approach}
 
-Our solution is \textbf{Twig}, a language for code generation that features:
+To help with this problem, we are working on \textbf{Twig}, a language for
+code generation that features:
 
 \begin{itemize}
 
 \item \textbf{Type-directed code generation} to minimize runtime overhead;
 
-\item Simple but effective \textbf{algebraic manipulation} of Twig
+\item Simple, user-extensile \textbf{algebraic manipulation} of Twig
 expressions, which can eliminate redundant operations.
 
 \end{itemize}
@@ -139,7 +117,8 @@ expressions, which can eliminate redundant operations.
 
 \textbf{Twig}, is based on the theory of \emph{term rewriting}.
 
-Next, we cover some basic definitions and results from that theory.
+In Twig, we use rules that transform \emph{types} in the target language (i.e.
+C), and which generate code as a side-effect of application.
 
 \end{frame}
 
@@ -158,20 +137,11 @@ which are applied sequentially to transform inputs to outputs.
 
 
 %%
-\begin{frame}{Preview}
-
-In Twig, we will use rules that transform \emph{types} in the target language
-(i.e. C), and which generate code as a side-effect of application.
-
-\end{frame}
-
-
-%%
 \begin{frame}{Abstract reduction}
 
-\textbf{Reduction} abstracts and formalizes the idea of step-by-step
-transformation. An \textbf{abstract reduction system} is a pair $(A,\to)$
-where $\to$ is a binary relation on $A$.
+\textbf{Reduction} formalizes the idea of step-by-step transformation. An
+\textbf{abstract reduction system} is a pair $(A,\to)$ where $\to$ is a binary
+relation on $A$.
 
 Some terminology:
 
@@ -240,18 +210,6 @@ Naturally, proving termination is undecidable in general.
 
 
 %%
-\begin{frame}{Termination}
-
-Note that confluence does not entail termination:
-
-\begin{center}
-\includegraphics[width=2in]{images/ars}
-\end{center}
-
-\end{frame}
-
-
-%%
 \begin{frame}{Confluence}
 
 Every object in a confluent system has at most one normal form. A reduction
@@ -267,8 +225,20 @@ x \xrightarrow{*} y_1 \land x \xrightarrow{*} y_2 \implies
 \includegraphics[width=1.5in]{images/confluence}
 \end{center}
 
-Determining whether a reduction system is confluent is undecidable in general,
-but it is decidable for terminating systems.
+For a given system $(A,\to)$, confluence is decidable if and only if the
+system is terminating.
+
+\end{frame}
+
+
+%%
+\begin{frame}{Confluence and termination}
+
+Note that confluence does not imply termination:
+
+\begin{center}
+\includegraphics[width=3in]{images/ars}
+\end{center}
 
 \end{frame}
 
@@ -276,9 +246,9 @@ but it is decidable for terminating systems.
 %%
 \begin{frame}{Terms}
 
-Informally, \emph{terms} are tree-structured data where labeled nodes
-represent either \emph{constructors} having 0 or more sub-terms, or else
-\emph{variables}.
+A \emph{term} is tree-structured data with labeled internal nodes, and where
+labels represent either \emph{constructors} having 0 or more sub-terms, or
+else \emph{variables}.
 
 Terminology:
 
@@ -324,38 +294,53 @@ Note that variables cannot have sub-terms.
 
 
 %%
-\begin{frame}{Terms}
+\begin{frame}[fragile]{Matching}
 
-Slightly more formally, a set of constructors $\Sigma$ and a set of variables
-$X$ determine a set of terms $T(\Sigma,X)$ iff $\Sigma \cap X = \emptyset$.
+Given a term and a ground term, we can decide if they \emph{match}. If they
+do, the match induces an \emph{environment} binding variables to ground terms.
 
-We refer to the ground terms as $T(\Sigma)$ and clearly $T(\Sigma) \subseteq
-T(\Sigma,X)$.
+Some examples:
+
+\begin{figure}[h]
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Pattern} & \textbf{Input} & \textbf{Result}\\
+\hline
+\texttt{a(b,c)} & \texttt{a(b,c)} & \{\}\\
+\hline
+\texttt{a(X,Y)} & \texttt{a(b,c(d,e))} &
+  $\{\mathtt{X}=\mathtt{b},\mathtt{Y}=\mathtt{c(d,e)}\}$\\
+\hline
+\texttt{a(b,c)} & \texttt{a(b,z)} & $\bot$\\
+\hline
+\end{tabular}
+\end{figure}
 
 \end{frame}
 
 
 %%
-\begin{frame}{Substitution}
+\begin{frame}[fragile]{Substitution}
 
-A \textbf{ground-substitution} in $T(\Sigma,X)$ is a partial function $\sigma
-: X \to T(\Sigma)$, i.e. from variables to ground terms in $T(\Sigma,X)$. We
-use $\sigma$ to define a partial function $\delta : T(\Sigma,X) \to
-T(\Sigma)$.
+With an environment and a term, we can perform \emph{substitution} to produce
+a new ground term.
 
-The application of $\delta$ to a term $t \in T(\Sigma,X)$ replaces the
-variables in $t$ with the corresponding image of that variable under $\sigma$.
-The result is a ground term $t' \in T(\Sigma)$. The result is undefined if $t$
-contains a variable $x$ such that $\sigma(x)$ is undefined.
-
-Substitutions $\sigma$ and $\tau$ can be composed such that for all $x \in X
-\:.\: \sigma\tau(x) = t$ iff
-
-\begin{itemize}
-  \item $\sigma(x) = t$ and $\tau(x)$ is undefined or
-  \item $\tau(x) = t$ and $\sigma(x)$ is undefined or
-  \item $\sigma(x) = \tau(x) = t$
-\end{itemize}
+\begin{figure}[h]
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Environment} & \textbf{Term} & \textbf{Result}\\
+\hline
+$\{\mathtt{X}=\mathtt{b},\mathtt{Y}=\mathtt{c(d,e)}\}$ & 
+  \texttt{foo(Y,X)} & \texttt{foo(c(d,e),b)} \\
+\hline
+$\{\mathtt{X}=\mathtt{b},\mathtt{Y}=\mathtt{c(d,e)}\}$ & 
+    \texttt{bar(X,X)} & \texttt{bar(b,b)} \\
+\hline
+$\{\mathtt{X}=\mathtt{b},\mathtt{Y}=\mathtt{c(d,e)}\}$ & 
+    \texttt{Y} & \texttt{c(d,e)} \\
+\hline
+\end{tabular}
+\end{figure}
 
 \end{frame}
 
@@ -373,7 +358,7 @@ i.e. methods for choosing which rule to apply in a given context.
 
 
 %%
-\begin{frame}{System S: Primitive rules}
+\begin{frame}{Twig}
 
 Term rewriting rules are written:
 
@@ -388,7 +373,7 @@ function $r : T \to (T \cup \{\bot\})$.
 
 
 %%
-\begin{frame}{System S: Primitive rules}
+\begin{frame}{Twig}
 
 The result $\bot$ can be interpreted as ``failure'' or ``undefined.'' It is
 returned in case:
