@@ -37,9 +37,9 @@ Today I will be talking about:
 \begin{enumerate}
   \item Why generating code is difficult
   \item Term rewriting theory
-  \item System S
+  \item Twig's language
   \item How Twig generates code
-  \item Example: generating GPU code
+  \item Example: generating code for GPUs
 \end{enumerate}
 
 \end{frame}
@@ -346,58 +346,20 @@ $\{\mathtt{X}=\mathtt{b},\mathtt{Y}=\mathtt{c(d,e)}\}$ &
 
 
 %%
-\begin{frame}{System S}
+\begin{frame}[fragile]{Rules}
 
-\textbf{System S} is a formal semantics for term rewriting systems. It is the
-basis for Twig's rule expressions.
+We can combine matching and substitution to give a precise definition of a
+\emph{rule}.
 
-The key idea in System S is user-definable rewriting \textbf{strategies} --
-i.e. methods for choosing which rule to apply in a given context.
-
-\end{frame}
-
-
-%%
-\begin{frame}{Twig}
-
-Term rewriting rules are written:
-
-\begin{itemize}
-  \item \texttt{[} $t_1$ \texttt{->} $t_2$ \texttt{]}
-\end{itemize}
-
-where $t_1$ and $t_2$ are terms. Given a set of ground terms $T$, a rule is a
-function $r : T \to (T \cup \{\bot\})$.
+\begin{center}
+\includegraphics[height=1.5in]{images/rule}
+\end{center}
 
 \end{frame}
 
 
 %%
-\begin{frame}{Twig}
-
-The result $\bot$ can be interpreted as ``failure'' or ``undefined.'' It is
-returned in case:
-
-\begin{itemize}
-  \item The input term does not ``match'' $t_1$;
-  \item $t_2$ contains variables not bound in $t_1$ (i.e. substitution is undefined).
-\end{itemize}
-
-\end{frame}
-
-
-%%
-\begin{frame}{System S: Primitive rule application}
-
-Pseudo-code for rule application:
-
-\verbatiminput{code/apply.hs}
-
-\end{frame}
-
-
-%%
-\begin{frame}{System S: Primitive rule examples}
+\begin{frame}[fragile]{Rules}
 
 For example, here are De Morgan's laws:
 
@@ -408,25 +370,42 @@ For example, here are De Morgan's laws:
 
 \end{frame}
 
-%%
-\begin{frame}{System S: Primitive rules}
 
-Some things to note about rules in System S:
+%%
+\begin{frame}{Twig}
+
+In Twig, we use this term rewriting machinery to define a language for code
+generation. Terms represent types in the target language (for now, C), and
+rules are transformations between types, i.e. \emph{typemaps}.
+
+\end{frame}
+
+
+%%
+\begin{frame}{Failure}
+
+The result $\bot$ can be interpreted as ``failure'' or ``undefined.'' It is
+the result of rule application in case
 
 \begin{itemize}
-  \item Rules are unidirectional
-  \item Rules match using only the outermost constructor
-  \item Matched variables need not be used\\
-        e.g. \texttt{[or(true,P) -> true]}
-  \item Matching is non-linear\\
-        e.g. \texttt{[and(P,not(P)) -> false]}
+  \item The input term does not match or
+  \item Substitution references undefined variables.
 \end{itemize}
 
 \end{frame}
 
 
 %%
-\begin{frame}{System S: Basic combinators}
+\begin{frame}{Combining rules}
+
+We want to be able to combine rules to build more complex rules. Twig provides
+a set of combinators for this purpose.
+
+\end{frame}
+
+
+%%
+\begin{frame}{Twig: Basic combinators}
 
 Sequence:
 
@@ -474,144 +453,21 @@ Discard result:
 \infer{t \arr{\lnot s} t}{t \arr{s} \bot}
 \]
 
-Fix-point:
-
-\[
-\infer{t \arr{\mu x(s)} t'}{t \arr{s[x := \mu x(s)]} t'}
-\qquad 
-\infer{t \arr{\mu x(s)} \bot}{t \arr{s[x := \mu x(s)]} \bot}
-\]
-
 \end{frame}
 
 
 %%
-\begin{frame}{Tuples}
+\begin{frame}{Properties of Twig's combinators}
 
-Twig introduces special syntax for ``tuple'' terms:
-
-\begin{itemize}
-  \item ``\texttt{(}$t_1,t_2,\ldots,t_n$\texttt{)}'' 
-        $:=$ \texttt{tuple(}$t_1,t_2,\ldots,t_n$\texttt{)}
-\end{itemize}
-
-and some tuple combinators.
-
-All tuple combinators share these failure semantics:
-
-\[
-\infer{f(\ldots) \arr{s} \bot}
-{f \neq \mathtt{tuple}}
-\qquad
-\infer{\mathtt{tuple}(t_1,\ldots,t_n) \arr{s(i)} \bot}{i > n}
-\]
-
-\end{frame}
-
-%%
-\begin{frame}{Tuple combinators}
-
-Projection:
-
-\[
-\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} t_i}{}
-\]
-
-Path:
-
-\[
-\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} 
-\mathtt{tuple}(\ldots,t_i',\ldots)}
-{t_i \arr{s} t_i'}
-\]
-
-\[
-\infer{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} \bot}
-{t_i \arr{s} \bot}
-\]
-
-\end{frame}
-
-
-%%
-\begin{frame}{Tuple combinators}
-
-Congruence:
-
-\[
-\infer{
-\mathtt{tuple}(t_1,\ldots,t_n)
-\arr{(s_1,\ldots,s_n)}
-\mathtt{tuple}(t_1',\ldots,t_n') }
-{t_1 \arr{s_1} t_1' \quad \ldots \quad t_n \arr{s_n} t_n'}
-\]
-
-\[
-\infer{
-\mathtt{tuple}(\ldots,t_i,\ldots)
-\arr{(\ldots,s_i,\ldots)}
-\bot}
-{t_i \arr{s_i} \bot}
-\]
-
-\end{frame}
-
-
-%%
-\begin{frame}{Tuple combinators}
-
-Branch:
-
-\[
-\infer{
-  t \arr{\mathtt{\#branch}(s_1,\ldots,s_n)}
-  \mathtt{tuple}(t_1',\ldots,t_n')
-}{t \arr{s_1} t_1' \quad \ldots \quad t \arr{s_n} t_n'}
-\]
-
-\[
-\infer
-{t \arr{\mathtt{\#branch}(\ldots,s_i,\dots)} \bot}
-{t \arr{s_i} \bot}
-\]
-
-\end{frame}
-
-
-%%
-\begin{frame}{Tuple combinators}
-
-Map:
-
-\[
-\infer{
-  \mathtt{tuple}(t_1,\ldots,t_n)
-  \arr{\mathtt{\#map}(s)}
-  \mathtt{tuple}(t_1',\ldots,t_n')
-}{t_1 \arr{s} t_1' \quad \ldots \quad t_n \arr{s} t_n'}
-\]
-
-\[
-\infer
-{\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\mathtt{\#map}(s)} \bot}
-{t_i \arr{s} \bot}
-\]
-
-\end{frame}
-
-
-%%
-\begin{frame}{System S: Properties}
-
-A few things to notice about System S/Twig:
+A few things to notice about Twig:
 
 \begin{itemize}
 
-\item Rules are always applied deterministically, therefore all Twig programs
-are confluent.
+\item Rules are applied deterministically, therefore all Twig programs are
+confluent.
 
-\item Programs which do not involve the \texttt{Fix} combinator have finite
-chains of rule application, therefore these programs terminate.
+\item Programs are finite and we do not provide a fix-point combinator,
+therefore all Twig programs terminate.
 
 \end{itemize}
 
@@ -620,8 +476,6 @@ chains of rule application, therefore these programs terminate.
 
 %%
 \begin{frame}{Values in Twig}
-
-To generate code, we let terms range over types in a given target language.
 
 Types in the target language are values in Twig.
 
@@ -661,17 +515,12 @@ including application-specific types.
 %%
 \begin{frame}{Extended rules for code generation}
 
-In Twig, code is generated as a side effect of rule evaluation. We extend the
-semantics of primitive rules so that they are functions
+In Twig, code is generated as a side effect of rule evaluation. Primitive
+rules can be associated with code \emph{templates}, which are emitted as a
+side effect of successful rule application.
 
-\[
-T \to (T \times M) \cup \{\bot\}
-\]
-
-where $M$ ranges over code \emph{templates} and include an ``empty'' template.
-
-We also extend the semantics of the various combinators to correctly combine
-templates according to a formal \emph{template algebra}.
+We extend the semantics of Twig's combinators to combine templates according
+to a formal \emph{template algebra}.
 
 \end{frame}
 
@@ -690,48 +539,14 @@ SWIG.
 Twig takes care of declaring and naming the variables, and supports parameters
 and temporary variables.
 
-\end{frame}
-
-
-%%
-\begin{frame}[fragile]{Generating code from tuples}
-
-Tuples represent a collection of values, and these may be accessed
-individually within a template:
-
-\begin{verbatim}
-[(float,float) -> float] {
-  $out = $in1 * $in1 + $in2 * $in2;
-}
-\end{verbatim}
-
-Non-tuple sub-terms may not be accessed with this syntax, because there is no
-generic way to decompose aggregate values.
+Twig also has a notion of \emph{tuple} inputs and outputs, but I have elided
+this for time.
 
 \end{frame}
 
 
 %%
-\begin{frame}[fragile]{Generating code from tuples}
-
-Variables in rules are fine, but it is up to the programmer to make sure that
-the template makes sense.
-
-\begin{verbatim}
-[(X,X) -> X] {
-  $out = $in1 * $in1 + $in2 * $in2;
-}
-\end{verbatim}
-
-If done carefully (e.g. making sure that \texttt{X} is an \texttt{int},
-\texttt{float}, etc. beforehand), this technique enables polymorphic code
-generation.
-
-\end{frame}
-
-
-%%
-\begin{frame}[fragile]{GPU Example revisited}
+\begin{frame}[fragile]{GPU example}
 
 So now we can write our simple GPU example:
 
@@ -767,127 +582,23 @@ allows for user-defined algebraic identities.
 Twig provides many built-in identities, for example:
 
 \begin{itemize}
-  \item \texttt{id;X => X}
-  \teim \texttt{X;fail => fail}
-  \item \texttt{X;(Y|Z) => (X;Y)|(X;Z)}
-  \item \texttt{\#all($r_1,\ldots,r_n$);\#all($s_1,\ldots,s_n$) => 
-  \#all($r_1$;$s_1$,\ldots,$r_n$;$s_n$)}
+  \item $\mathtt{id;X} \to \mathtt{X}$
+  \item $\mathtt{X;fail} \to \mathtt{fail}$
+  \item $\mathtt{X;(Y|Z)} \to \mathtt{(X;Y)|(X;Z)}$
   \item $\ldots$
 \end{itemize}
 
 These reductions are performed with a general-purpose rewrite engine, so it is
-important that the set be confluent and terminating.
+important that the set be confluent and terminating. Twig \textbf{does not}
+enforce this!
 
 \end{frame}
 
 
 %%
-\begin{frame}[fragile]{Evaluation of Twig's Utility}
+\begin{frame}[fragile]{Summary}
 
-Twig has been (mostly) implemented in Haskell. I am in the process of
-evaluating its application to the GPU problem.
-
-\begin{itemize}
-
-\item We have demonstrated Twig's algebraic reduction on simple GPU programs.
-
-\item We are evaluating its effectiveness for large, realistic GPU programs.
-
-\item We are comparing the code generated by Twig against other GPU code
-generators such as PyCUDA.
-
-\end{itemize}
-
-\end{frame}
-
-
-%%
-\begin{frame}[fragile]{Other applications}
-
-We are also using Twig to generate efficient multi-language bindings. Twig's
-algebraic identities can be used to bypass intermediate interoperability
-layers in certain contexts.
-
-\begin{center}
-\includegraphics[height=1.5in]{images/multi-language}
-\end{center}
-
-\end{frame}
-
-
-%%
-\begin{frame}{Related work}
-
-Twig began as a method for multi-language binding generation, influenced by
-ad-hoc tools such as SWIG. SWIG is effective but basic. In particular, there
-is no way to compose rules, and no way to generate code other than bindings.
-
-Moby/FIG was a major influence on Twig. Twig is a more general tool than FIG,
-but shares a similar formal approach.
-
-PyCUDA generates native GPU code from Python. The Python GPU functions
-generate C code, which is then compiled, evaluated, and returned back into
-Python at runtime.
-
-\end{frame}
-
-
-%%
-\begin{frame}{Future directions}
-
-In the future Twig could be extended:
-
-\begin{itemize}
-
-\item Allowing users to generate code in other languages (e.g. Python).
-
-\item Supporting more sophisticated code generation, e.g. functors.
-
-\item Ensuring that user-defined reductions terminate and are confluent.
-
-\end{itemize}
-
-Twig belongs to a class of tools which are also useful for program analysis
-and formal methods...
-
-\end{frame}
-
-
-%% 
-\begin{frame}{Formal methods}
-
-Term rewriting is fundamental in formal methods. It is relevant whenever you
-need to reason about equivalence relationships. Proofs are a particularly
-important example.
-
-Formal semantics and type systems are also important tools for formal methods.
-
-Automated reasoning about languages like C is difficult in general because
-programs do not contain high-level semantic information.
-
-Formal semantics can be used to augment general-purpose languages and enable
-higher-level reasoning. Code generation in Twig is an example of this
-approach.
-
-These techniques help us build software that is correct by construction.
-
-\end{frame}
-
-
-%% 
-\begin{frame}{Formal methods}
-
-``Formal methods'' refers to several techniques for mathematical reasoning
-about software properties. These include:
-
-\begin{itemize}
-  \item Model checking;
-  \item Formal semantics;
-  \item Type systems.
-\end{itemize}
-
-In general formal methods may be high-cost, but for domains like
-cyber-security and NW they are often justified.
+\ldots
 
 \end{frame}
 
