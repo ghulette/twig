@@ -35,7 +35,7 @@
 Today I will be talking about:
 
 \begin{enumerate}
-  \item Why generating code is difficult
+  \item Motivation for Twig
   \item Term rewriting theory
   \item Twig's language
   \item How Twig generates code
@@ -453,6 +453,8 @@ Discard result:
 \infer{t \arr{\lnot s} t}{t \arr{s} \bot}
 \]
 
+\small{We omit discussion of \emph{tuple} combinators.}
+
 \end{frame}
 
 
@@ -528,8 +530,7 @@ to a formal \emph{template algebra}.
 %%
 \begin{frame}{Code templates}
 
-Primitive rules have a syntax for attaching a templates, based on that of
-SWIG.
+Primitive rules have a syntax for attaching a templates, based on SWIG.
 
 \begin{itemize}
   \item \texttt{[int -> float] \{ \$out = (float)\$in; \}}
@@ -538,9 +539,6 @@ SWIG.
 
 Twig takes care of declaring and naming the variables, and supports parameters
 and temporary variables.
-
-Twig also has a notion of \emph{tuple} inputs and outputs, but I have elided
-this for time.
 
 \end{frame}
 
@@ -563,12 +561,12 @@ So now we can write our simple GPU example:
 Notice the \texttt{\@reduce} directive:
 
 \begin{verbatim}
-@reduce copyArrayFromGPU ; copyArrayToGPU => id
+@reduce (copyFromGPU;copyToGPU) => id
 \end{verbatim}
 
 This tells Twig to replace the expression
 
-\texttt{copyArrayFromGPU ; copyArrayToGPU} 
+\texttt{copyFromGPU;copyToGPU}
 
 with the identity rule wherever it occurs. The \texttt{@reduce} directive
 allows for user-defined algebraic identities.
@@ -598,7 +596,16 @@ enforce this!
 %%
 \begin{frame}[fragile]{Summary}
 
-\ldots
+We covered:
+
+\begin{itemize}
+  \item Abstract rewriting theory,
+  \item Terms, matching, and substitution,
+  \item Twig's rules and combinators for rule expressions,
+  \item How Twig generates code,
+  \item Reductions that can simplify expressions,
+  \item An example using reductions to eliminate redundant GPU copies.
+\end{itemize}
 
 \end{frame}
 
@@ -606,7 +613,7 @@ enforce this!
 %% 
 \begin{frame}{Conclusion}
 
-Questions?
+Thanks for listening! Questions?
 
 My email: \texttt{ghulett@sandia.gov}
 

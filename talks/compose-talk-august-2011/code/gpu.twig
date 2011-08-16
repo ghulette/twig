@@ -1,16 +1,11 @@
-copyArrayToGPU = 
-  [(array(X),int) -> (gpuarray(X),int)] { ... }
-copyArrayFromGPU = 
-  [(gpuarray(X),int) -> (array(X),int)] { ... }
-kernel {id} = 
-  [(gpuarray(X),int)) -> (gpuarray(X),int)] {
+copyToGPU   = [(array(X),int)     -> (gpuarray(X),int)] {...}
+copyFromGPU = [(gpuarray(X),int)  -> (array(X),int] {...}
+kernel{k}   = [(gpuarray(X),int)) -> (gpuarray(X),int)] {
   ...
-  invoke_kernel($id);
+  invoke_kernel($k);
   ...
 }
-execKernel {k} = 
-  copyArrayToGPU ; kernel {$k} ; copyArrayFromGPU
-main = 
-  execKernel {"foo"} ; execKernel {"bar"}
+execKernel(k) = copyToGPU;kernel(k);copyFromGPU
+main          = execKernel{"foo"};execKernel{"bar"}
 
-@reduce (copyArrayFromGPU ; copyArrayToGPU) => id
+@reduce (copyFromGPU;copyToGPU) => id
