@@ -1,0 +1,16 @@
+copyArrayToGPU = 
+  [(array(X),int) -> (gpuarray(X),int)] { ... }
+copyArrayFromGPU = 
+  [(gpuarray(X),int) -> (array(X),int)] { ... }
+kernel {id} = 
+  [(gpuarray(X),int)) -> (gpuarray(X),int)] {
+  ...
+  invoke_kernel($id);
+  ...
+}
+execKernel {id} = 
+  copyArrayToGPU ; kernel {$id} ; copyArrayFromGPU
+main = 
+  execKernel {"foo"} ; execKernel {"bar"}
+
+@reduce (copyArrayFromGPU ; copyArrayToGPU) => T

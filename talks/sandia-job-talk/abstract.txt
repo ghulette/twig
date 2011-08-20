@@ -1,0 +1,24 @@
+Type-driven program generation using term rewriting
+
+Faced with a programming task that is too intricate or tedious to write by
+hand in a given target language, programmers may prefer to generate the
+program from a higher-level specification. One such task is GPU programming.
+Utilizing a GPU involves lengthy setup and teardown routines, as well as
+extensive error checking and memory management. Generating code in this
+scenario is desirable but naive tools may introduce inefficiencies, such as
+redundant memory copies.
+
+We present a new language called Twig, suitable for type-directed code
+generation tasks. Twig's semantics are based on the theory of term rewriting,
+which combines elements of abstract rewriting theory and universal algebra
+into a Turing-complete model of computation. This framework allows simple
+rules to be composed into complex code generation strategies. This approach is
+general enough to cope with a variety of code generation tasks including, as
+we show, the GPU example.
+
+We present some basic theories and results from term rewriting and show how
+Twig leverages them. Then we show how Twig can be used for GPU code
+generation, and in particular how our work supports suppression of artifacts
+such as redundant copies to improve performance. Finally we will discuss how
+generic term rewriting tools, like Twig, might be applied to problems in
+formal verification and cyber security.
