@@ -1,6 +1,5 @@
-http://www.ncsa.illinois.edu/~kindr/files/CiSE12-GPI_SI-CfP.pdf 2:01
-http://www.wikicfp.com/cfp/servlet/event.showcfp?eventid=17193&copyownerid=26786
-http://www.wikicfp.com/cfp/servlet/event.showcfp?eventid=16050&copyownerid=19912
-http://www.wikicfp.com/cfp/servlet/event.showcfp?eventid=17133&copyownerid=26749
-http://www.wikicfp.com/cfp/servlet/event.showcfp?eventid=16535&copyownerid=7800
-http://www.wikicfp.com/cfp/servlet/event.showcfp?eventid=11148&copyownerid=14667
+PDCS - Sep 5th
+http://www.iasted.org/conferences/cfp-757.html
+
+PADL - Sep 17th (Abstract due Sep 10th)
+http://research.microsoft.com/en-us/um/people/crusso/padl12/
