@@ -1,0 +1,59 @@
+\documentclass{acm_proc_article-sp}
+% \usepackage{fullpage}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{proof}
+\usepackage{url}
+\usepackage{parskip}
+
+\newcommand{\arr}[1]{\ensuremath\xrightarrow{#1}}
+
+\begin{document}
+
+\title{The Twig Language}
+
+\numberofauthors{3}
+
+\author{
+% 1st. author
+\alignauthor
+Geoffrey C. Hulette\\
+\affaddr{University of Oregon}\\
+\affaddr{Eugene, OR}\\
+\email{ghulette@cs.uoregon.edu}
+% 2nd. author
+\alignauthor
+Matthew Sottile\\
+\affaddr{Galois, Inc.}\\
+\affaddr{Portland, OR}\\
+\email{mjsottile@computer.org}
+% 3rd author
+\alignauthor
+Allen D. Malony\\
+\affaddr{University of Oregon}\\
+\affaddr{Eugene, OR}\\
+\email{malony@cs.uoregon.edu}
+}
+
+\maketitle
+
+\begin{abstract}
+
+Twig's language design.
+
+\end{abstract}
+
+\input{intro}
+\input{twig}
+\input{related-work}
+\input{evaluation}
+\input{conclusion}
+
+This work was supported in part by the Department of Energy Office of Science,
+Advanced Scientific Computing Research.
+
+% \pagebreak
+\bibliographystyle{abbrv}
+\bibliography{twig-language}
+
+\end{document}
