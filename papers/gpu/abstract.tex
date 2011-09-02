@@ -2,18 +2,17 @@
 
 \begin{abstract}
 
-Numerous programming models have been introduced in the last few years to
-allow programmers to utilize new accelerator-based architectures. While OpenCL
-and CUDA represent similar low-level abstractions for programming
-accelerators, most often based on GPU processors, few higher level programming
-models have emerged that are compatible with common general purpose languages.
-In this paper, we propose that extensions to the type systems of traditional
-general purpose languages can be made that allow programmers to continue to
-work at a high level of abstraction with respect to memory, deferring much of
-the tedium of data management and movement code in OpenCL or CUDA to an
-automatic compilation tool. Furthermore, the techniques based on formal term
-rewriting that are described in this paper take advantage of reduction and
-simplification rules that can be used to optimize memory optimizations to
-reduce unnecessary storage requirements and transfer activity.
+Numerous programming models have been introduced to allow programmers to
+utilize new accelerator-based architectures. While OpenCL and CUDA provide
+low-level access to accelerator programming (typically GPUs), the task cries
+out for a higher level abstraction. Of the higher level programming models
+which have emerged, none are intended to co-exist with mainstream, general
+purpose languages. In this paper, we propose that extensions to the type
+systems of traditional general purpose languages can be made that allow
+programmers to work at a higher level of abstraction with respect to memory,
+deferring much of the tedium of data management and movement code in OpenCL or
+CUDA to an automatic compilation tool. Furthermore, our techniques, based on
+formal term rewriting, take advantage of reduction and simplification rules
+that can reduce unnecessary data motion to and from the accelerator.
 
 \end{abstract}
