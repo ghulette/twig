@@ -16,7 +16,112 @@ evaluation of the transformation generate code as a side effect. In this way,
 domain specific code can be generated depending on the input types. In this
 section we describe the basics of Twig's language.
 
-\input{codegen}
+
+\subsection{Code generation}
+\label{twig:code-gen}
+
+Twig provides an abstract model of code generation. We discuss our concrete
+implementation, which generates C code, in
+Section~\ref{twig:concrete-code-gen}. For our purposes, ``code'' is
+represented by an abstract data type $M$. Each $x$ in $M$ is intended to
+represent a ``block'' of code; i.e., something that performs some operation on
+a set of inputs and produces a set of outputs. Although this is the intended
+interpretation, our model elides the details and focuses only on the inputs
+and outputs for each block, and how they can be arranged to form larger
+blocks.
+
+For all $x$ in $M$, we define two functions \texttt{in} and \texttt{out},
+which map elements in $M$ to, respectively, the number of inputs and outputs
+of the element. In either case, the number may be zero.
+
+Given this structure, we provide two fundamental operations. The first is
+\emph{sequential composition}, where the outputs of one code block are fed
+into the inputs of another. We represent this operation as addition ($+$) and
+say that
+
+\[
+\infer
+{x+y \in M}
+{x \in M \quad y \in M \quad \mathtt{out}(x) = \mathtt{in}(y)}
+\]
+
+and
+
+\begin{eqnarray*}
+\mathtt{in} (x+y) &=& \mathtt{in}(x)\\
+\mathtt{out}(x+y) &=& \mathtt{out}(y)
+\end{eqnarray*}
+
+Note that the condition that the number of outputs on the left side equal the
+number of inputs on the right implies that $M$ is not closed under sequential
+composition. We take care in the design of the rest of Twig's semantics to
+ensure that this is never a problem.
+
+The second operation is \emph{parallel composition}, where two blocks execute
+independently of one another. We represent this operation as multiplication
+($\times$) and say that
+
+\[
+\infer
+{x \times y \in M}
+{x \in M \quad y \in M}
+\]
+
+and we define
+
+\begin{eqnarray*}
+\mathtt{in} (x \times y) =& \mathtt{in}(x)  + \mathtt{in}(y)\\
+\mathtt{out}(x \times y) =& \mathtt{out}(x) + \mathtt{out}(y)
+\end{eqnarray*}
+
+Note that $M$ is closed under parallel composition.
+
+We define a set of special elements in $M$, namely $\Pi_m(i_1,\ldots,i_n)$,
+where $i_1,\ldots,i_n \in \lbrace i | 1 \leq i \leq m \rbrace$. These are
+called \emph{permutation} elements, and represent the primitive operation of
+rearranging $m$ inputs to $n$ outputs, possibly in a different order, and
+possibly duplicating or dropping elements. The elements are only passed
+through, and are otherwise unchanged.
+
+Among the permutation elements, there are a set of elements for which we
+provide special rules; namely, a set of \emph{identity} permutations. The
+simplest of these is $\Pi_1(1)$, which acts as an identity transformation with
+one input and one output. We refer to this element as $I_1$. In fact, there
+are an unlimited number of identity transformations, which take $n$ inputs to
+$n$ outputs, unchanged. These are referred to as $I_n$, where $1 \leq n$, and
+$I_n = \Pi_n(1,2,\ldots,n)$. Clearly,
+
+\[
+\mathtt{in}(I_n) = \mathtt{out}(I_n) = n
+\]
+
+Since the elements $I_n$ are intended to represent identity operations, we
+assign them a special meaning. Namely,
+
+\[
+\infer{x + I_n \to x}{\mathtt{out}(x) = n} 
+\qquad
+\infer{I_n + x \to x}{\mathtt{in}(x) = n}
+\]
+
+That is, $I_n$ acts as both a left- and right-identity when sequenced with a
+block $x$. We sometimes use $I_n$ as a kind of ``no-op.''
+
+It is worth noting one further identity, namely
+
+\[
+I_n = (I_1)^n
+\]
+
+That is, $I_n$ is equivalent to the $n$-way parallel composition of $I_1$.
+
+When $n$ is implied from the context we will sometimes write $I$ for $I_n$.
+For example, $x+I$ as a shorthand to refer to $x+I_n$ where $n =
+\mathtt{out}(x)$.
+
+Using this simple system for composition, a wide variety of code can be
+generated.
+
 
 \subsection{Values}
 
