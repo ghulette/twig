@@ -2,65 +2,53 @@
 
 \section{Introduction}
 
-Programmers are often constrained by engineering requirements to produce work
-in a mainstream language such as C or Java. At the same time, there is an
-increasing awareness of the benefits of \emph{domain-specific} programming
-languages (DSLs) for letting programmers focus on the problem they are solving
-instead of implementation details. The goal of DSLs is to closely model the
-problem domain that a programmer is working within, and this brings a number
-of benefits. First, DSLs avoid the reduction in abstraction from algorithm
-statement to a corresponding implementation that is required by traditional
-languages, allowing a clearer and more succinct expression. Second, DSLs may
-admit automated high-level reasoning about programs, such as optimization for
-efficiency in running time or space requirements, or proving that the program
-adheres to required constraints such as variable value ranges. Where a DSL
-provides these benefits and also generates C (or some other mainstream
-language) as output, it may be useful and relatively easy to integrate with
-existing engineering processes. Furthermore, domain specific languages reside
-at a higher level of abstraction than traditional languages, allowing them to
-be more easily retargeted to new architectures due to a lack of specificity
-regarding how high level algorithms should be mapped to specific
-architectures. This final benefit is particularly attractive for
-non-traditional processor architectures emerging in the market at present.
+Writing code for accelerators such as GPUs can be tedious and error prone. One
+problem is that the dominant methods for programming in these environments,
+such as CUDA or OpenGL, provide only a low-level interface to the hardware.
+For many programmers, in particular domain programmers such as simulation
+scientists, a higher-level interface may be desired. The trade-off, however,
+may be a pronounced decrease in performance. Since performance is generally
+the salient reason to use an accelerator in the first place, this situation
+represents a major impediment to the widespread adoption of accelerator
+hardware environments by non-specialist programmers.
 
-\subsection{The Domain Specific Language Approach}
+One of the major potential impediments to performance on accelerators, of
+particular hazard to high-level programming models, is redundant memory
+movement. Accelerators typically possess their own special-purpose memory,
+separate from the main system memory. Programmers must explicitly copy data
+from the system to the accelerator before it can be processed there. Once the
+data is processed, it must be copied back into the system memory. Copying
+memory to and from the device is typically quite slow, presenting one of the
+major bottlenecks for accelerator performance. Programmers must be careful,
+therefore, to copy data only as needed, and to do as much processing as
+possible on the device before copying the data back to the system.
 
-The power of DSLs comes at a cost, however. DSLs typically have a unique
-syntax and semantics that may be known primarily to the language's author. The
-interpreter and other tools may be difficult to support or extend if the
-original author becomes unavailable. It can also be difficult to extend DSLs
-to support new constructs or rules. This has been a long standing argument in
-favor of continued preference for traditional general purpose programming
-languages.
+Another problem with high-level accelerator programming environments is that
+of integration with existing and supporting code. Scientists at Sandia, for
+example, typically write code in popular general-purpose languages such as
+C/C++, Fortran, or Python. They also make frequent use of the vast catalog of
+libraries in these same languages. Domain-specific accelerator languages which
+cannot integrate, or integrate only with difficulty, with existing codes in
+these languages are of limited use in these scenarios.
 
-%% This paragraph needs more work. Why does twig help fix the problems pointed
-%% out above?
+In this paper we present a high level code generation language called
+\emph{Twig} and show how it can be used to overcome the obstacles to
+high-level accelerator programming described above. In particular, Twig allows
+for simple, high-level accelerator programming, and at the same time supports
+automated reasoning about composite programs that can, in many cases, avoid
+redundant memory copying and thereby retain high performance. Finally, Twig's
+role in the programming toolchain is to generate code in a mainstream language
+like C. The generated code is then incorporated into a surrounding program,
+which is built as usual. This minimizes the complexity that Twig adds to the
+build process, and allows Twig code to interact easily with existing code and
+libraries.
 
-We introduce Twig, a DSL intended for ``ad-hoc'' modeling of a variety of
-high-level program semantics, and admitting simple reasoning via equivalence
-rules. The evaluation of a Twig program generates code in C (and potentially
-other languages), lending it to integration in existing projects. By
-``ad-hoc'' we mean that Twig can be configured rather easily by application
-programmers to serve as a DSL for different purposes, even within the same
-application.
+Twig achieves these goals through a formal basis in term rewriting, along with
+a scheme which uses data types to direct the generation of code in the target
+language. In particular, we augment existing data types in the target language
+with a notion of \emph{location}, e.g., an array of floats located on a GPU,
+or an integer located in main memory. We describe the details of this approach
+in the following section.
 
-In this paper, we demonstrate how Twig can be used to build a domain specific
-extension to traditional languages like C to address what we believe are
-limitations to existing type systems that complicate the programming of hybrid
-architectures such as those based on GPGPUs. All mainstream languages are
-based on an assumption that the underlying architecture, either via hardware
-assistance or software runtime support, provides the illusion of a single
-addressable memory accessible by all cores within a computer. Hybrid systems
-violate this by partitioning memory between processors of different types
-(such as a CPU and GPU), and forcing data movement between these memories to
-be explicitly stated. Traditional languages must be extended to abstract away
-the management of this data movement. This paper shows how Twig can be used to
-move this into the type system of a traditional language via a domain specific
-extension.
-
-\subsection{The Twig Approach}
-
-Twig is not really a DSL itself, but rather enables the construction of DSLs
-for various applications and domains. It enables high-level composition of
-code by providing basic composition operators which operate on rules. Rules
-can generate arbitrarily complex code.
+% Why C? Because it is lingua franca, and it is the language of accelerator %
+% APIs.
