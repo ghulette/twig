@@ -2,53 +2,79 @@
 
 \section{Introduction}
 
-Writing code for accelerators such as GPUs can be tedious and error prone. One
-problem is that the dominant methods for programming in these environments,
-such as CUDA or OpenGL, provide only a low-level interface to the hardware.
-For many programmers, in particular domain programmers such as simulation
-scientists, a higher-level interface may be desired. The trade-off, however,
-may be a pronounced decrease in performance. Since performance is generally
-the salient reason to use an accelerator in the first place, this situation
-represents a major impediment to the widespread adoption of accelerator
-hardware environments by non-specialist programmers.
+Programming for GPUs can be a challenging task, in large part due to the
+partitioned memory model that they impose on programmers. Unlike a basic SMP,
+data must be explicitly moved within the memory hierarchy such that the
+appropriate processing device can access it. There is a considerable amount of
+protocol that must be invoked in order to set up and release the device, move
+data to and from the device, and synchronize processing at barriers. This
+protocol logic becomes more complex when tuning for performance by using
+asynchronous memory transfers to overlap computation and data movement. Yet for
+many problems, the \emph{computational logic} of a program related to the goals
+of the application is fairly simple to state -- perform some set of functions on
+vector or array data. Current GPU programming techniques in common languages for
+high performance computing (such as C, C++, and Fortran) require this
+computational logic to be intermixed with the \emph{protocol logic}, resulting
+in programs that are complex to write, maintain, and tune for performance.
+Composition of independently developed program units that use the GPU is
+similarly complex due to limited (or nonexistent) methods for reasoning about
+the result of this composition in terms of lower level memory usage and task
+creation.
 
-One of the major potential impediments to performance on accelerators, of
-particular hazard to high-level programming models, is redundant memory
-movement. Accelerators typically possess their own special-purpose memory,
-separate from the main system memory. Programmers must explicitly copy data
-from the system to the accelerator before it can be processed there. Once the
-data is processed, it must be copied back into the system memory. Copying
-memory to and from the device is typically quite slow, presenting one of the
-major bottlenecks for accelerator performance. Programmers must be careful,
-therefore, to copy data only as needed, and to do as much processing as
-possible on the device before copying the data back to the system.
+This pattern suggests that programmers should consider abstracting the interface
+to the GPU that constitutes the protocol logic of the program, so that they can
+focus on the domain oriented computational logic of the program. This will allow
+them to avoid obfuscating their computational logic with the tedious details of
+interacting with the device.
 
-Another problem with high-level accelerator programming environments is that
-of integration with existing and supporting code. Scientists at Sandia, for
+At the same time, it is crucial that GPU programming systems are able to
+integrate with existing code and programming tools. Scientists at Sandia, for
 example, typically write code in popular general-purpose languages such as
 C/C++, Fortran, or Python. They also make frequent use of the vast catalog of
-libraries in these same languages. Domain-specific accelerator languages which
-cannot integrate, or integrate only with difficulty, with existing codes in
-these languages are of limited use in these scenarios.
+libraries in these languages. Domain-specific accelerator languages which cannot
+integrate, or integrate only with difficulty, with existing codes in these
+languages are of limited use in these scenarios.
 
-In this paper we present a high level code generation language called
-\emph{Twig} and show how it can be used to overcome the obstacles to
-high-level accelerator programming described above. In particular, Twig allows
-for simple, high-level accelerator programming, and at the same time supports
-automated reasoning about composite programs that can, in many cases, avoid
-redundant memory copying and thereby retain high performance. Finally, Twig's
-role in the programming toolchain is to generate code in a mainstream language
-like C. The generated code is then incorporated into a surrounding program,
-which is built as usual. This minimizes the complexity that Twig adds to the
-build process, and allows Twig code to interact easily with existing code and
-libraries.
+In this paper we present a high\-level code generation language called
+\emph{Twig} and show how it can be used to overcome some of the obstacles to GPU
+accelerator programming described above. Twig allows for simple, high-level GPU
+programming, and at the same time supports automated reasoning about composite
+programs that can, in many cases, avoid redundant memory copying and thereby
+retain high performance. Crucially, Twig's role in the programming toolchain is
+to generate code in a mainstream language like C. The generated code is then
+incorporated into a surrounding program, which is built as usual. This minimizes
+the complexity that Twig adds to the build process, and allows Twig code to
+interact easily with existing code and libraries.
 
-Twig achieves these goals through a formal basis in term rewriting, along with
-a scheme which uses data types to direct the generation of code in the target
-language. In particular, we augment existing data types in the target language
-with a notion of \emph{location}, e.g., an array of floats located on a GPU,
-or an integer located in main memory. We describe the details of this approach
-in the following section.
+Twig achieves these goals by leveraging the theory of term
+rewriting~\cite{baader98rewriting}, along with a scheme which uses data types to
+direct the generation of code in the target language. In particular, we augment
+existing data types in the target language with a notion of \emph{location},
+e.g., an array of floats located on a GPU, or an integer located in main memory.
+We describe the basics of Twig's language in the following section, and then
+discuss how we use this language along with located types to generate code for
+GPUs.
+
+% Writing code for accelerators such as GPUs can be tedious and error prone. One
+% problem is that the dominant methods for programming in these environments,
+% such as CUDA or OpenGL, provide only a low-level interface to the hardware.
+% For many programmers, in particular domain programmers such as simulation
+% scientists, a higher-level interface may be desired. The trade-off, however,
+% may be a pronounced decrease in performance. Since performance is generally
+% the salient reason to use an accelerator in the first place, this situation
+% represents a major impediment to the widespread adoption of accelerator
+% hardware environments by non-specialist programmers.
+
+% One of the major potential impediments to performance on accelerators, of
+% particular hazard to high-level programming models, is redundant memory
+% movement. Accelerators typically possess their own special-purpose memory,
+% separate from the main system memory. Programmers must explicitly copy data
+% from the system to the accelerator before it can be processed there. Once the
+% data is processed, it must be copied back into the system memory. Copying
+% memory to and from the device is typically quite slow, presenting one of the
+% major bottlenecks for accelerator performance. Programmers must be careful,
+% therefore, to copy data only as needed, and to do as much processing as
+% possible on the device before copying the data back to the system.
 
 % Why C? Because it is lingua franca, and it is the language of accelerator %
 % APIs.
