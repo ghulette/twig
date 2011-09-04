@@ -2,7 +2,32 @@
 
 \section{Located Types}
 
-Twig augments types in the target language with a notion of location. We provide
-rules which respect these locations and generate code appropriately. This
-provides a kind of type checking facility, ensuring that operations on the GPU
-are matched with data that is already there... blah blah.
+An important principle of Twig's design is the ability to augment type
+information. Twig generates C code, and that code must therefore conforms to C's
+type system. However, Twig can operate on more complex types, as long as these
+types have a mapping to C. This enables us to design primitive rules that insist
+on stricter type information than would be available in C alone.
+
+For GPU programming, we exploit this capability by adding a notion of
+\emph{location} to the usual C types. Location in this case describes where the
+data is stored in memory, i.e., either in system memory or on the GPU. For
+example, an array of integers in system memory is represented by the simple term
+\texttt{array(int)}, while the same data on the GPU is represented by the term
+\texttt{gpu(array(int))}. By wrapping the basic data type with the location
+information, we ensure that rules must be specific to the GPU in order to
+operate on GPU data. For example,
+
+\begin{verbatim}
+[gpu(array(float)) -> gpu(array(int))] {...}
+\end{verbatim}
+
+will convert an array of floats to an array of integers, but only if the data
+already resides on the GPU. If it does not, the data must be moved with a rule
+such as
+
+\begin{verbatim}
+[array(float) -> gpu(array(float))] {...}
+\end{verbatim}
+
+This scheme could be extended to support more complex locations, such as
+multiple GPUs.

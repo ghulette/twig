@@ -1,3 +1,54 @@
 %!TEX root = twig-gpu.tex
 
 \section{Example}
+
+The following example shows how reductions in Twig can eliminate redundant
+memory copies.
+
+\begin{verbatim}
+copyToGPU   = [(array(X),int)     -> (gpuarray(X),int)] {...}
+copyFromGPU = [(gpuarray(X),int)  -> (array(X),int] {...}
+kernel{k}   = [(gpuarray(X),int)) -> (gpuarray(X),int)] {
+  ...
+  invoke_kernel($k);
+  ...
+}
+execKernel(k) = copyToGPU;kernel(k);copyFromGPU
+main          = execKernel{"foo"};execKernel{"bar"}
+
+@reduce (copyFromGPU;copyToGPU) => id	
+\end{verbatim}
+
+This example is considerably simplified in the interest of brevity and clarity.
+We mark the missing C and OpenCL code for each rule with an ellipsis.
+
+The first three lines define primitive rules for moving data to and from the
+GPU, and for invoking a kernel transformation on the array in GPU memory. The
+kernel rule is parameterized with an argument \texttt{k}, which allows us to
+pass the name of the kernel to be executed.
+
+The \texttt{execKernel} rule will perform one kernel operation on the GPU. Note
+that this rule will be semantically valid in whatever context it is called,
+since it first moves the data onto the GPU, then executes the kernel, and then
+copies it back (in a more realistic program, we might block while the copies
+complete). The semantics are those of a function on an array -- considerably
+simpler than the abstraction presented by OpenCL or CUDA alone.
+
+The \texttt{main} rule is the top level of the program. It executes two kernels
+in sequence with two invocations of \texttt{execKernel}. As noted above, each
+invocation would normally result in a copy to and from the GPU. Since the data
+is not modified in between GPU calls, on its own this function would generate a
+redundant copy.
+
+The next line, however, specifies a reduction which will eliminate the redundant
+copy. It simply says that if data is copied from the GPU to the system and then
+immediately back, we can replace the copying with an identity transformation,
+i.e., a no-op.
+
+Although this example is quite simple, it demonstrates the power of reductions.
+The reduction rule given here would probably be paired with the \texttt{copyTo}
+and \texttt{copyFrom} rules in a module that could be exposed for domain
+programmers, allowing them to perform GPU operations without ever worrying about
+the rule design. Sophisticated users, however, could even add
+application-specific reductions, enabling very powerful and customizable code
+generation based on domain-specific logic.
