@@ -2,24 +2,26 @@
 
 \section{Introduction}
 
-Programming for GPUs can be a challenging task, in large part due to the
-partitioned memory model that they impose on programmers. Unlike a basic SMP,
-data must be explicitly moved within the memory hierarchy such that the
-appropriate processing device can access it. There is a considerable amount of
-protocol that must be invoked in order to set up and release the device, move
-data to and from the device, and synchronize processing at barriers. This
-protocol logic becomes more complex when tuning for performance by using
-asynchronous memory transfers to overlap computation and data movement. Yet for
-many problems, the \emph{computational logic} of a program related to the goals
-of the application is fairly simple to state -- perform some set of functions on
-vector or array data. Current GPU programming techniques in common languages for
-high performance computing (such as C, C++, and Fortran) require this
-computational logic to be intermixed with the \emph{protocol logic}, resulting
-in programs that are complex to write, maintain, and tune for performance.
-Composition of independently developed program units that use the GPU is
-similarly complex due to limited (or nonexistent) methods for reasoning about
-the result of this composition in terms of lower level memory usage and task
-creation.
+Programming for hybrid computers can be a challenging task, in large
+part due to the partitioned memory model that they impose on
+programmers. Unlike a basic SMP, data must be explicitly moved within
+the memory hierarchy such that the appropriate processing device can
+access it. There is a considerable amount of protocol that must be
+invoked in order to set up and release the device, move data to and
+from the device, and synchronize processing at barriers. This protocol
+logic becomes more complex when tuning for performance by using
+asynchronous memory transfers to overlap computation and data
+movement. Yet for many problems, the \emph{computational logic} of a
+program related to the goals of the application is fairly simple to
+state -- perform some set of functions on vector or array
+data. Current GPU programming techniques in common languages for high
+performance computing (such as C, C++, and Fortran) require this
+computational logic to be intermixed with the \emph{protocol logic},
+resulting in programs that are complex to write, maintain, and tune
+for performance.  Composition of independently developed program units
+that use the GPU is similarly complex due to limited (or nonexistent)
+methods for reasoning about the result of this composition in terms of
+lower level memory usage and task creation.
 
 This pattern suggests that programmers should consider abstracting the interface
 to the GPU that constitutes the protocol logic of the program, so that they can
@@ -27,15 +29,16 @@ focus on the domain oriented computational logic of the program. This will allow
 them to avoid obfuscating their computational logic with the tedious details of
 interacting with the device.
 
-At the same time, it is crucial that GPU programming systems are able to
-integrate with existing code and programming tools. Scientists at Sandia, for
-example, typically write code in popular general-purpose languages such as
-C/C++, Fortran, or Python. They also make frequent use of the vast catalog of
-libraries in these languages. Domain-specific accelerator languages which cannot
-integrate, or integrate only with difficulty, with existing codes in these
-languages are of limited use in these scenarios.
+At the same time, it is crucial that GPU programming systems are able
+to integrate with existing code and programming tools. Scientists in
+the national laboratories, for example, typically write code in
+popular general-purpose languages such as C/C++, Fortran, or
+Python. They also make frequent use of the vast catalog of libraries
+in these languages. Domain-specific accelerator languages which cannot
+integrate, or integrate only with difficulty, with existing codes in
+these languages are of limited use in these scenarios.
 
-In this paper we present a high\-level code generation language called
+In this paper we present a high-level code generation language called
 \emph{Twig} and show how it can be used to overcome some of the obstacles to GPU
 accelerator programming described above. Twig allows for simple, high-level GPU
 programming, and at the same time supports automated reasoning about composite
