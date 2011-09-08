@@ -2,35 +2,33 @@
 
 \section{Related Work}
 
-\subsection{Accelerator Programming}
-
-Programmers could build a library of functions or objects which hide as many
-details as possible. In fact this has already been done to a large extent, with
-frameworks such as CUDA or OpenCL, and these libraries are the primary way in
-which programmers already program for GPUs. This approach mitigates many
-difficult issues, but provides only a minimal abstraction -- the library
-abstraction cannot hide the need to coordinate GPU activities such as set up and
-memory management. Programmers might try to create their own libraries on top of
-CUDA or OpenCL, but in most languages the object or library facilities will not
-allow them to reason at a high semantic level. In other words, they might be
-able to simplify some operations by specializing them (e.g. ignore the
-possibility for multiple devices), but they cannot hide them altogether.
-
-Another approach is to design a domain-specific language for GPUs. Examples
-include PyCUDA and OpenMPC. Domain-specific languages are typically not
-customizable for higher-level application logic.
-
-A technique that is becoming popular and is based on the OpenMP model of
-directive-based code annotations hides much of the protocol logic by leaving it
-to a compiler and runtime system to implement it. The PGI
-Accelerate~\cite{pgi-accelerate} model and the HMPP programming
-system~\cite{hmpp} are examples of this in compiler products. This approach
-will, like OpenMP, make significant progress on lowering the barrier of entry
-for programmers. Unfortunately, these methods provide too much a black-box to
-the programmer, limiting their ability to customize the underlying GPU protocol
-logic.
-
-\subsection{Languages}
+% \subsection{Accelerator Programming}
+% 
+% Programmers could build a library of functions or objects which hide as many
+% details as possible. In fact this has already been done to a large extent,
+% with frameworks such as CUDA or OpenCL, and these libraries are the primary
+% way in which programmers already program for GPUs. This approach mitigates
+% many difficult issues, but provides only a minimal abstraction -- the library
+% abstraction cannot hide the need to coordinate GPU activities such as set up
+% and memory management. Programmers might try to create their own libraries on
+% top of CUDA or OpenCL, but in most languages the object or library facilities
+% will not allow them to reason at a high semantic level. In other words, they
+% might be able to simplify some operations by specializing them (e.g. ignore
+% the possibility for multiple devices), but they cannot hide them altogether.
+% 
+% Another approach is to design a domain-specific language for GPUs. Examples
+% include PyCUDA and OpenMPC. Domain-specific languages are typically not
+% customizable for higher-level application logic.
+% 
+% A technique that is becoming popular and is based on the OpenMP model of
+% directive-based code annotations hides much of the protocol logic by leaving
+% it to a compiler and runtime system to implement it. The PGI
+% Accelerate~\cite{pgi-accelerate} model and the HMPP programming
+% system~\cite{hmpp} are examples of this in compiler products. This approach
+% will, like OpenMP, make significant progress on lowering the barrier of entry
+% for programmers. Unfortunately, these methods provide too much a black-box to
+% the programmer, limiting their ability to customize the underlying GPU
+% protocol logic.
 
 Kennedy's \emph{telescoping languages} work sought to provide a similar ability
 to build high-level problem-solving languages that used scripting languages to

@@ -1,5 +1,11 @@
-Interaction diagram
-Diagram showing arrows, reason about arrows
-Code generation details
-Application specific transformations
-Data movement as type marshalling
+Code generation
+* more details on how to do it in practice
+* give an example, show how code is connected
+* expand on identity part - why do we want it?
+
+Move Section 3 before Section 2
+
+Use CUDA in the example
+
+Compress related work, remove "Accelerator Programming" subsection, and move to
+start
