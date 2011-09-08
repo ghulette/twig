@@ -1,6 +1,10 @@
 Expand section on Located Types
 * More of an overview of the technique - what and why, skip the how
 
+Look into automatically inserting coercions, i.e. reductions of the form
+    
+    [_ -> gpu(T)];[T -> _] => [_ -> gpu(T)];[gpu(T) -> T];[T -> _]
+
 Code generation
 * more details on how to do it in practice
 * give an example, show how code is connected
