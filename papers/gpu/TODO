@@ -1,11 +1,9 @@
+Expand section on Located Types
+* More of an overview of the technique - what and why, skip the how
+
 Code generation
 * more details on how to do it in practice
 * give an example, show how code is connected
 * expand on identity part - why do we want it?
 
-Move Section 3 before Section 2
-
 Use CUDA in the example
-
-Compress related work, remove "Accelerator Programming" subsection, and move to
-start

@@ -1,21 +1,59 @@
 %!TEX root = twig-gpu.tex
 
-\section{Located Types}
+\section{Method Overview}
 
-An important principle of Twig's design is the ability to augment type
-information. Twig generates C code, and that code must therefore conforms to C's
-type system. However, Twig can operate on more complex types, as long as these
-types have a mapping to C. This enables us to design primitive rules that insist
-on stricter type information than would be available in C alone.
+The core idea of our approach is to use Twig's language, equipped with some
+GPU-specific components, to represent GPU-related operations as a set of
+transformations on a piece of data. As we will see in Section~\ref{semantics},
+Twig imposes some significantly limitations on control flow between
+transformations. The tradeoff, however, is that it can be easy to reason about
+automated transformations on programs written in Twig. In particular, we would
+like to transform GPU-related programs to eliminate redundant copies as
+described above. Other domain- or application-specific transformations may be
+possible as well.
 
-For GPU programming, we exploit this capability by adding a notion of
+This approach allows us to recognize and exploit the scenario shown in
+Figure~\ref{basic-idea}. In the figure, two GPU kernel transformations, $f$ and
+$g$, are combined in sequence. The first part shows the na\"ive composition. The
+second part shows the desired composition, with the redundant intermediate
+copies eliminated.
+
+\begin{figure}[ht]
+\label{basic-idea}
+\begin{center}
+\includegraphics[width=3.0in]{images/basic-idea}
+\caption{Elimination of redundant data copies}
+\end{center}
+\end{figure}
+
+Twig operates on data types instead of data. The input to a Twig program is a
+data type, and the output is a transformed data type along with some generated
+code that will perform the transformation on data in the target language. For
+this reason, Twig is restricted to operate only on types that can be represented
+in the target language, (e.g., for C, things like \texttt{int}, \texttt{float},
+or \texttt{structs}). It can, however, augment the information about those types
+to make them more restrictive. For GPU programming, we exploit this capability
+with the addition of \emph{located types}.
+
+\subsection{Located Types}
+
+% An important principle of Twig's design is the ability to augment type
+% information. Twig generates C code, and that code must therefore conforms to
+% C's type system. However, Twig can operate on more complex types, as long as
+% these types have a mapping to C. This enables us to design primitive rules
+% that insist on stricter type information than would be available in C alone.
+
+For GPU programming, we exploit Twig's augmented types by adding a notion of
 \emph{location} to the usual C types. Location in this case describes where the
-data is stored in memory, i.e., either in system memory or on the GPU. For
-example, an array of integers in system memory is represented by the simple term
-\texttt{array(int)}, while the same data on the GPU is represented by the term
-\texttt{gpu(array(int))}. By wrapping the basic data type with the location
-information, we ensure that rules must be specific to the GPU in order to
-operate on GPU data. For example,
+data is stored in memory, i.e., either in system memory or on the GPU. 
+
+For example, we can have an array of \texttt{int}s on the CPU (represented in
+Twig as the type \texttt{array(int)}), or the same data type but located on the
+GPU (\texttt{gpu(array(int))}). This simple scheme allows one to express
+transformations in Twig which take location into account explicitly.
+
+By wrapping the basic data type with the location information, we ensure that
+rules must be specific to the GPU in order to operate on GPU data. For example,
 
 \begin{verbatim}
 [gpu(array(float)) -> gpu(array(int))] {...}
@@ -31,3 +69,6 @@ such as
 
 This scheme could be extended to support more complex locations, such as
 multiple GPUs.
+
+This simple but effective scheme enables facilitates automated reasoning about
+the movement of data to and from the GPU.
