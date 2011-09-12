@@ -67,8 +67,9 @@ such as
 [array(float) -> gpu(array(float))] {...}
 \end{verbatim}
 
-This scheme could be extended to support more complex locations, such as
-multiple GPUs.
-
 This simple but effective scheme enables facilitates automated reasoning about
 the movement of data to and from the GPU.
+
+Located types could easily be extended to support more complex location
+information. For example, in a computer with multiple GPU devices, each device
+could be assigned its own location.

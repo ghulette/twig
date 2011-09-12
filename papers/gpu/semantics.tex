@@ -20,48 +20,6 @@ focusing on how they are used to support GPU accelerator programming. The full
 semantics and features of the language will be provided in a forthcoming paper.
 
 
-\subsection{Code generation}
-\label{twig:code-gen}
-
-Twig uses an abstract model of code generation. In Twig, a ``block'' of code
-represent anything that performs some operation on a set of inputs and produces
-a set of outputs. Blocks may have zero or more inputs and outputs, and blocks
-can be combined as described below.
-
-This model hides some details so that the semantics are clear. Our current
-implementation supports generation of C code, and adds some extra features to
-support that language. These include such as managing type declarations,
-parameterized blocks, and ``closing blocks'' which are generated as variables go
-out of scope and are intended to be used to free resources.
-
-Given this structure, we provide two fundamental operations. The first is
-\emph{sequential composition}, where the outputs of one code block are fed into
-the inputs of another. We use the plus operator ($+$) to represent this
-operation. Twig's code generator for C takes care of declaring and uniquely
-naming temporary variables to accomplish sequencing.
-
-The second operation is \emph{parallel composition}, where two blocks execute
-independently of one another. We represent this operation with the
-multiplication operator ($\times$).
-
-Twig defines a set of special blocks, named $\Pi_m(i_1,\ldots,i_n)$, called
-\emph{permutation} blocks. These represent the primitive operation of
-rearranging $m$ inputs to $n$ outputs, possibly in a different order, and
-possibly duplicating or dropping elements. The data is only passed through, and
-are otherwise unchanged.
-
-Among the permutation blocks, there are a set of elements for which we provide
-special rules; namely, a set of \emph{identity} permutations. The simplest of
-these is $\Pi_1(1)$, which acts as an identity transformation with one input and
-one output. We refer to this element as $I_1$. In fact, there are an unlimited
-number of identity transformations, which take $n$ inputs to $n$ outputs,
-unchanged. These are referred to as $I_n$, where $1 \leq n$, and $I_n =
-\Pi_n(1,2,\ldots,n)$. The blocks $I_n$ are left- and right-identity elements
-under a sequence operation. We sometimes use $I_n$ as a kind of ``no-op.''
-
-Using this simple system, a wide variety of code can be generated.
-
-
 \subsection{Values}
 
 Values in Twig can be any valid \emph{term} representing a type in the target
