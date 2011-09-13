@@ -26,23 +26,54 @@ be used to free resources. We are looking into the possibility of incorporating
 these and other features into the language-neutral model, but for the moment
 they are specific to C.
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{images/code-gen1}
+\caption{Two basic blocks, A and B.}
+\label{fig:codegen-blocks}
+\end{figure}
+
 \subsection{Block Composition}
 
-As mentioned above, Twig provides two fundamental operations to compose blocks.
-The first is the \emph{sequential composition} binary operator, represented by
-the addition symbol ($+$).
+As mentioned above, Twig provides two fundamental binary operations on blocks.
+The first is the \emph{sequential composition} operator, represented by the
+addition symbol ($+$). Sequencing connects two blocks of code by ``wiring'' the
+outputs of the first block into the inputs of the second. In C, this is done by
+creating temporary variables which are substituted into the original blocks. For
+example, see Figure~\ref{fig:codegen-seq}, which builds on
+Figure~\ref{fig:codegen-blocks}.
 
-Twig's code generator for C takes care of declaring and uniquely naming
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{images/code-gen2}
+\caption{Two blocks from Figure~\ref{fig:codegen-blocks} composed sequentially.
+The variable ``tmp'' is created, and renaming performed, so that the output of
+block A would flow to the input of block B.}
+\label{fig:codegen-seq}
+\end{figure}
+
+Twig's implementation for C takes care of declaring and uniquely naming
 temporary variables to accomplish sequencing.
 
-The second operation is \emph{parallel composition}, where two blocks execute
-independently of one another. We represent this operation with the
-multiplication operator ($\times$).
+The second operator is \emph{parallel composition}. Under this operator, two
+blocks are combined so as to execute independently of one another, but to appear
+as one single block. We represent this operation with the multiplication
+operator ($\times$). An example is shown in Figure~\ref{fig:codegen-par}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{images/code-gen3}
+\caption{Two blocks from Figure~\ref{fig:codegen-blocks} composed in parallel.
+Renaming is performed such that the composed block has two inputs and two outputs.}
+\label{fig:codegen-par}
+\end{figure}
 
 \subsection{Special Blocks}
 
-Twig defines a set of special blocks, named $\Pi_m(i_1,\ldots,i_n)$, called
-\emph{permutation} blocks. These represent the primitive operation of
+% Explain why we care about this.
+
+Twig defines a special set of blocks called \emph{permutation} blocks. They are
+named $\Pi_m(i_1,\ldots,i_n)$, and represent the primitive operation of
 rearranging $m$ inputs to $n$ outputs, possibly in a different order, and
 possibly duplicating or dropping elements. The data is only passed through, and
 are otherwise unchanged.
