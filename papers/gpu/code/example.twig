@@ -1,0 +1,25 @@
+copyArrayToGPU = [array(float) -> gpu(array(float))] {
+  cudaMalloc((void **) &$out, SIZE);
+  cudaMemcpy($out, $in, SIZE, cudaMemcpyHostToDevice);
+}
+
+copyArrayFromGPU = [gpu(array(float)) -> array(float)] {
+  $out = malloc(SIZE * sizeof(float));
+  cudaMemcpy($out, $in, SIZE, cudaMemcpyHostToDevice);
+}
+
+kernelA = [gpu(array(float)) -> gpu(array(float))] {
+  times_two <<< N_BLOCKS, BLOCK_SIZE >>> ($in, N);
+  $out = $in;
+}
+
+kernelB = [gpu(array(float)) -> gpu(array(float))] {
+  plus_one <<< N_BLOCKS, BLOCK_SIZE >>> ($in, N);
+  $out = $in;
+}
+
+runKernel(k) = copyArrayToGPU;k;copyArrayFromGPU
+
+main = runKernel(kernelA);runKernel(kernelB)
+
+@reduce copyArrayFromGPU;copyArrayToGPU -> id
