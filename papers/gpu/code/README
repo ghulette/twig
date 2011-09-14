@@ -1,0 +1,9 @@
+Based on the following CUDA example:
+http://llpanorama.wordpress.com/2008/05/21/my-first-cuda-program/
+
+There are two files:
+* example1.cu - What we should generate without reductions
+* example2.cu - What we should generate after reductions have been applied
+
+Build each file with something like:
+$nvcc -I/usr/local/cuda/include/ -L/usr/local/cuda/lib/ goal.cu
