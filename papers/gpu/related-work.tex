@@ -23,25 +23,27 @@
 % A technique that is becoming popular and is based on the OpenMP model of
 % directive-based code annotations hides much of the protocol logic by leaving
 % it to a compiler and runtime system to implement it. The PGI
-% Accelerate~\cite{pgi-accelerate} model and the HMPP programming
+`% Accelerate~\cite{pgi-accelerate} model and the HMPP programming
 % system~\cite{hmpp} are examples of this in compiler products. This approach
 % will, like OpenMP, make significant progress on lowering the barrier of entry
 % for programmers. Unfortunately, these methods provide too much a black-box to
 % the programmer, limiting their ability to customize the underlying GPU
 % protocol logic.
 
-Kennedy's \emph{telescoping languages} work sought to provide a similar ability
-to build high-level problem-solving languages that used scripting languages to
-coordinate functionality present in domain-specific
-libraries~\cite{kennedy00telescoping}. This work took a different approach to
-the problem, focusing on compiler optimization methods and targeting potentially
-distributed, grid-based environments. Interestingly, one of the compilation
-techniques that was called out as part of the telescoping languages strategy was
-that of automated recognition and exploitation of identities. This would allow a
-compilation tool to recognize instances when compositions of functions could be
-replaced with more efficient equivalent implementations. Our work adopts a
-similar strategy in identifying compositions of rules that are inverses of each
-other and can therefore be eliminated.
+Kennedy's \emph{telescoping languages} work sought to provide a
+similar ability to build high-level problem-solving languages that
+used scripting languages to coordinate functionality present in
+domain-specific libraries~\cite{kennedy00telescoping}. This work took
+a different approach to the problem, focusing on compiler optimization
+methods and targeting potentially distributed, grid-based
+environments. Interestingly, one of the compilation techniques that
+was called out as part of the telescoping languages strategy was that
+of automated recognition and exploitation of identities. This would
+allow a compilation tool to recognize instances when compositions of
+functions could be replaced with more efficient equivalent
+implementations. Our work adopts a similar strategy in identifying
+compositions of rules that are inverses of each other and can
+therefore be eliminated.
 
 Domain-specific language approaches have had notable success in the
 computational science field, an exemplar being the Tensor Contraction Engine
