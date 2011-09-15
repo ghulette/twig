@@ -3,9 +3,8 @@
 --    instead be passed as data through tuples, or as block parameters.
 -- 2. No cleanup (free, cudaFree, etc.). This can be handled by closing blocks, 
 --    but right now this is C specific and I don't have a good syntax for it.
--- 3. We don't have the CPU wait for the GPU before copying back. This would 
---    actually work fine, but to do it properly we would want to make a separate 
---    rule, and include more reductions to move and combine redundant barriers.
+-- 3. I thought we were ignoring barriers, but it turns out that cudaMemcpy 
+--    conveniently includes a barrier anyway.
 
 copyArrayToGPU = [array(float) -> gpu(array(float))] {
   cudaMalloc((void **) &$out, SIZE);
