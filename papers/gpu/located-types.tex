@@ -2,6 +2,31 @@
 
 \section{Method Overview}
 
+%%% Matt 1P rewrite
+
+The core idea behind our approach is to use the Twig language to
+represent the protocol logic of a GPU-based program as types and
+operations on types.  This has two consequences.  First, by extending
+the existing type system, we allow a clean mixing of computational and
+protocol logic in our notion of located types.  Second, we can
+leverage existing techniques from language type systems to encode
+operations that occur in the protocol logic.  The notion of
+\emph{located types} that we introduce in
+Section~\ref{sec:located-types} is the key to our approach.  
+
+Protocol related logic is often concerned with allocation, movement,
+and representational conversion.  Adding the concept of location to
+types supports numerous protocol operations: automatic generation of
+allocation logic (corresponding to typed variable declaration and
+scoping); data movement as type coercision on the location aspect of a
+type; and device-specific representation marshalling by interpreting
+the combination of location and actual data type.  By extending the 
+type system, we offload the burden of writing and optimizing this
+protocol logic from the programmer to automatic tools.
+
+%%% End Matt Stuff
+
+\comment{tweak this to match paragraph(s) above}
 The core idea of our approach is to use Twig's language, equipped with some
 GPU-specific components, to represent GPU-related operations as a set of
 transformations on a piece of data. As we will see in Section~\ref{semantics},
@@ -36,6 +61,7 @@ to make them more restrictive. For GPU programming, we exploit this capability
 with the addition of \emph{located types}.
 
 \subsection{Located Types}
+\label{sec:located-types}
 
 % An important principle of Twig's design is the ability to augment type
 % information. Twig generates C code, and that code must therefore conforms to
