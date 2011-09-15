@@ -5,14 +5,14 @@
 %%% Matt 1P rewrite
 
 The core idea behind our approach is to use the Twig language to
-represent the protocol logic of a GPU-based program as types and
-operations on types.  This has two consequences.  First, by extending
-the existing type system, we allow a clean mixing of computational and
-protocol logic in our notion of located types.  Second, we can
-leverage existing techniques from language type systems to encode
-operations that occur in the protocol logic.  The notion of
+represent the protocol logic of a GPU-based program in terms of types
+and operations on types.  This has two consequences.  First, by
+extending the existing type system, we allow a clean mixing of
+computational and protocol logic in our notion of located types.
+Second, we can leverage existing techniques from language type systems
+to encode operations that occur in the protocol logic.  The notion of
 \emph{located types} that we introduce in
-Section~\ref{sec:located-types} is the key to our approach.  
+Section~\ref{sec:located-types} is the key to our approach.
 
 Protocol related logic is often concerned with allocation, movement,
 and representational conversion.  Adding the concept of location to
@@ -46,7 +46,7 @@ copies eliminated.
 \begin{figure}[ht]
 \label{basic-idea}
 \begin{center}
-\includegraphics[width=3.0in]{images/basic-idea}
+\includegraphics[width=1.8in]{images/basic-idea}
 \caption{Elimination of redundant data copies}
 \end{center}
 \end{figure}
