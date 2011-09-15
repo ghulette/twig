@@ -14,13 +14,12 @@ space and move data to and from the device, and synchronize processing
 at control flow barriers that logically span devices. This protocol
 logic becomes more complex when tuning for performance by minimizing
 the number of data transfers that occur and using asynchronous memory
-transfers when possible for those that must occur to overlap
-computation and data movement.  In many standardized programming
-systems that are used for programming hybrid computers, there is an
-intermingling of computational, application logic with this
-platform-oriented protocol logic.  This leads to excessively complex
-and tedious software that is prohibitively difficult to develop,
-maintain, and compose with other software.
+transfers to overlap computation and data movement.  In many
+standardized programming systems that are used for programming hybrid
+computers, there is an intermingling of computational, application
+logic with this platform-oriented protocol logic.  This leads to
+excessively complex and tedious software that is prohibitively
+difficult to develop, maintain, and compose with other software.
 
 \subsection{Protocol vs. Computational Logic}
 
