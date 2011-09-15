@@ -6,23 +6,28 @@
 -- 3. I thought we were ignoring barriers, but it turns out that cudaMemcpy 
 --    conveniently includes a barrier anyway.
 
-copyToGPU = [array(float) -> gpu(array(float))] {
+copyArrayToGPU = [array(float) -> gpu(array(float))] {
   cudaMalloc((void **) &$out, SIZE);
   cudaMemcpy($out, $in, SIZE, cudaMemcpyHostToDevice);
 }
 
-copyFromGPU = [gpu(array(float)) -> array(float)] {
+copyArrayFromGPU = [gpu(array(float)) -> array(float)] {
   $out = malloc(SIZE * sizeof(float));
   cudaMemcpy($out, $in, SIZE, cudaMemcpyHostToDevice);
 }
 
-kernel{k} = [gpu(array(float)) -> gpu(array(float))] {
-  $k <<< N_BLOCKS, BLOCK_SIZE >>> ($in, N);
+kernelA = [gpu(array(float)) -> gpu(array(float))] {
+  times_two <<< N_BLOCKS, BLOCK_SIZE >>> ($in, N);
   $out = $in;
 }
 
-runKernel{k} = copyToGPU;kernel{k};copyFromGPU
+kernelB = [gpu(array(float)) -> gpu(array(float))] {
+  plus_one <<< N_BLOCKS, BLOCK_SIZE >>> ($in, N);
+  $out = $in;
+}
 
-main = runKernel(foo);runKernel(bar)
+runKernel(k) = copyArrayToGPU;k;copyArrayFromGPU
+
+main = runKernel(kernelA);runKernel(kernelB)
 
 @reduce copyArrayFromGPU;copyArrayToGPU -> id
