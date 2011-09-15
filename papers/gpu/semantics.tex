@@ -141,7 +141,8 @@ being passed.
 \infer{t \arr{s_1|s_2} (t',m)}{t \arr{s_1} (t',m)}
 \qquad 
 \infer{t \arr{s_1|s_2} (t',m)}{t \arr{s_1} \bot \quad t \arr{s_2} (t',m)}
-\qquad
+\]
+\[
 \infer{t \arr{s_1|s_2} \bot}{t \arr{s_1} \bot \quad t \arr{s_2} \bot}
 \]
 \caption{Semantics for left-biased choice}
@@ -231,16 +232,16 @@ This conversion is redundant and, if we encounter it, we might as well
 eliminate it. This can be accomplished with the following reduction:
 
 \begin{verbatim}
-reduce intToFloat;floatToInt => id
+reduce intToFloat;floatToInt -> id
 \end{verbatim}
 
 This statement introduces a new reduction rule which instructs Twig to replace
-any subexpression \texttt{intToFloat;floatToInt} with the identity rule,
+any subexpression\\\texttt{intToFloat;floatToInt} with the identity rule,
 \texttt{id}. Recall that \texttt{id} is the identity rule; it simply passes
 the value through unchanged.
 
-Twig also comes with some default reductions. These special reductions use
-knowledge of Twig's combinators to perform further reductions. One example is
+Twig also comes with some default reductions. These special reductions exploit
+the meaning of Twig's combinators to normalize expressions. One example is
 identity elimination, which will replace subexpressions of the form
 \texttt{id;X} with \texttt{X}, where \texttt{X} is a variable representing any
 subexpression.

@@ -2,22 +2,22 @@
 
 \section{Example}
 
-The following example shows how reductions in Twig can eliminate redundant
-memory copies.
+The following example shows how Twig is used, and how reductions can eliminate
+redundant memory copies.
 
 \begin{verbatim}
 copyToGPU = [array(float) -> gpu(array(float))] {
-  cudaMalloc((void **) &$out, SIZE);
-  cudaMemcpy($out, $in, SIZE, cudaMemcpyHostToDevice);
+  cudaMalloc((void **)&$out,SIZE);
+  cudaMemcpy($out,$in,SIZE,cudaMemcpyHostToDevice);
 }
 
 copyFromGPU = [gpu(array(float)) -> array(float)] {
   $out = malloc(SIZE * sizeof(float));
-  cudaMemcpy($out, $in, SIZE, cudaMemcpyHostToDevice);
+  cudaMemcpy($out,$in,SIZE,cudaMemcpyHostToDevice);
 }
 
 kernel{k} = [gpu(array(float)) -> gpu(array(float))] {
-  $k <<< N_BLOCKS, BLOCK_SIZE >>> ($in, N);
+  $k <<<N_BLOCKS,BLOCK_SIZE>>>($in, N);
   $out = $in;
 }
 
@@ -25,7 +25,7 @@ runKernel{k} = copyToGPU;kernel{k};copyFromGPU
 
 main = runKernel(foo);runKernel(bar)
 
-@reduce copyArrayFromGPU;copyArrayToGPU -> id
+reduce copyArrayFromGPU;copyArrayToGPU -> id
 \end{verbatim}
 
 This example is simplified in the interest of brevity and clarity. In
@@ -63,14 +63,16 @@ main = runKernel(foo);runKernel(bar)
 to 
 
 \begin{verbatim}
-main = copyToGPU;kernel{foo};copyFromGPU;copyToGPU;kernel{bar};copyFromGPU
+main = copyToGPU;kernel{foo};copyFromGPU;
+       copyToGPU;kernel{bar};copyFromGPU
 \end{verbatim}
 
-This expression, evaluated with a \texttt{float *} as input, will generate the
-following code:
+This expression, evaluated with a \texttt{float*} as input, will generate the
+following code, which contains the redundant copy operation:
 
 \begin{verbatim}
-float *tmp01,*tmp02,*tmp03,*tmp04,*tmp05,*tmp06,*tmp07;
+float *tmp01,*tmp02,*tmp03,*tmp04,
+      *tmp05,*tmp06,*tmp07;
 cudaMalloc((void **)&tmp02,SIZE);
 cudaMemcpy(tmp02,tmp01,SIZE,cudaMemcpyHostToDevice);
 foo <<<N_BLOCKS,BLOCK_SIZE>>> (tmp02, N);
@@ -85,23 +87,23 @@ tmp07 = malloc(SIZE * sizeof(float));
 cudaMemcpy(tmp07,tmp06,SIZE,cudaMemcpyHostToDevice);
 \end{verbatim}
 
-As you can 
-
 We solve this problem by introducing a \emph{reduction}, as described in
-Section~\ref{sec:reductions}. In particular, the line
+Section~\ref{sec:reductions}. The line
 
 \begin{verbatim}
 @reduce copyArrayFromGPU;copyArrayToGPU -> id
 \end{verbatim}
 
-specifies a reduction which will eliminate the redundant copy. It instructs Twig
-to search for an expression where data is copied from the GPU to the system and
-then immediately back, and to replace it with an identity transformation, i.e.,
-a no-op. Now the expanded version of \texttt{main} has the extra copies removed,
-and reads
+specifies a reduction which will eliminate the redundant copy. This line
+instructs Twig to search for the expression on the left-hand side of the arrow,
+in which data is copied from the GPU to the system and then immediately back.
+Wherever the expression is found, it is replaced it with the expression on the
+right-hand side; in this case, an identity transformation, i.e., a no-op. Now
+the expanded version of \texttt{main} has the extra copies removed, and reads
 
 \begin{verbatim}
-main = copyToGPU;kernel{foo};kernel{bar};copyFromGPU
+main = copyToGPU;kernel{foo};
+       kernel{bar};copyFromGPU
 \end{verbatim}
 
 and the code that is generated will be
