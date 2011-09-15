@@ -30,7 +30,27 @@
 % the programmer, limiting their ability to customize the underlying GPU
 % protocol logic.
 
-\comment{This section needs serious rewrites.}
+Numerous systems have been created in recent years to address the GPU
+programming problem that provide an abstraction above low level
+interfaces such as OpenCL or CUDA.  These include the PGI Accelerate
+model~\cite{pgi-accelerate} or the HMPP programming
+system~\cite{hmpp}.  While both of these systems provide an
+abstraction above the low level programming library, we believe that
+they hide too much from the programmer.  There is little room for
+tuning of the way the lower level interface to the accelerator is used
+-- the programmer is reliant on the tool vendor to provide a
+sufficiently tunable abstraction such that working with this low level
+interface is unnecessary.  Unfortunately, in large applications, it is
+infeasible to assume that all developers of the components that form
+the overall application will use the same higher level abstraction
+method.  This makes is challenging not only to tune the code that
+bridges between devices, but to reason about how the code resulting
+from the independent programming systems interacts.  We address this
+by adopting a code generation approach, in which a single, standardized
+low level target is used (such as OpenCL).  This both addresses the
+composability problem (all Twig code maps to a single ``lingua franca''
+for programming the hybrid system), and exposes the implementation in
+the generated code to allow tuning and modification by the end user.
 
 The closest work to that which we describe is Reppy's Application
 Specific Foreign Function Interface Generator,
