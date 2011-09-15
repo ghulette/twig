@@ -6,21 +6,37 @@ The following example shows how reductions in Twig can eliminate redundant
 memory copies.
 
 \begin{verbatim}
-copyToGPU   = [(array(X),int)     -> (gpuarray(X),int)] {...}
-copyFromGPU = [(gpuarray(X),int)  -> (array(X),int] {...}
-kernel{k}   = [(gpuarray(X),int)) -> (gpuarray(X),int)] {
-  ...
-  invoke_kernel($k);
-  ...
+copyArrayToGPU = [array(float) -> gpu(array(float))] {
+  cudaMalloc((void **) &$out, SIZE);
+  cudaMemcpy($out, $in, SIZE, cudaMemcpyHostToDevice);
 }
-execKernel(k) = copyToGPU;kernel(k);copyFromGPU
-main          = execKernel{"foo"};execKernel{"bar"}
 
-@reduce (copyFromGPU;copyToGPU) => id	
+copyArrayFromGPU = [gpu(array(float)) -> array(float)] {
+  $out = malloc(SIZE * sizeof(float));
+  cudaMemcpy($out, $in, SIZE, cudaMemcpyHostToDevice);
+}
+
+kernelA = [gpu(array(float)) -> gpu(array(float))] {
+  times_two <<< N_BLOCKS, BLOCK_SIZE >>> ($in, N);
+  $out = $in;
+}
+
+kernelB = [gpu(array(float)) -> gpu(array(float))] {
+  plus_one <<< N_BLOCKS, BLOCK_SIZE >>> ($in, N);
+  $out = $in;
+}
+
+runKernel(k) = copyArrayToGPU;k;copyArrayFromGPU
+
+main = runKernel(kernelA);runKernel(kernelB)
+
+@reduce copyArrayFromGPU;copyArrayToGPU -> id	
 \end{verbatim}
 
-This example is considerably simplified in the interest of brevity and clarity.
-We mark the missing C and OpenCL code for each rule with an ellipsis.
+This example is simplified in the interest of brevity and clarity. In
+particular, we assume that the array size, block size, and other parameters are
+simple constants. A real application would probably pass these values in via
+more complex rules.
 
 The first three lines define primitive rules for moving data to and from the
 GPU, and for invoking a kernel transformation on the array in GPU memory. The
