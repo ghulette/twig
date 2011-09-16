@@ -4,29 +4,28 @@
 
 %%% Matt 1P rewrite
 
-The core idea behind our approach is to use the Twig language to
-represent the protocol logic of a GPU-based program in terms of types
-and operations on types.  This has two consequences.  First, by
-extending the existing type system, we allow a clean mixing of
-computational and protocol logic in our notion of located types.
-Second, we can leverage existing techniques from language type systems
-to encode operations that occur in the protocol logic.  The notion of
-\emph{located types} that we introduce in
-Section~\ref{sec:located-types} is the key to our approach.
+The core idea behind our approach is to use the Twig language to represent the
+protocol logic of a GPU-based program in terms of types and operations on types.
+This has two consequences. First, by extending the existing type system, we
+allow a clean mixing of computational and protocol logic in our notion of
+located types. Second, we can leverage existing techniques from language type
+systems to encode operations that occur in the protocol logic. The notion of
+\emph{located types} that we introduce in Section~\ref{sec:located-types} is the
+key to our approach.
 
-Protocol related logic is often concerned with allocation, movement,
-and representational conversion.  Adding the concept of location to
-types supports numerous protocol operations: automatic generation of
-allocation logic (corresponding to typed variable declaration and
-scoping); data movement as type coercision on the location aspect of a
-type; and device-specific representation marshalling by interpreting
-the combination of location and actual data type.  By extending the 
-type system, we offload the burden of writing and optimizing this
+Protocol related logic is often concerned with allocation, movement, and
+representational conversion. Adding the concept of location to types supports
+numerous protocol operations: automatic generation of allocation logic
+(corresponding to typed variable declaration and scoping); data movement as type
+coercion on the location aspect of a type; and device-specific representation
+marshaling by interpreting the combination of location and actual data type. By
+extending the type system, we offload the burden of writing and optimizing this
 protocol logic from the programmer to automatic tools.
 
 %%% End Matt Stuff
 
-\comment{tweak this to match paragraph(s) above}
+\comment{tweak this to match paragraph(s) above} 
+
 The core idea of our approach is to use Twig's language, equipped with some
 GPU-specific components, to represent GPU-related operations as a set of
 transformations on a piece of data. As we will see in Section~\ref{semantics},
@@ -71,26 +70,27 @@ with the addition of \emph{located types}.
 
 For GPU programming, we exploit Twig's augmented types by adding a notion of
 \emph{location} to the usual C types. Location in this case describes where the
-data is stored in memory, i.e., either in system memory or on the GPU. 
+data is stored in memory, i.e., either in system memory or on the GPU.
 
 For example, we can have an array of \texttt{int}s on the CPU (represented in
 Twig as the type \texttt{array(int)}), or the same data type but located on the
-GPU (\texttt{gpu(array(int))}). This simple scheme allows one to express
-transformations in Twig which take location into account explicitly.
+GPU (represented as \texttt{gpu(array(int))}). This simple scheme allows one to
+express transformations in Twig which take location into account explicitly.
 
 By wrapping the basic data type with the location information, we ensure that
 rules must be specific to the GPU in order to operate on GPU data. For example,
+a rule
 
 \begin{verbatim}
-[gpu(array(float)) -> gpu(array(int))] {...}
+[gpu(array(float)) -> gpu(array(int))]
 \end{verbatim}
 
-will convert an array of floats to an array of integers, but only if the data
-already resides on the GPU. If it does not, the data must be moved with a rule
-such as
+promises to convert an array of floats to an array of integers, but only if the
+data already resides on the GPU. If it does not, the data must be moved with a
+rule such as
 
 \begin{verbatim}
-[array(float) -> gpu(array(float))] {...}
+[array(float) -> gpu(array(float))]
 \end{verbatim}
 
 This simple but effective scheme enables facilitates automated reasoning about

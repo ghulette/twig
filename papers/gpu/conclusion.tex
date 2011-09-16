@@ -2,37 +2,35 @@
 
 \section{Conclusion}
 
-We have introduced the concept of separating the protocol logic that
-is inherent to hybrid systems from the computational logic that forms the
-domain specific intent of a program that uses the system.  We have 
-demonstrated that a type-based approach can enforce this separation by
-making explicit in data types information related to both the locale in which
-data resides, and the representation of the data itself.  By doing so,
-we allow the protocol logic of a program to be expressed via operations
-exclusively on located types.  Operations previously made explicit become
-implicit in as realizations of operations on data types, such as type
-casting, typed data declarations, and type coercisions.  Finally, by
-adopting a code generation approach, we show that users of these higher
-level abstractions are not prohibited from both tuning the resultant code and
-composing together independently developed programs that utilize standardized
-hybrid programming libraries like OpenCL. 
+We have introduced the concept of separating the protocol logic that is inherent
+to hybrid systems from the computational logic that forms the domain specific
+intent of a program that uses the system. We have demonstrated that a type-based
+approach can enforce this separation by making explicit in data types
+information related to both the locale in which data resides, and the
+representation of the data itself. By doing so, we allow the protocol logic of a
+program to be expressed via operations exclusively on located types. Operations
+previously made explicit become implicit in as realizations of operations on
+data types, such as type casting, typed data declarations, and type coercion.
+Finally, by adopting a code generation approach, we show that users of these
+higher level abstractions are not prohibited from both tuning the resultant code
+and composing together independently developed programs that utilize
+standardized hybrid programming libraries like OpenCL or CUDA.
 
 \subsection{Future work}
 
 This paper focused on the formalism upon which we have built our type-based
-system for encoding the protocol logic of hybrid system programming.  Much
-work remains to make this technique transparent to the user.  First, we must
-develop method for annotating existing code in order to enrichen the type
-system to carry located type metadata.  Second, we must develop tools for
-extracting this information and generating the Twig term representation
-that forms the input to the rewriting and reduction techniques described here.
-Both cases can be implemented and demonstrated within extensible compiler
-frameworks such as the ROSE compiler infrastructure from Lawrence Livermore
-National Laboratory.  Work to provide this capability via ROSE is currently
-underway as part of the DOE COMPOSE-HPC project.
+system for encoding the protocol logic of hybrid system programming. Much work
+remains to make this technique transparent to the user. First, we must develop
+method for annotating existing code in order to enrich the type system to carry
+located type metadata. Second, we must develop tools for extracting this
+information and generating the Twig term representation that forms the input to
+the rewriting and reduction techniques described here. Both cases can be
+implemented and demonstrated within extensible compiler frameworks such as the
+ROSE compiler infrastructure from Lawrence Livermore National Laboratory. Work
+to provide this capability via ROSE is currently underway as part of the DOE
+COMPOSE-HPC project.
 
 \section{Acknowledgements}
 
 This work was supported in part by the Department of Energy Office of Science,
 Advanced Scientific Computing Research.
-
