@@ -2,8 +2,6 @@
 
 \section{Method Overview}
 
-%%% Matt 1P rewrite
-
 The core idea behind our approach is to use the Twig language to represent the
 protocol logic of a GPU-based program in terms of types and operations on types.
 This has two consequences. First, by extending the existing type system, we
@@ -14,33 +12,26 @@ systems to encode operations that occur in the protocol logic. The notion of
 key to our approach.
 
 Protocol related logic is often concerned with allocation, movement, and
-representational conversion. Adding the concept of location to types supports
-numerous protocol operations: automatic generation of allocation logic
-(corresponding to typed variable declaration and scoping); data movement as type
-coercion on the location aspect of a type; and device-specific representation
-marshaling by interpreting the combination of location and actual data type. By
-extending the type system, we offload the burden of writing and optimizing this
-protocol logic from the programmer to automatic tools.
+representational conversion. Adding the concept of location to types supports a
+number of protocol operations, including automatic generation of allocation
+logic (corresponding to typed variable declaration and scoping), and
+device-specific representation marshalling. By extending the type system, we
+offload the burden of writing and optimizing this protocol logic from the
+programmer to automatic tools.
 
-%%% End Matt Stuff
+As we will see in Section~\ref{semantics}, programs written in Twig's language
+are significantly constrained with respect to control flow. The tradeoff is that
+Twig's constraints make it easy to reason about automated transformations on
+programs. In particular, we will demonstrate how the structure of Twig's
+language allows it to transform GPU-related programs to eliminate redundant
+memory copies. Other domain- or application-specific transformations will
+certainly be possible as well.
 
-\comment{tweak this to match paragraph(s) above} 
-
-The core idea of our approach is to use Twig's language, equipped with some
-GPU-specific components, to represent GPU-related operations as a set of
-transformations on a piece of data. As we will see in Section~\ref{semantics},
-Twig imposes some significantly limitations on control flow between
-transformations. The tradeoff, however, is that it can be easy to reason about
-automated transformations on programs written in Twig. In particular, we would
-like to transform GPU-related programs to eliminate redundant copies as
-described above. Other domain- or application-specific transformations may be
-possible as well.
-
-This approach allows us to recognize and exploit the scenario shown in
-Figure~\ref{basic-idea}. In the figure, two GPU kernel transformations, $f$ and
-$g$, are combined in sequence. The first part shows the na\"ive composition. The
-second part shows the desired composition, with the redundant intermediate
-copies eliminated.
+We illustrate the redundant memory copy problem in Figure~\ref{basic-idea}. In
+the figure, two GPU kernel transformations, $f$ and $g$, are combined in
+sequence. The top half of the diagram shows the na\"ive composition, which
+introduces a redundant copy. The bottom half shows the desired composition, with
+the redundant intermediate copies eliminated.
 
 \begin{figure}[ht]
 \label{basic-idea}
@@ -56,8 +47,10 @@ code that will perform the transformation on data in the target language. For
 this reason, Twig is restricted to operate only on types that can be represented
 in the target language, (e.g., for C, things like \texttt{int}, \texttt{float},
 or \texttt{structs}). It can, however, augment the information about those types
-to make them more restrictive. For GPU programming, we exploit this capability
-with the addition of \emph{located types}.
+in order to make them more restrictive. For GPU programming, we exploit this
+capability with the addition of \emph{located types}.
+
+\comment{simple example of augmented types?}
 
 \subsection{Located Types}
 \label{sec:located-types}
@@ -72,10 +65,17 @@ For GPU programming, we exploit Twig's augmented types by adding a notion of
 \emph{location} to the usual C types. Location in this case describes where the
 data is stored in memory, i.e., either in system memory or on the GPU.
 
-For example, we can have an array of \texttt{int}s on the CPU (represented in
-Twig as the type \texttt{array(int)}), or the same data type but located on the
-GPU (represented as \texttt{gpu(array(int))}). This simple scheme allows one to
-express transformations in Twig which take location into account explicitly.
+For example, in Twig we represent an array of \texttt{int}s on the CPU as the
+type \texttt{array(int)}. The same type, but with the additional restriction
+that it be located on the GPU, is represented as \texttt{gpu(array(int))}. The
+general method is to \emph{wrap} an underlying type with its location. Note that
+the location information may or may not be reflected in the generated target
+type. If we are generating CUDA code, for example, the generated type for both
+\texttt{gpu(array(int))} and \texttt{array(int)} is simply a C pointer to
+\texttt{int} (i.e., \texttt{int *}). This simple scheme allows one to express
+transformations in Twig which take location into account explicitly.
+
+\comment{add OpenCL example above?}
 
 By wrapping the basic data type with the location information, we ensure that
 rules must be specific to the GPU in order to operate on GPU data. For example,

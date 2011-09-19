@@ -7,17 +7,17 @@ the partitioned memory model that they impose on programmers. Unlike a basic
 SMP, data must be explicitly allocated on different devices and moved within the
 memory hierarchy of a single compute node such that the appropriate processing
 device can access it. This induces a considerable amount of protocol when
-adopting programming models like OpenCL or CUDA that must be explicitly defined
-by the programmer in order to set up and release the device, allocate space and
-move data to and from the device, and synchronize processing at control flow
-barriers that logically span devices. This protocol logic becomes more complex
-when tuning for performance by minimizing the number of data transfers that
-occur and using asynchronous memory transfers to overlap computation and data
-movement. In many standardized programming systems that are used for programming
-hybrid computers, there is an intermingling of computational, application logic
-with this platform-oriented protocol logic. This leads to excessively complex
-and tedious software that is prohibitively difficult to develop, maintain, and
-compose with other software.
+adopting low-level programming models like OpenCL or CUDA that must be
+explicitly defined by the programmer in order to set up and release the device,
+allocate space and move data to and from the device, and synchronize processing
+at control flow barriers that logically span devices. This protocol logic
+becomes more complex when tuning for performance by minimizing the number of
+data transfers that occur and using asynchronous memory transfers to overlap
+computation and data movement. In many standardized programming systems that are
+used for programming hybrid computers, there is an intermingling of
+computational and application logic with this platform-oriented protocol logic.
+This leads to excessively complex and tedious software that is prohibitively
+difficult to develop, maintain, and compose with other software.
 
 \subsection{Protocol vs. Computational Logic}
 
@@ -67,13 +67,12 @@ programming, and at the same time supports automated reasoning about composite
 programs that can, in many cases, avoid redundant memory copying and thereby
 retain high performance. Crucially, Twig's role in the programming toolchain is
 to generate code in a mainstream language like C. The generated code is then
-incorporated into a surrounding program, which is built as usual. This minimizes
+incorporated into a surrounding program, and then built as usual. This minimizes
 the complexity that Twig adds to the build process, and allows Twig code to
-interact easily with existing code and libraries. Furthermore, by adopting a
-code generation approach, the resultant code induces no additional dependency on
-a third-party tool since the generated code can be integrated directly into the
-code base, requiring only the compilation tools of the base language and
-standardized libraries (such as OpenCL) for supporting hybrid processing.
+interact easily with existing code and libraries. Generated code induces no
+additional dependency on a third-party tool since it can be integrated directly
+into the code base, requiring only the compilation tools of the base language
+and standardized libraries (such as OpenCL) for supporting hybrid processing.
 
 Twig achieves these goals by leveraging the theory of term
 rewriting~\cite{baader98rewriting}, along with a scheme which uses data types to
@@ -109,6 +108,3 @@ for data movement between devices via term rewriting formalisms.
 % major bottlenecks for accelerator performance. Programmers must be careful,
 % therefore, to copy data only as needed, and to do as much processing as
 % possible on the device before copying the data back to the system.
-
-% Why C? Because it is lingua franca, and it is the language of accelerator %
-% APIs.
