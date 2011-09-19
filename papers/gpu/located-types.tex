@@ -72,10 +72,8 @@ general method is to \emph{wrap} an underlying type with its location. Note that
 the location information may or may not be reflected in the generated target
 type. If we are generating CUDA code, for example, the generated type for both
 \texttt{gpu(array(int))} and \texttt{array(int)} is simply a C pointer to
-\texttt{int} (i.e., \texttt{int *}). This simple scheme allows one to express
+\texttt{int} (i.e., \texttt{int *}). This facility allows one to express
 transformations in Twig which take location into account explicitly.
-
-\comment{add OpenCL example above?}
 
 By wrapping the basic data type with the location information, we ensure that
 rules must be specific to the GPU in order to operate on GPU data. For example,
@@ -93,9 +91,15 @@ rule such as
 [array(float) -> gpu(array(float))]
 \end{verbatim}
 
-This simple but effective scheme enables facilitates automated reasoning about
-the movement of data to and from the GPU.
+This simple but effective scheme enables automated reasoning about the movement
+of data to and from the GPU.
 
-Located types could easily be extended to support more complex location
-information. For example, in a computer with multiple GPU devices, each device
-could be assigned its own location.
+While our current use of Twig's augmented type information is straightforward,
+our current work is focused on leveraging this capability to its fullest.
+Located types could, for example, be easily extended to support more complex
+location information. In a computer with multiple GPU devices, each device could
+be assigned its own location, and each location would correspond with a unique
+type. Furthermore, Twig may be able to use the type information in a program to
+infer that data should be moved between locations, and then insert the
+appropriate rule automatically. This process is called \emph{coercion}
+generation, and it is a topic of ongoing work.
