@@ -21,10 +21,10 @@ more detail below.
 Our current implementation of this model supports the generation of C code, and
 adds some extra features to support that language. These features include such
 details as managing type declarations, support for parameterized blocks, and for
-``closing'' which are generated as variables go out of scope and are intended to
-be used to free resources. We are looking into the possibility of incorporating
-these and other features into the language-neutral model, but for the moment
-they are specific to C.
+``closing'' blocks, which are generated as variables go out of scope and are
+intended to be used to free resources. We are looking into the possibility of
+incorporating these and other features into the language-neutral model, but for
+the moment they are specific to C.
 
 \begin{figure}[htbp]
 \centering
@@ -71,13 +71,15 @@ outputs.}
 
 \subsection{Special Blocks}
 
-% Explain why we care about this.
+Twig defines a special set of blocks called \emph{permutation} blocks. These
+blocks have some special properties, which we will exploit for the purposes of
+rewriting programs to remove redundant memory copies. In particular, some kinds
+of blocks act as a kind of identity element when composed with others.
 
-Twig defines a special set of blocks called \emph{permutation} blocks. They are
-named $\Pi_m(i_1,\ldots,i_n)$, and represent the primitive operation of
-rearranging $m$ inputs to $n$ outputs, possibly in a different order, and
-possibly duplicating or dropping elements. The data is only passed through, and
-are otherwise unchanged.
+The permutation blocks are referred to as $\Pi_m(i_1,\ldots,i_n)$, and represent
+the primitive operation of rearranging $m$ inputs to $n$ outputs, possibly in a
+different order, and possibly duplicating or dropping elements. The data is only
+passed through, and are otherwise unchanged.
 
 Among the permutation blocks, there are a set of elements for which we provide
 special rules; namely, a set of \emph{identity} permutations. The simplest of
