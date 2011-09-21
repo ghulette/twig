@@ -60,19 +60,21 @@ vendor-defined model.
 
 \subsection{The Twig Approach}
 
-In this paper we present a high-level code generation language called
-\emph{Twig} and show how it can be used to overcome some of the obstacles to GPU
-accelerator programming described above. Twig allows for simple, high-level GPU
-programming, and at the same time supports automated reasoning about composite
-programs that can, in many cases, avoid redundant memory copying and thereby
-retain high performance. Crucially, Twig's role in the programming toolchain is
-to generate code in a mainstream language like C. The generated code is then
-incorporated into a surrounding program, and then built as usual. This minimizes
-the complexity that Twig adds to the build process, and allows Twig code to
-interact easily with existing code and libraries. Generated code induces no
-additional dependency on a third-party tool since it can be integrated directly
-into the code base, requiring only the compilation tools of the base language
-and standardized libraries (such as OpenCL) for supporting hybrid processing.
+In this paper we present a high-level programming language called \emph{Twig}
+which has been designed for expressing protocol logic and for easy integration
+with mainstream languages. We then show how Twig can be used to overcome some of
+the obstacles to GPU accelerator programming described above. Twig's design
+allows it to express GPU programming logic simply, and at the same time supports
+automated reasoning about composite programs that can, in many cases, avoid
+redundant memory copying and thereby retain high performance. Crucially, Twig's
+role in the programming toolchain is to generate code in a mainstream language
+like C. The generated code is then incorporated into a surrounding program, and
+then built as usual. This minimizes the complexity that Twig adds to the build
+process, and allows Twig code to interact easily with existing code and
+libraries. Generated code induces no additional dependency on a third-party tool
+since it can be integrated directly into the code base, requiring only the
+compilation tools of the base language and standardized libraries (such as
+OpenCL) for supporting hybrid processing.
 
 Twig achieves these goals by leveraging the theory of term
 rewriting~\cite{baader98rewriting}, along with a scheme which uses data types to
