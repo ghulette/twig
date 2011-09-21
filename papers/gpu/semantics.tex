@@ -38,6 +38,7 @@ i.e.  \emph{tuples}, and operations on groups. We omit the semantics
 here for lack of space.
 
 \subsection{Rules}
+\label{sec:rules}
 
 The most basic building blocks of a Twig program are called
 \emph{primitive rules}. A primitive rule describes a transformation
@@ -173,13 +174,6 @@ results.
 \qquad 
 \infer{t \arr{\lnot s} (t,I)}{t \arr{s} \bot}
 \]
-
-% Include fix-point operator?
-% \[
-% \infer{t \arr{\mu x(s)} t'}{t \arr{s[x := \mu x(s)]} t'}
-% \qquad 
-% \infer{t \arr{\mu x(s)} \bot}{t \arr{s[x := \mu x(s)]} \bot}
-% \]
 \caption{Semantics for basic operators}
 \end{figure}
 
@@ -193,18 +187,18 @@ For convenience, Twig allows rules and rule expressions to be assigned names,
 like so:
 
 \begin{verbatim}
-intToFloat = [int -> float] {
-  $out = (float)$in;
-}
+intToFloat = [int -> float] { ... }
 \end{verbatim}
 
-This assigns a primitive rule to the name \texttt{intToFloat}. Names must begin
-with lower-case letters, and can only be used once. The name can be used in
-place of the rule itself within expressions.
+Here, the ellipsis stands in place of some code to be generated.
 
-A Twig program is a list of such name/expression assignments. There is a
-special expression name, \texttt{main}, which designates the top-level
-expression for the program.
+This example assigns a primitive rule to the name \texttt{intToFloat}. Names
+must begin with lower-case letters, and can only be used once. The name can be
+used in place of the rule itself within expressions.
+
+A Twig program is a list of such name/expression assignments. There is a special
+expression name, \texttt{main}, which designates the top-level expression for
+the program.
 
 \subsection{Reductions}
 \label{sec:reductions}
@@ -232,8 +226,8 @@ and the expression
 intToFloat;floatToInt
 \end{verbatim}
 
-This conversion is redundant and, if we encounter it, we might as well
-eliminate it. This can be accomplished with the following reduction:
+This conversion is redundant and, if we encounter it, we might as well eliminate
+it. This can be accomplished with the following reduction:
 
 \begin{verbatim}
 reduce intToFloat;floatToInt -> id
@@ -241,8 +235,8 @@ reduce intToFloat;floatToInt -> id
 
 This statement introduces a new reduction rule which instructs Twig to replace
 any subexpression\\\texttt{intToFloat;floatToInt} with the identity rule,
-\texttt{id}. Recall that \texttt{id} is the identity rule; it simply passes
-the value through unchanged.
+\texttt{id}. Recall that \texttt{id} is the identity rule; it simply passes the
+value through unchanged.
 
 Twig also comes with some default reductions. These special reductions exploit
 the meaning of Twig's combinators to normalize expressions. One example is

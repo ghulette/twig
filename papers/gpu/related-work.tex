@@ -2,34 +2,6 @@
 
 \section{Related Work}
 
-% \subsection{Accelerator Programming}
-% 
-% Programmers could build a library of functions or objects which hide as many
-% details as possible. In fact this has already been done to a large extent,
-% with frameworks such as CUDA or OpenCL, and these libraries are the primary
-% way in which programmers already program for GPUs. This approach mitigates
-% many difficult issues, but provides only a minimal abstraction -- the library
-% abstraction cannot hide the need to coordinate GPU activities such as set up
-% and memory management. Programmers might try to create their own libraries on
-% top of CUDA or OpenCL, but in most languages the object or library facilities
-% will not allow them to reason at a high semantic level. In other words, they
-% might be able to simplify some operations by specializing them (e.g. ignore
-% the possibility for multiple devices), but they cannot hide them altogether.
-% 
-% Another approach is to design a domain-specific language for GPUs. Examples
-% include PyCUDA and OpenMPC. Domain-specific languages are typically not
-% customizable for higher-level application logic.
-% 
-% A technique that is becoming popular and is based on the OpenMP model of
-% directive-based code annotations hides much of the protocol logic by leaving
-% it to a compiler and runtime system to implement it. The PGI
-% Accelerate~\cite{pgi-accelerate} model and the HMPP programming
-% system~\cite{hmpp} are examples of this in compiler products. This approach
-% will, like OpenMP, make significant progress on lowering the barrier of entry
-% for programmers. Unfortunately, these methods provide too much a black-box to
-% the programmer, limiting their ability to customize the underlying GPU
-% protocol logic.
-
 Numerous systems have been created in recent years to address the GPU
 programming problem that provide an abstraction above low level interfaces such
 as OpenCL or CUDA. These include the PGI Accelerate model~\cite{pgi-accelerate}
@@ -38,85 +10,60 @@ an abstraction above the low level programming library, we believe that they
 hide too much from the programmer. There is little room for tuning of the way
 the lower level interface to the accelerator is used -- the programmer is
 reliant on the tool vendor to provide a sufficiently tunable abstraction such
-that working with this low level interface is unnecessary. 
+that working with this low level interface is unnecessary.
 
-Unfortunately, in large applications, it is infeasible to assume that
-all developers of the components that form the overall application
-will use the same higher level abstraction method. This makes is
-challenging not only to tune the code that bridges between devices,
-but to reason about how the code resulting from the independent
-programming systems interacts. We address this by adopting a code
-generation approach, in which a single, standardized low level target
-is used (such as OpenCL). This both addresses the composability
-problem (all Twig code maps to a single ``lingua franca'' for
-programming the hybrid system), and exposes the implementation in the
-generated code to allow tuning and modification by the end user.
+Unfortunately, in large applications, it is infeasible to assume that all
+developers of the components that form the overall application will use the same
+higher level abstraction method. This makes it challenging not only to tune the
+code that bridges between devices, but to reason about how the code resulting
+from the independent programming systems interacts. We address this by adopting
+a code generation approach in which a single, low level target is used (such as
+OpenCL). This approach addresses both the composability problem (all Twig code
+maps to a single ``lingua franca'' for programming the hybrid system), and
+exposes the implementation in the generated code to allow tuning and
+modification by the end user.
 
-The closest work to that which we describe is Reppy's Application
-Specific Foreign Function Interface Generator,
-FIG~\cite{reppy06fig}. In that work, a similar formal approach was
-taken specifically to the generate bindings between programs in two
-different programming languages. We have found that very similar
-issues arise in building bindings between devices in a hybrid
-system. These overlaps include memory ownership and management, data
-marshalling, and managing the flow of program control across the
-language or device boundary. Our work builds upon that of Reppy and
-Song, and aims to provide a general-purpose tool that is not tied to
-the Moby programming language. Twig's approach largely subsumes the
-case of foreign function interface generation, and could incorporate
-other interesting applications like mapping between two different
-libraries written in the same language. This second case is of
-particular interest when dealing with the problem of composing complex
-software from smaller program units, where developers working
-independently may have chosen different representations for data types
-that are semantically identical.
+The closest work to that which we describe is Reppy's Application Specific
+Foreign Function Interface Generator, FIG~\cite{reppy06fig}. In that work, a
+similar formal approach was taken specifically to the generate bindings between
+programs in two different programming languages. We have found that very similar
+issues arise in building bindings between devices in a hybrid system. These
+overlaps include memory ownership and management, data marshalling, and managing
+the flow of program control across the language or device boundary. Our work
+builds upon that of Reppy and Song, and aims to provide a general-purpose tool
+that is not tied to the Moby programming language. Twig's approach largely
+subsumes the case of foreign function interface generation, and could
+incorporate other interesting applications like mapping between two different
+libraries written in the same language. This second case is of particular
+interest when dealing with the problem of composing complex software from
+smaller program units, where developers working independently may have chosen
+different representations for data types that are semantically identical.
 
-Kennedy's \emph{telescoping languages} work is related to ours in that
-it seeks to support high-level programming by deferring challenging
-problems to automated tools. In particular, the telescoping languages
-effort sought to provide the ability to build high-level
-problem-solving languages that used scripting languages to coordinate
-functionality present in domain-specific
-libraries~\cite{kennedy00telescoping}. Much of the work then focused
-on compiler optimization methods and targeting potentially
-distributed, grid-based environments. Interestingly, one of the
-compilation techniques that was called out as part of the telescoping
-languages strategy was that of automated recognition and exploitation
-of identities. This would allow a compilation tool to recognize
-instances when compositions of functions could be replaced with more
-efficient equivalent implementations. As is described in this paper,
-we adopt a similar strategy in identifying compositions of rules that
-are equivalent to the identity function and can therefore be
-eliminated.
+Kennedy's \emph{telescoping languages} work is related to ours in that it seeks
+to support high-level programming by deferring challenging problems to automated
+tools. In particular, the telescoping languages effort sought to provide the
+ability to build high-level problem-solving languages that used scripting
+languages to coordinate functionality present in domain-specific
+libraries~\cite{kennedy00telescoping}. Much of the work then focused on compiler
+optimization methods and targeting potentially distributed, grid-based
+environments. Interestingly, one of the compilation techniques that was called
+out as part of the telescoping languages strategy was that of automated
+recognition and exploitation of identities. This would allow a compilation tool
+to recognize instances when compositions of functions could be replaced with
+more efficient equivalent implementations. As is described in this paper, we
+adopt a similar strategy in identifying compositions of rules that are
+equivalent to the identity function and can therefore be eliminated.
 
-Code generation approaches have had notable success in the
-computational science field, an exemplar being the Tensor Contraction
-Engine (TCE)~\cite{baumgartner05synthesis}. The TCE allows
-computational chemists to write tensor contraction operations in a
-high level language similar to Mathematica, leaving it up to the TCE
-tool to generate the corresponding collections of loops that implement
-the operations. The advantage of this approach is that tedious and
-often error-prone nested loops over many large arrays with a
-correspondingly large number of indices can be both machine generated
-and optimized. Optimizations such as loop fusion, memory locality
-management, and data distribution and partitioning in a parallel
-machine can all be automated, versus previous approaches that required
-very labor intensive hand written code. The TCE is not a general tool,
-and is only of use to programmers working with similar tensor-based
-computations.
-
-
-% With respect to the GPU programming context specifically, a number of language
-% approaches have been investigated to alleviate programmers of the tedious
-% burden of programming in languages like CUDA or OpenCL. For example, ...
-% 
-% Discuss PyCUDA and OpenMPC. What about Jacket and other GPU-type interfaces
-% for languages like Matlab?
-% 
-% HPF was interesting because it explored extending the type system of Fortran
-% 90 to add data distribution information, which feels similar to the Twig GPU
-% idea. definitely need to talk about that at some point in the paper.
-% 
-% Other general-purpose DSLs? Yampa/Arrows?
-% 
-% Accelerate GPU language in Haskell is similar.  
+Code generation approaches have had notable success in the computational science
+field, an exemplar being the Tensor Contraction Engine
+(TCE)~\cite{baumgartner05synthesis}. The TCE allows computational chemists to
+write tensor contraction operations in a high level language similar to
+Mathematica, leaving it up to the TCE tool to generate the corresponding
+collections of loops that implement the operations. The advantage of this
+approach is that tedious and often error-prone nested loops over many large
+arrays with a correspondingly large number of indices can be both machine
+generated and optimized. Optimizations such as loop fusion, memory locality
+management, and data distribution and partitioning in a parallel machine can all
+be automated, versus previous approaches that required very labor intensive hand
+written code. The TCE is not a general tool, and is only of use to programmers
+working with similar tensor-based computations.
