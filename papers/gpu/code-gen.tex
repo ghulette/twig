@@ -28,7 +28,7 @@ the moment they are specific to C.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\columnwidth]{images/code-gen1}
+\includegraphics[width=0.75\columnwidth]{images/code-gen1}
 \caption{Two basic blocks, A and B.}
 \label{fig:codegen-blocks}
 \end{figure}
@@ -45,14 +45,14 @@ Figure~\ref{fig:codegen-blocks}.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\columnwidth]{images/code-gen2}
+\includegraphics[width=0.75\columnwidth]{images/code-gen2}
 \caption{Two blocks from Figure~\ref{fig:codegen-blocks} composed sequentially.
 The variable ``tmp'' is created, and renaming performed, so that the output of
 block A would flow to the input of block B.}
 \label{fig:codegen-seq}
 \end{figure}
 
-Twig's implementation for C takes care of declaring and uniquely naming
+Twig's implementation takes care of declaring and uniquely naming
 temporary variables to accomplish sequencing.
 
 The second operator is \emph{parallel composition}. Under this operator, two
@@ -62,7 +62,7 @@ operator ($\times$). An example is shown in Figure~\ref{fig:codegen-par}.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\columnwidth]{images/code-gen3}
+\includegraphics[width=0.75\columnwidth]{images/code-gen3}
 \caption{Two blocks from Figure~\ref{fig:codegen-blocks} composed in parallel.
 Renaming is performed such that the composed block has two inputs and two 
 outputs.}

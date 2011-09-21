@@ -2,35 +2,39 @@
 
 \section{Method Overview}
 
-The core idea behind our approach is to use the Twig language to represent the
-protocol logic of a GPU-based program in terms of types and operations on types.
-This has two consequences. First, by extending the existing type system, we
-allow a clean mixing of computational and protocol logic in our notion of
-located types. Second, we can leverage existing techniques from language type
-systems to encode operations that occur in the protocol logic. The notion of
-\emph{located types} that we introduce in Section~\ref{sec:located-types} is the
-key to our approach.
+The core idea behind our approach is to use the Twig language to
+represent the protocol logic of a GPU-based program in terms of types
+and operations on types.  This has two consequences. First, by
+extending the existing type system, we allow a clean mixing of
+computational and protocol logic in our notion of located
+types. Second, we can leverage existing techniques from language type
+systems to encode operations that occur in the protocol logic. The
+notion of \emph{located types} that we introduce in
+Section~\ref{sec:located-types} is the key to our approach.
 
-Protocol related logic is often concerned with allocation, movement, and
-representational conversion. Adding the concept of location to types supports a
-number of protocol operations, including automatic generation of allocation
-logic (corresponding to typed variable declaration and scoping), and
-device-specific representation marshalling. By extending the type system, we
-offload the burden of writing and optimizing this protocol logic from the
-programmer to automatic tools.
+Protocol related logic is often concerned with allocation, movement,
+and representational conversion. Adding the concept of location to
+types supports a number of protocol operations, including automatic
+generation of allocation logic (corresponding to typed variable
+declaration and scoping), and device-specific representation
+marshalling. By extending the type system, we offload the burden of
+writing and optimizing this protocol logic from the programmer to
+automatic tools.
 
-As we will see in Section~\ref{semantics}, programs written in Twig's language
-are significantly constrained with respect to control flow. The tradeoff is that
-Twig's constraints make it easy to reason about automated transformations on
-programs. In particular, we will demonstrate how the structure of Twig's
-language allows it to transform GPU-related programs to eliminate redundant
-memory copies. Other domain- or application-specific transformations will
+As we will see in Section~\ref{semantics}, programs written in Twig's
+language are significantly constrained with respect to control
+flow. The tradeoff is that Twig's constraints make it easy to reason
+about automated transformations on programs. In particular, we will
+demonstrate how the structure of Twig's language allows it to
+transform GPU-related programs to eliminate redundant memory
+copies. Other domain- or application-specific transformations will
 certainly be possible as well.
 
-We illustrate the redundant memory copy problem in Figure~\ref{basic-idea}. In
-the figure, two GPU kernel transformations, $f$ and $g$, are combined in
-sequence. The top half of the diagram shows the na\"ive composition, which
-introduces a redundant copy. The bottom half shows the desired composition, with
+We illustrate the redundant memory copy problem in
+Figure~\ref{basic-idea}. In the figure, two GPU kernel
+transformations, $f$ and $g$, are combined in sequence. The top half
+of the diagram shows the na\"ive composition, which introduces a
+redundant copy. The bottom half shows the desired composition, with
 the redundant intermediate copies eliminated.
 
 \begin{figure}[ht]
@@ -41,16 +45,26 @@ the redundant intermediate copies eliminated.
 \end{center}
 \end{figure}
 
-Twig operates on data types instead of data. The input to a Twig program is a
-data type, and the output is a transformed data type along with some generated
-code that will perform the transformation on data in the target language. For
-this reason, Twig is restricted to operate only on types that can be represented
-in the target language, (e.g., for C, things like \texttt{int}, \texttt{float},
-or \texttt{structs}). It can, however, augment the information about those types
-in order to make them more restrictive. For GPU programming, we exploit this
-capability with the addition of \emph{located types}.
+Twig operates on data types instead of data. The input to a Twig
+program is a data type, and the output is a transformed data type
+along with some generated code that will perform the transformation on
+data in the target language. For this reason, Twig is restricted to
+operate only on types that can be represented in the target language,
+(e.g., for C, things like \texttt{int}, \texttt{float}, or
+\texttt{structs}). It can, however, augment the information about
+those types in order to make them more restrictive. For GPU
+programming, we exploit this capability with the addition of
+\emph{located types}.  
 
-\comment{add a simple example of augmented types?}
+Located types are a specific instance of the notion of \emph{augmented
+  types}, in which the types provided by a base language are enhanced
+to carry important semantics that are implicit in the underlying
+language.  For example, most languages support multi-dimensional
+arrays, but the ordering (column versus row major) is implicit.  An
+augmented multi-dimensional array type would add this ordering as an
+explicit part of the type.  In this way, the transition between
+representations would be explicit and clear in the code, instead of
+something implied by the base language itself.
 
 \subsection{Located Types}
 \label{sec:located-types}
