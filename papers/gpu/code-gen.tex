@@ -1,7 +1,7 @@
 %!TEX root = twig-gpu.tex
 
 \section{Code generation}
-\label{twig:code-gen}
+\label{sec:code-gen}
 
 To generate code, Twig relies on an abstract, language-independent model with a
 small number of basic operations. This simplified model is useful for
@@ -26,7 +26,7 @@ intended to be used to free resources. We are looking into the possibility of
 incorporating these and other features into the language-neutral model, but for
 the moment they are specific to C.
 
-\begin{figure}[htbp]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=\columnwidth]{images/code-gen1}
 \caption{Two basic blocks, A and B.}
@@ -43,7 +43,7 @@ creating temporary variables which are substituted into the original blocks. For
 example, see Figure~\ref{fig:codegen-seq}, which builds on
 Figure~\ref{fig:codegen-blocks}.
 
-\begin{figure}[htbp]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=\columnwidth]{images/code-gen2}
 \caption{Two blocks from Figure~\ref{fig:codegen-blocks} composed sequentially.
@@ -60,7 +60,7 @@ blocks are combined so as to execute independently of one another, but to appear
 as one single block. We represent this operation with the multiplication
 operator ($\times$). An example is shown in Figure~\ref{fig:codegen-par}.
 
-\begin{figure}[htbp]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=\columnwidth]{images/code-gen3}
 \caption{Two blocks from Figure~\ref{fig:codegen-blocks} composed in parallel.

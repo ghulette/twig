@@ -3,10 +3,6 @@
 \section{Twig's Semantics}
 \label{semantics}
 
-% Overview of how Twig works, basic semantics, code generation, simple
-% example. Focus on importance of generating C - integration with existing
-% methods, type-directed generation.
-
 Twig is based on a core semantics called System S~\cite{Visser:1998p333},
 augmented with semantics for generating code and specialized to operate on types
 instead of general terms. Twig uses the operators of System S to combine
@@ -15,43 +11,46 @@ transformations are then applied to a given type, resulting in a new type and
 generating code as a side effect. In this section we describe the basics of
 Twig's language.
 
-Here, we give an abbreviated and informal description of Twig's semantics,
-focusing on how they are used to support GPU accelerator programming. The full
-semantics and features of the language will be provided in a forthcoming paper.
-
+Here, we give an abbreviated and mostly informal description of Twig's
+semantics, focusing on how they are used to support GPU accelerator programming.
+The full semantics and features of the language will be provided in a
+forthcoming paper.
 
 \subsection{Values}
 
 Values in Twig can be any valid \emph{term} representing a type in the target
 language. Terms are tree structured data with labeled internal nodes. Examples
 of terms include simple values like \texttt{int} and \texttt{float}, as well as
-compound types like \texttt{ptr(int)}, which represents a pointer to an integer
-in C.
+compound types like \texttt{ptr(int)}, which might represent a pointer to an
+integer in C.
 
 The programmer can control the mapping between terms in Twig and types in the
 target language via a configuration file. Furthermore, the mapping need not be
-injective, i.e. you can have multiple values in Twig map to the same type in C.
-For example, you might use distinct Twig values \texttt{string} and
-\texttt{ptr(char)}, but have both represent a \texttt{char *} in C.
+injective, i.e. users are free to have multiple values in Twig map to the same
+type in C. For example, you might use distinct Twig values \texttt{string} and
+\texttt{ptr(char)}, but map both to a pointer to \texttt{char} (\texttt{char *})
+in C.
 
 Twig also includes support for terms representing groups of values, i.e.
-\emph{tuples}. As this capability is not needed here, we omit discussion of it.
+\emph{tuples}, and operations on groups. We omit the semantics here for lack of
+space.
 
 \subsection{Rules}
 
-The basic building blocks of a Twig program are called \emph{primitive rules}. A
-primitive rule describes a basic transformation between terms. For example, in C
-it is easy to convert an integer to a float. In Twig, this rule is written
+The most basic building blocks of a Twig program are called \emph{primitive
+rules}. A primitive rule describes a transformation from one term to another.
+For example, in C it is easy to convert an integer value to floating point, and
+we can write this rule in Twig as follows:
 
 \begin{verbatim}
 [int -> float]
 \end{verbatim}
 
-The term to the left of the arrow is the input, and the term to the right is
-the output. In this example, the rule says that if the input value is
-\texttt{int} then it will be rewritten to the value \texttt{float}. If the
-input is not \texttt{int} then it will be rewritten to the special value
-$\bot$, which can be read as ``failure.''
+The term to the left of the arrow is the input, and the term to the right is the
+output. In this example, the rule says that if and only if the input to the rule
+is the term \texttt{int}, then the output will be the term \texttt{float}. If
+the input is not \texttt{int}, then the output will be the special value $\bot$,
+which can be read as ``undefined'' or simply ``failure.''
 
 Rules can also have \emph{variables} in place of terms or sub-terms. For
 example the primitive rule
@@ -62,56 +61,58 @@ example the primitive rule
 
 rewrites any pointer type to its referent. The variable \texttt{X} is bound to
 the corresponding value of the matched input on the right, and that value is
-then substituted for the variable where it appears on the left. Variables
-match whole sub-terms only; e.g., rules such as \texttt{[X(int) -> X]} are
-invalid.
+then substituted for the variable where it appears on the left. Variables match
+whole sub-terms only; e.g., rules such as \texttt{[X(int) -> X]} are not
+allowed.
 
-Primitive rules may generate code as a side effect of successful application. To
-include code with a rule, you put it immediately after the rule definition and
-surround it with braces, like so:
+Primitive rules will typically generate code as a side effect of successful
+application. To generate code with a rule, the programmer puts it immediately
+after the rule definition and surrounds it with braces, like so:
 
 \begin{verbatim}
-[int -> float] {
-  $out = (float)$in;
-}
+[int -> float] { $out = (float)$in; }
 \end{verbatim}
 
-As part of the code generation, Twig will assign \texttt{\$in} and
-\texttt{\$out} elements generated C variable names, and ensure that they are
-declared with the appropriate type. If there are multiple inputs or outputs,
-then the relevant placeholders are enumerated; e.g., \texttt{\$in1},
-\texttt{\$in2}, and so on.
+As part of the code generation, Twig will generate temporary C variable names
+and substitute them for \texttt{\$in} and \texttt{\$out}. Twig will also ensure
+that the variables are declared with the appropriate type, based on the provided
+mapping between terms and types. If there are multiple inputs or outputs, then
+the relevant placeholders are enumerated; e.g., \texttt{\$in1}, \texttt{\$in2},
+and so on.
 
-It is important to understand that Twig does not check the code in any way, and
-the generation procedure is strictly syntactic. This scheme is similar to that
-used by SWIG~\cite{swig}.
+It is important to understand that Twig does not check the generated code in any
+way beyond what was just described -- the generation procedure is mostly
+syntactic. This approach is similar to the code generation strategy used in
+SWIG~\cite{swig}.
 
 \subsection{Combinators}
 
 Rules can be combined into more complex expressions using Twig's operators. In
 the formal semantics below, let $t$ range over terms, $m$ range over code block
-expressions and $s_i$ range over rule expressions (i.e. a primitive rule, or
-another rule expression built with operators).
+expressions and $s_i$ range over rule expressions, i.e., a primitive rule or a
+sub-expression built with operators.
 
-A primitive rule $s$ transforms $t$ to $t'$ with generated code $m$:
+A primitive rule $s$ transforms a term $t$ to another term $t'$ with generated
+code $m$:
 
 \[
 t \arr{s} (t',m)
 \]
 
 if the application of rule $s$ to value $t$ succeeds. If no code is given for
-the rule, then $m$ is the ``no-op'' element, $e$. If the application of $s$ to
-$t$ fails, e.g., if $t$ does not match the pattern in $s$, then we say
+the rule, then $m$ is the ``no-op'' element, $e$ (see
+Section~\ref{sec:code-gen}). If the application of $s$ to $t$ fails, e.g., if
+$t$ does not match the pattern in $s$, then we say
 
 \[
 t \arr{s} \bot
 \]
 
-Note that no code is generated in this case.
+Note that code is not generated in this case.
 
-The most important of Twig's combinators is the \emph{sequence} operator,
-which chains the application of two rules together, providing the output of
-the first to the input of the second, and failing if either rule fails (see
+The most frequently used combinator in Twig is the \emph{sequence} operator.
+This operator chains the application of two rules together, providing the output
+of the first to the input of the second, and failing if either rule fails (see
 Figure~\ref{semantics:sequence}). With this operator, simple rules can be
 composed into multi-step transformations.
 
@@ -130,10 +131,10 @@ composed into multi-step transformations.
 
 Another important binary operator is \emph{left-biased choice}. This operator
 will try the first rule expression, and if it succeeds then its output is the
-result (see Figure~\ref{semantics:choice}). If it fails (i.e. results in
-$\bot$), then the second rule is tried. This operator allows different paths
-to be taken, and different code to be generated, depending on the input type
-being passed.
+result (see Figure~\ref{semantics:choice}) of the expression. If the first rule
+fails (i.e. results in $\bot$), then the second rule is tried. This operator
+allows different paths to be taken, and different code to be generated,
+depending on the input type.
 
 \begin{figure}[ht]
 \label{semantics:choice}

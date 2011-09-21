@@ -35,26 +35,26 @@ more complex rules. We also omit the cleanup routines for allocated memory,
 which would be handled by Twig's special closing block syntax.
 
 The first three rules definitions are primitives for moving data to and from the
-GPU, and for invoking a kernel transformation on the array in GPU memory,
-respectively. The rules \texttt{kernel} and \texttt{runKernel} are parameterized
-by a variable \texttt{k}, whose value is inserted directly into the generated
-code.
+GPU (\texttt{copyToGPU} and \texttt{copyFromGPU}), and for invoking a kernel
+transformation on the array in GPU memory (\texttt{kernel}). The rules
+\texttt{kernel} and \texttt{runKernel} are parameterized by a variable
+\texttt{k}, whose value is inserted directly into the generated code.
 
-The \texttt{runKernel} rule will perform one kernel operation on the GPU. Note
-that this rule will be semantically valid in whatever context it is called,
-since it first moves the data onto the GPU, then executes the kernel, and then
-copies it back. To the programmer, \texttt{runKernel} appears to simply perform
-a function on a local array -- a considerably simpler than the abstraction
-presented by OpenCL or CUDA.
+The \texttt{runKernel} rule will perform a single logical function on the GPU.
+Note that this rule will be semantically valid in any context where it appears,
+since it ensures that the data is first moved onto the GPU, the kernel is
+executed, and then the data is copied back. To the programmer,
+\texttt{runKernel} appears to simply perform a function on a local array -- a
+considerably simpler than the abstraction presented by OpenCL or CUDA.
 
-The \texttt{main} rule is the top level of the program. It executes two kernels
-in sequence with two invocations of \texttt{runKernel}. As noted above, by
-design each invocation would normally result in a copy to and from the GPU -- a
-conservative strategy. Since the data is not modified in between GPU calls, on
-its own this expression would generate a redundant copy in between the calls to
-\texttt{foo} and \texttt{bar}. To see why, we can trace the execution of the
-Twig program. First, named expressions are substituted in, so \texttt{main}
-goes from:
+The \texttt{main} rule is the top level of the program. This example executes
+two kernels in sequence with two invocations of \texttt{runKernel}. As noted
+above, by design each invocation would normally result in a copy to and from the
+GPU -- a conservative strategy. Since the data is not modified in between GPU
+calls, on its own this expression would generate a redundant copy in between the
+calls to \texttt{foo} and \texttt{bar}. To see why, we can trace the execution
+of the Twig program. First, variable names are substituted with the expressions
+they denote, so \texttt{main} goes from:
 
 \begin{verbatim}
 main = runKernel(foo);runKernel(bar)
@@ -67,8 +67,9 @@ main = copyToGPU;kernel{foo};copyFromGPU;
        copyToGPU;kernel{bar};copyFromGPU
 \end{verbatim}
 
-This expression, evaluated with a \texttt{float*} as input, will generate the
-following code, which contains the redundant copy operation:
+We have added some white space for clarity -- it does not affect the meaning of
+the program. Evaluating this expression with a \texttt{float*} as input will
+generate the following code, which contains the redundant copy operation:
 
 \begin{verbatim}
 float *tmp01,*tmp02,*tmp03,*tmp04,
@@ -121,9 +122,9 @@ cudaMemcpy(tmp05,tmp04,SIZE,cudaMemcpyHostToDevice);
 \end{verbatim}
 
 Although this example is simple, it demonstrates the power of reductions. The
-reduction rule given here would probably be paired with the \texttt{copyTo} and
-\texttt{copyFrom} rules in a module that could be exposed for domain
-programmers, allowing them to perform GPU operations without ever worrying about
-the rule design. Sophisticated users, however, could even add
-application-specific reductions, enabling very powerful and customizable code
-generation based on domain-specific logic.
+reduction rule given here would probably be paired with the \texttt{copyToGPU}
+and \texttt{copyFromGPU} rules in a module intended for consumption by domain
+programmers, allowing them to perform GPU operations without worrying about the
+design of the rules. Sophisticated users, however, could add their own rules or
+even application-specific reductions, enabling very powerful and customizable
+code generation based on domain-specific logic.
