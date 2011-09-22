@@ -19,6 +19,15 @@ device-specific representation marshalling. By extending the type system, we
 offload the burden of writing and optimizing this protocol logic from the
 programmer to automatic tools.
 
+The advantage of pushing location information into the type system is that it
+forces programmers to explicitly account for operations related to the protocol
+logic of an application. In plain CUDA or OpenCL codes, protocol-related
+operations are intermixed with computational logic, and the type system does not
+help to enforce protocol rules. For example, in CUDA programmers are free to
+execute a kernel on the GPU before they have copied any data there. We will show
+that by augmenting type information, we can make many of these protocol-related
+details explicit and check them at compile time.
+
 As we will see in Section~\ref{semantics}, programs written in Twig's language
 are significantly constrained with respect to control flow. The tradeoff is that
 Twig's constraints make it easy to reason about automated transformations on

@@ -12,16 +12,17 @@ the lower level interface to the accelerator is used -- the programmer is
 reliant on the tool vendor to provide a sufficiently tunable abstraction such
 that working with this low level interface is unnecessary.
 
-Unfortunately, in large applications, it is infeasible to assume that all
-developers of the components that form the overall application will use the same
-higher level abstraction method. This makes it challenging not only to tune the
-code that bridges between devices, but to reason about how the code resulting
-from the independent programming systems interacts. We address this by adopting
-a code generation approach in which a single, low level target is used (such as
-OpenCL). This approach addresses both the composability problem (all Twig code
-maps to a single ``lingua franca'' for programming the hybrid system), and
-exposes the implementation in the generated code to allow tuning and
-modification by the end user.
+Furthermore, in large applications it is infeasible to assume that all
+developers of the various components will use the same higher level abstraction
+method. This makes it challenging not only to tune the code that bridges between
+devices, but to reason about how the code resulting from the independent
+programming systems interacts. We address this by adopting a code generation
+approach in which a single, low level target is used (such as OpenCL). This
+approach addresses both the composability problem (all Twig code maps to a
+single ``lingua franca'' for programming the hybrid system), and exposes the
+implementation in the generated code to allow tuning and modification by the end
+user. Thus, with Twig, users are free to adjust either the low level generated
+code, or the high level protocol logic, as required by the application.
 
 The closest work to that which we describe is Reppy's Application Specific
 Foreign Function Interface Generator, FIG~\cite{reppy06fig}. In that work, a
