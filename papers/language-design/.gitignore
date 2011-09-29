@@ -1,0 +1,6 @@
+twig-language.pdf
+*.aux
+*.bbl
+*.blg
+*.log
+*.synctex.gz

@@ -1,10 +1,7 @@
 %!TEX root = twig-language.tex
 
 \section{Twig}
-
-% Overview of how Twig works, basic semantics, code generation, simple
-% example. Focus on importance of generating C - integration with existing
-% methods, type-directed generation.
+\label{sec:semantics}
 
 Twig is based on a core semantics called System S~\cite{Visser:1998p333}.
 System S was originally designed for specifying term rewriting
@@ -15,8 +12,6 @@ transformation. We extend the semantics of System S in order to have the
 evaluation of the transformation generate code as a side effect. In this way,
 domain specific code can be generated depending on the input types. In this
 section we describe the basics of Twig's language.
-
-\input{codegen}
 
 \subsection{Values}
 
@@ -115,13 +110,14 @@ Note that no code is generated in this case.
 The most important of Twig's combinators is the \emph{sequence} operator,
 which chains the application of two rules together, providing the output of
 the first to the input of the second, and failing if either rule fails (see
-Figure~\ref{semantics:sequence}). With this operator, simple rules can be
+Figure~\ref{fig:semantics-seq}). With this operator, simple rules can be
 composed into multi-step transformations.
 
 \begin{figure}[ht]
-\label{semantics:sequence}
+\label{fig:semantics-seq}
 \[
-\infer{t \arr{s_1;s_2} (t'',m_1+m_2)}{t \arr{s_1} (t',m_1) \quad t' \arr{s_2} (t'',m_2)}
+\infer{t \arr{s_1;s_2} (t'',m_1+m_2)}{t \arr{s_1} (t',m_1) \quad t' \arr{s_2} 
+(t'',m_2)}
 \qquad 
 \infer{t \arr{s_1;s_2} \bot}{t \arr{s_1} \bot}
 \qquad
