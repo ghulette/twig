@@ -20,12 +20,12 @@ with labeled internal nodes. Examples of terms include simple values like
 \texttt{int} and \texttt{float}, as well as compound types like
 \texttt{ptr(int)}, which represents a pointer to an integer.
 
-Note that terms in Twig are intended to represent types in the target
-language. The programmer can control the mapping via a configuration file.
-Furthermore, the mapping need not be injective, i.e. you can have multiple
-values in Twig map to the same type in C. For example, you might use distinct
-Twig values \texttt{string} and \texttt{ptr(char)}, but have both represent a
-\texttt{char *} in C.
+Note that terms in Twig are intended to represent types in the target language.
+The programmer can control the mapping via a configuration file. Furthermore,
+the mapping need not be injective, i.e. you can have multiple values in Twig map
+to the same type in C. For example, you might use distinct Twig values
+\texttt{string} and \texttt{ptr(char)}, but have both represent a \texttt{char
+*} in C.
 
 In Twig, terms may also represent tuples. Tuples are represented with either a
 special constructor \texttt{tuple}, or equivalently (and preferably) with no

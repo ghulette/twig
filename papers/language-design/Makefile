@@ -1,8 +1,10 @@
+DOC=twig-language
+
 all:
-	pdflatex twig-language.tex
-	bibtex twig-language
-	pdflatex twig-language.tex
-	pdflatex twig-language.tex
+	pdflatex $(DOC).tex
+	bibtex $(DOC)
+	pdflatex $(DOC).tex
+	pdflatex $(DOC).tex
 
 clean:
-	rm -f *~ *.bbl *.blg *.log *.aux *.synctex.gz twig-language.pdf
+	rm -f *~ *.bbl *.blg *.log *.aux *.synctex.gz $(DOC).pdf

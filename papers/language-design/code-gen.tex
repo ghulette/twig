@@ -11,12 +11,11 @@ getting bogged down in the (potentially quite complicated) details of outputting
 code for a particular programming language.
 
 Twig generates code in units called \emph{blocks}. The term ``block'' is
-somewhat overloaded -- our usage differs somewhat from the norm. In Twig, a
-block of code represents anything that performs some operation on a set of
-inputs, and which produces a set of outputs. Blocks may have zero or more inputs
-and outputs. Blocks can also be combined in two different ways:
-\emph{sequentially}, or \emph{in parallel}. These operations are described in
-more detail below.
+somewhat overloaded -- our usage differs from the norm. In Twig, a block of code
+represents anything that performs some operation on a set of inputs, and which
+produces a set of outputs. Blocks may have zero or more inputs and outputs.
+Blocks can also be combined in two different ways: \emph{sequentially}, or
+\emph{in parallel}. These operations are described in more detail below.
 
 Our current implementation of this model supports the generation of C code, and
 adds some extra features to support that language. These features include such
@@ -94,13 +93,14 @@ Using this simple system, a wide variety of code can be generated.
 
 
 % Twig provides an abstract model of code generation. We discuss our
-% implementation, which generates C code, in Section~\ref{sec:concrete-code-gen}.
-% For our purposes, ``code'' is represented by an abstract data type $M$. Each $x$
-% in $M$ is intended to represent a ``block'' of code; i.e., something that
-% performs some operation on a set of inputs and produces a set of outputs.
-% Although this is the intended interpretation, our model elides the details and
-% focuses only on the inputs and outputs for each block, and how they can be
-% arranged to form larger blocks.
+% implementation, which generates C code, in
+% Section~\ref{sec:concrete-code-gen}. For our purposes, ``code'' is represented
+% by an abstract data type $M$. Each $x$ in $M$ is intended to represent a
+% ``block'' of code; i.e., something that performs some operation on a set of
+% inputs and produces a set of outputs. Although this is the intended
+% interpretation, our model elides the details and focuses only on the inputs
+% and outputs for each block, and how they can be arranged to form larger
+% blocks.
 % 
 % For all $x$ in $M$, we define two functions \texttt{in} and \texttt{out},
 % which map elements in $M$ to, respectively, the number of inputs and outputs
@@ -114,8 +114,7 @@ Using this simple system, a wide variety of code can be generated.
 % \[
 % \infer
 % {x+y \in M}
-% {x \in M \quad y \in M \quad \mathtt{out}(x) = \mathtt{in}(y)}
-% \]
+% {x \in M \quad y \in M \quad \mathtt{out}(x) = \mathtt{in}(y)} \]
 % 
 % and
 % 
@@ -142,9 +141,8 @@ Using this simple system, a wide variety of code can be generated.
 % and we define
 % 
 % \begin{eqnarray*}
-% \mathtt{in} (x \times y) =& \mathtt{in}(x)  + \mathtt{in}(y)\\
-% \mathtt{out}(x \times y) =& \mathtt{out}(x) + \mathtt{out}(y)
-% \end{eqnarray*}
+% \mathtt{in} (x \times y) =& \mathtt{in}(x)  + \mathtt{in}(y)\\ \mathtt{out}(x
+% \times y) =& \mathtt{out}(x) + \mathtt{out}(y) \end{eqnarray*}
 % 
 % Note that $M$ is closed under parallel composition.
 % 
