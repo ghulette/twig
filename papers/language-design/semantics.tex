@@ -3,11 +3,11 @@
 \section{Twig}
 \label{sec:semantics}
 
-Twig is based on a core semantics called System S~\cite{Visser:1998p333}.
-System S was originally designed for specifying term rewriting
+Twig is based on a core semantics called \emph{System S}~\cite{system-s}. System
+S was originally designed for specifying term rewriting
 systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to
-combine primitive \emph{rules} into more complex transformations on types.
-These transformations are then applied to a given type, which performs the
+combine primitive \emph{rules} into more complex transformations on types. These
+transformations are then applied to a given type, which performs the
 transformation. We extend the semantics of System S in order to have the
 evaluation of the transformation generate code as a side effect. In this way,
 domain specific code can be generated depending on the input types. In this
@@ -15,41 +15,45 @@ section we describe the basics of Twig's language.
 
 \subsection{Values}
 
-Values in Twig can be any valid \emph{term}. Terms are tree structured data
-with labeled internal nodes. Examples of terms include simple values like
+Values in Twig can be any valid \emph{term}. Terms are tree structured data with
+labeled internal nodes. Examples of terms include simple values like
 \texttt{int} and \texttt{float}, as well as compound types like
 \texttt{ptr(int)}, which represents a pointer to an integer.
 
-Note that terms in Twig are intended to represent types in the target language.
-The programmer can control the mapping via a configuration file. Furthermore,
-the mapping need not be injective, i.e. you can have multiple values in Twig map
-to the same type in C. For example, you might use distinct Twig values
-\texttt{string} and \texttt{ptr(char)}, but have both represent a \texttt{char
-*} in C.
+The mapping between terms in Twig and types in the target language is considered
+to be a configuration option controllable by the programmer. Furthermore, the
+mapping need not be injective, i.e. users are free to have multiple values in
+Twig map to the same type in C. For example, you might use distinct Twig values
+\texttt{string} and \texttt{ptr(char)}, but map both to a pointer to
+\texttt{char} (\texttt{char *}) in C.
 
-In Twig, terms may also represent tuples. Tuples are represented with either a
-special constructor \texttt{tuple}, or equivalently (and preferably) with no
-constructor at all. For example, \texttt{(string,int)} (or, equivalently
-\texttt{tuple(string,int)}) represents a pair of two types in C, a
-\texttt{string} and an \texttt{int}. The \texttt{tuple} constructor syntax is
-convenient mainly for our presentation of formal semantics for tuple
-operators, given below.
+Twig has just one special kind of term: tuples. Tuples are represented with
+either a special constructor \texttt{tuple}, or equivalently (and preferably)
+with no constructor at all. For example, \texttt{(string,int)} is the same as
+\texttt{tuple(string,int)}), and represents a pair of two types (a
+\texttt{string} and an \texttt{int}) in C. The \texttt{tuple} constructor syntax
+is more verbose, so we typically eschew it in practice; however, it is
+convenient for our presentation of the formal semantics for tuple operators
+below.
 
 \subsection{Rules}
 
-The basic building blocks of a Twig program are called \emph{rules}. A rule
-describes a basic transformation between terms. For example, in C it is easy
-to convert an integer to a float. In Twig, this rule is written
+% Formalize this
+
+The most basic building blocks of a Twig program are called \emph{primitive
+rules}. A primitive rule describes a transformation from one term to another.
+For example, in C it is easy to convert an integer value to floating point, and
+we can write this rule in Twig as follows:
 
 \begin{verbatim}
 [int -> float]
 \end{verbatim}
 
-The term to the left of the arrow is the input, and the term to the right is
-the output. In this example, the rule says that if the input value is
-\texttt{int} then it will be rewritten to the value \texttt{float}. If the
-input is not \texttt{int} then it will be rewritten to the special value
-$\bot$, which can be read as ``failure.''
+The term to the left of the arrow is the input, and the term to the right is the
+output. In this example, the rule says that if the input value is \texttt{int}
+then it will be rewritten to the value \texttt{float}. If the input is not
+\texttt{int} then it will be rewritten to the distinguished value $\bot$, which
+can be read as ``undefined'' or simply ``failure.''
 
 Rules can also have \emph{variables} in place of terms or sub-terms. For
 example the rule
@@ -173,6 +177,7 @@ results, and a fix point operator for recursion.
 % \qquad 
 % \infer{t \arr{\mu x(s)} \bot}{t \arr{s[x := \mu x(s)]} \bot}
 % \]
+
 \caption{Semantics for basic operators}
 \end{figure}
 
@@ -386,32 +391,3 @@ and one of them applies within the program. It will continually rewrite
 Twig's reductions are based on the formal theory of term
 rewriting~\cite{baader98rewriting}. In this case Twig's expressions, not its
 values, are the terms being rewritten.
-
-% Talk about finding a normal form for Twig expressions? Probably beyond the
-% scope of this paper.
-
-% \subsection{Term rewriting}
-% \label{section:term-rewriting}
-
-% Brief overview of term rewriting and how it is used in reductions.
-
-\subsection{Implementation}
-
-Our implementation of Twig is written in Haskell. Twig expects as input a
-\texttt{.twig} file containing a list of named rule expressions along with a
-\texttt{main} rule expression, as described in Section~\ref{section:names}. It
-also expects an initial value (i.e. a term, representing a C type), which will
-be used as the input to the main rule expression.
-
-Twig must also be configured with a mapping from terms to C types. Currently,
-this mapping is provided with a simple key/value text file, but we are working
-on a more flexible alternative.
-
-If the input value can be successfully rewritten using the main rule
-expression provided, then Twig will output the rewritten term along with the
-generated block of C code. If desired, this code block may be redirected to a
-separate file and included in a C program using the \texttt{\#include}
-directive.
-
-We are currently examining ways in which this process might be more easily
-incorporated into a typical C programmer's workflow.
