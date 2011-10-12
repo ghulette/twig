@@ -12,3 +12,21 @@ Twig has several advantages over SWIG:
 \item Twig typemaps are composable.
 \item Twig typemaps are polymorphic.
 \end{enumerate}
+
+Structure in Twig terms.
+
+First, we have n-ary tuples, which are constructed using \texttt{tuple} and may
+contain any number of children. Special operations are \texttt{branch},
+\texttt{congruence}, \texttt{pick}, and \texttt{permute}.
+
+Second, we have functors, which capture the intuitive idea of collections or
+contexts.
+
+% fmap id = id
+% (fmap f) . (fmap g) = fmap (f . g)
+% 
+% [array(_,int) -> ] {
+%   for(\$i=0;\$i < n;\$i++){
+%     
+%   }
+% }
