@@ -1,0 +1,38 @@
+757-088: A Type-based Approach to Separating Protocol from Application Logic: A
+Case Study in Hybrid Computer Programming
+
+== Review #1 ==
+Originality     2
+Contribution    2
+References      2
+Presentation    2
+Language        1
+Average         1.8
+
+Comments: The paper addresses an area/problem that is practical in nature but
+the approach the author takes is based on solid theoretical background.
+Separation of protocol logic and computational logic is a good idea.
+
+Suggestions: Some more information in the implementation section would have made
+it more interesting. I as a language person enjoyed it much, but the general
+audience in this conference may not be as interested in the language aspects as
+I would be. I found one simple error: p2. to the generate -> to generate
+
+== Review #2 ==
+Originality     2
+Contribution    3
+References      3
+Presentation    3
+Language        3
+Average         2.8
+
+Comments: Authors propose that extensions to the type systems of traditional
+general purpose languages can be made that allow programmers to work at a higher
+level of abstraction with respect to memory, deferring much of the tedium of
+data management and movement code to an automatic code generation tool.
+
+Suggestions: should provide extenive experiments to evaluate the effectiveness
+of your approach.
+
+== Chair's Decision ==
+The Chair Accepted this Paper on October 12, 2011
