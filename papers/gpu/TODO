@@ -1,13 +1,6 @@
-Expand section on Located Types
-* More of an overview of the technique - what and why, skip the how
+Possible CFPs:
+* http://innovativeparallel.org/CFP.aspx
+* http://www.hpdc.org/2012/
+* http://nkl.cc.u-tokyo.ac.jp/VECPAR2012/
+* http://www.world-academy-of-science.org/worldcomp11/ws
 
-Look into automatically inserting coercions, i.e. reductions of the form
-    
-    [_ -> gpu(T)];[T -> _] => [_ -> gpu(T)];[gpu(T) -> T];[T -> _]
-
-Code generation
-* more details on how to do it in practice
-* give an example, show how code is connected
-* expand on identity part - why do we want it?
-
-Use CUDA in the example

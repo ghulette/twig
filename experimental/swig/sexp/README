@@ -1,0 +1,9 @@
+To build, set SEXP_HOME to point at a built sexpr_1.2.1 directory, and run
+
+  ./build.sh
+
+To test, start python in the current directory and try something like:
+
+>>> import sexp
+>>> sexp.foo(4,5)
+20
