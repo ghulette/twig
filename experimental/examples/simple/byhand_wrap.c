@@ -1,16 +1,17 @@
 #include "Python.h"
+#include "simple.h"
 
-void handle_error() {
+void handle_error(void) {
   exit(1);
 }
 
-static PyObject *wrap_avg(PyObject *self, PyObject *args) {
+static PyObject *simple_avg(PyObject *self, PyObject *args) {
   int arg1;
   int arg2;
   float result;
-  PyObject *obj0 = 0;
-  PyObject *obj1 = 0;
-  PyObject *resultobj = 0;
+  PyObject *obj0;
+  PyObject *obj1;
+  PyObject *resultobj;
   
   if(!PyArg_ParseTuple(args,(char *)"OO:avg",&obj0,&obj1)) {
     handle_error();
@@ -24,15 +25,15 @@ static PyObject *wrap_avg(PyObject *self, PyObject *args) {
   }
   arg2 = (int)PyInt_AsLong(obj1);
   result = avg(arg1,arg2);
-  return Py_BuildValue("f",result);;
+  resultobj = Py_BuildValue("f",result);
+  return resultobj;
 }
 
-static PyObject *wrap_output(PyObject *self, PyObject *args) {
+static PyObject *simple_output(PyObject *self, PyObject *args) {
   char *arg1;
   char *arg1_buf;
   Py_ssize_t arg1_len;
   PyObject *obj0;
-  PyObject *resultobj;
 
   if (!PyArg_ParseTuple(args,(char *)"O:output",&obj0)) {
     handle_error();
@@ -48,8 +49,8 @@ static PyObject *wrap_output(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef SimpleMethods[] = {
-    {"avg", wrap_avg, METH_VARARGS, "Average."},
-    {"output", wrap_output, METH_VARARGS, "Print out."},
+    {"avg", simple_avg, METH_VARARGS, "Average."},
+    {"output", simple_output, METH_VARARGS, "Print out."},
     {NULL, NULL, 0, NULL}
 };
 
