@@ -2,7 +2,7 @@
 #include "simple.h"
 
 void handle_error(void) {
-  exit(1);
+  PyErr_SetString(PyExc_RuntimeError, "Twig error");
 }
 
 static PyObject *simple_avg(PyObject *self, PyObject *args) {
@@ -15,13 +15,16 @@ static PyObject *simple_avg(PyObject *self, PyObject *args) {
   
   if(!PyArg_ParseTuple(args,(char *)"OO:avg",&obj0,&obj1)) {
     handle_error();
+    return NULL;
   }
   if(!PyInt_Check(obj0)) {
     handle_error();
+    return NULL;
   }
   arg1 = (int)PyInt_AsLong(obj0);
   if(!PyInt_Check(obj1)) {
     handle_error();
+    return NULL;
   }
   arg2 = (int)PyInt_AsLong(obj1);
   result = avg(arg1,arg2);
@@ -37,13 +40,22 @@ static PyObject *simple_output(PyObject *self, PyObject *args) {
 
   if(!PyArg_ParseTuple(args,(char *)"O:output",&obj0)) {
     handle_error();
+    return NULL;
+  }
+  if(!PyString_Check(obj0)) {
+    handle_error();
+    return NULL;
   }
   arg1_buf = PyString_AsString(obj0);
   arg1_len = PyString_Size(obj0) + 1; // string length + null terminator
   arg1 = malloc(arg1_len * sizeof(char));
+  if(arg1 == NULL) {
+    handle_error();
+    return NULL;
+  }
   memcpy(arg1,arg1_buf,arg1_len);
   output(arg1);
-  // Should we copy the string back to Python?
+  free(arg1);
   Py_RETURN_NONE;
 }
 
