@@ -35,12 +35,11 @@ static PyObject *simple_output(PyObject *self, PyObject *args) {
   Py_ssize_t arg1_len;
   PyObject *obj0;
 
-  if (!PyArg_ParseTuple(args,(char *)"O:output",&obj0)) {
+  if(!PyArg_ParseTuple(args,(char *)"O:output",&obj0)) {
     handle_error();
   }
   arg1_buf = PyString_AsString(obj0);
-  arg1_len = PyString_Size(obj0) + 1;
-  arg1_len ++; // account for NULL terminator
+  arg1_len = PyString_Size(obj0) + 1; // string length + null terminator
   arg1 = malloc(arg1_len * sizeof(char));
   memcpy(arg1,arg1_buf,arg1_len);
   output(arg1);
