@@ -21,11 +21,10 @@ labeled internal nodes. Examples of terms include simple values like
 \texttt{ptr(int)}, which represents a pointer to an integer.
 
 The mapping between terms in Twig and types in the target language is considered
-to be a configuration option controllable by the programmer. Furthermore, the
-mapping need not be injective, i.e. users are free to have multiple values in
-Twig map to the same type in C. For example, you might use distinct Twig values
-\texttt{string} and \texttt{ptr(char)}, but map both to a pointer to
-\texttt{char} (\texttt{char *}) in C.
+to be a configuration option, controllable by the programmer. Furthermore, the
+mapping need not be injective, i.e., multiple values in Twig may map to the same
+type in C. For example, you might use distinct Twig values \texttt{string} and
+\texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
 
 Twig has just one special kind of term: tuples. Tuples are represented with
 either a special constructor \texttt{tuple}, or equivalently (and preferably)
