@@ -22,5 +22,9 @@ instance Block CBlock where
   outputs (Seq _ b2) = outputs b2
   outputs (Permute _ outs) = length outs
 
-  seqn b1 b2 = if outputs b1 == inputs b2 then Seq b1 b2 else invalid
   par b1 b2 = Par b1 b2
+  seqn b1 b2 | outputs b1 == inputs b2 = Seq b1 b2
+             | otherwise = invalid
+
+render :: CBlock -> String
+render = undefined
