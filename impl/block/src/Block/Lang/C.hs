@@ -1,8 +1,15 @@
 module Block.Lang.C where
 
 import Block
+import Block.Supply
 
-data CBlock = Basic Int Int String
+type Id = String
+
+data CBlockElt = InVar Int
+               | OutVar Int
+               | Text String
+
+data CBlock = Basic Int Int [CBlockElt]
             | Permute Int [Int]
             | Seq CBlock CBlock
             | Par CBlock CBlock
@@ -26,5 +33,21 @@ instance Block CBlock where
   seqn b1 b2 | outputs b1 == inputs b2 = Seq b1 b2
              | otherwise = invalid
 
-render :: CBlock -> String
-render = undefined
+render :: CBlock -> [Id] -> Supply Id (String,[Id])
+render (Basic _ outn ts) invars = do
+  outvars <- supplies outn
+  let txt = concatMap (renderElt invars outvars) ts
+  return (txt,outvars)
+render (Permute numIns ins) invars = render basicBlock invars
+  where numOuts = length ins
+        outs = [1..numOuts]
+        eltf = \(o,i) -> [OutVar o,Text "=",InVar i,Text ";\n"]
+        elts = concatMap eltf (zip outs ins)
+        basicBlock = Basic numIns numOuts elts
+-- render (Seq b1 b2) invars = undefined
+-- render (Par b1 b2) invars = undefined
+
+renderElt :: [Id] -> [Id] -> CBlockElt -> String
+renderElt _ _ (Text s) = s
+renderElt invars _ (InVar x) = invars !! x
+renderElt _ outvars (OutVar x) = outvars !! x

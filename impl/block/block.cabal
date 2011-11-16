@@ -10,5 +10,5 @@ Build-Type:     Simple
 Library
   Exposed-modules: Block,Block.Lang.C
   Hs-Source-Dirs:  src
-  Build-Depends:   base >= 4,containers
+  Build-Depends:   base >= 4,containers,mtl >= 2
   GHC-Options:     -O2 -Wall
