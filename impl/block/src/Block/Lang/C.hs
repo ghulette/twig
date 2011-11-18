@@ -1,4 +1,4 @@
-module Block.Lang.C where
+module Block.Lang.C (parse,render) where
 
 import Block
 import Block.Supply
@@ -33,19 +33,35 @@ instance Block CBlock where
   seqn b1 b2 | outputs b1 == inputs b2 = Seq b1 b2
              | otherwise = invalid
 
-render :: CBlock -> [Id] -> Supply Id (String,[Id])
-render (Basic _ outn ts) invars = do
-  outvars <- supplies outn
-  let txt = concatMap (renderElt invars outvars) ts
-  return (txt,outvars)
-render (Permute numIns ins) invars = render basicBlock invars
+varIds :: Id -> [Id]
+varIds prefix = map ((prefix ++) . show) [(1 :: Integer)..]
+
+render :: String -> CBlock -> (String,[String],[String])
+render prefix b = evalSupply (varIds prefix) $ do
+  inVars <- supplies (inputs b)
+  (txt,outVars) <- renderM b inVars
+  return (txt,inVars,outVars)
+
+renderM :: CBlock -> [Id] -> Supply Id (String,[Id])
+renderM (Basic _ outn ts) inVars = do
+  outVars <- supplies outn
+  let txt = concatMap (renderElt inVars outVars) ts
+  return (txt,outVars)
+renderM (Permute numIns ins) inVars = renderM permuteBlk inVars
   where numOuts = length ins
         outs = [1..numOuts]
-        eltf = \(o,i) -> [OutVar o,Text "=",InVar i,Text ";\n"]
-        elts = concatMap eltf (zip outs ins)
-        basicBlock = Basic numIns numOuts elts
--- render (Seq b1 b2) invars = undefined
--- render (Par b1 b2) invars = undefined
+        f = \o i -> [OutVar o,Text "=",InVar i,Text ";\n"]
+        elts = concat (zipWith f outs ins)
+        permuteBlk = Basic numIns numOuts elts
+renderM (Seq b1 b2) inVars = do
+  (txt1,midVars) <- renderM b1 inVars
+  (txt2,outVars) <- renderM b2 midVars
+  return (txt1++txt2,outVars)
+renderM (Par b1 b2) inVars = do
+  let (inVars1,inVars2) = splitAt (inputs b1) inVars
+  (txt1,outVars1) <- renderM b1 inVars1
+  (txt2,outVars2) <- renderM b2 inVars2
+  return (txt1++txt2,outVars1++outVars2)
 
 renderElt :: [Id] -> [Id] -> CBlockElt -> String
 renderElt _ _ (Text s) = s
