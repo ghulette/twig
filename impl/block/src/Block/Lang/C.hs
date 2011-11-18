@@ -1,7 +1,7 @@
-module Block.Lang.C (parse,render) where
+module Block.Lang.C (render) where
 
 import Block
-import Block.Supply
+import Control.Monad.Supply
 
 type Id = String
 
@@ -37,7 +37,7 @@ varIds :: Id -> [Id]
 varIds prefix = map ((prefix ++) . show) [(1 :: Integer)..]
 
 render :: String -> CBlock -> (String,[String],[String])
-render prefix b = evalSupply (varIds prefix) $ do
+render prefix b = (flip evalSupply) (varIds prefix) $ do
   inVars <- supplies (inputs b)
   (txt,outVars) <- renderM b inVars
   return (txt,inVars,outVars)
@@ -49,10 +49,9 @@ renderM (Basic _ outn ts) inVars = do
   return (txt,outVars)
 renderM (Permute numIns ins) inVars = renderM permuteBlk inVars
   where numOuts = length ins
-        outs = [1..numOuts]
         f = \o i -> [OutVar o,Text "=",InVar i,Text ";\n"]
-        elts = concat (zipWith f outs ins)
-        permuteBlk = Basic numIns numOuts elts
+        body = concat (zipWith f [1..numOuts] ins)
+        permuteBlk = Basic numIns numOuts body
 renderM (Seq b1 b2) inVars = do
   (txt1,midVars) <- renderM b1 inVars
   (txt2,outVars) <- renderM b2 midVars
