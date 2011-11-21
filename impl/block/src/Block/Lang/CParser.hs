@@ -1,36 +1,42 @@
 module Block.Lang.CParser where
 
 import Text.Parsec
+import Data.List (intercalate)
 
-csvFile :: Parsec [Char] s [[String]]
-csvFile = do 
-  result <- many line
+-- Text with embedded variables
+
+data VarTextElt = Lit String
+                | Var String
+                deriving (Eq,Show)
+
+type VarText = [VarTextElt]
+
+textWithVars :: Parsec [Char] s VarText
+textWithVars = do
+  result <- many elt
   eof
   return result
 
--- Each line contains 1 or more cells, separated by a comma
---line :: GenParser Char st [String]
-line :: Parsec [Char] s [String]
-line = do 
-  result <- cells
-  eol
-  return result
+elt :: Parsec [Char] s VarTextElt
+elt = (char '`' >> var) <|> text <?> "Text or variable"
 
-cells :: Parsec [Char] s [String]
-cells = do 
-  first <- cellContent
-  next <- (char ',' >> cells) <|> (return [])
-  return (first : next)
+text :: Parsec [Char] s VarTextElt
+text = do
+  txt <- many1 (noneOf "`")
+  return (Lit txt)
 
-cellContent :: Parsec [Char] s String
-cellContent = many (noneOf ",\n")
+var :: Parsec [Char] s VarTextElt
+var = do
+  v <- many1 alphaNum
+  char '`'
+  return (Var v)
 
-eol :: Parsec [Char] s ()
-eol = char '\n' >> return ()
-
-parseCSV :: String -> Either ParseError [[String]]
-parseCSV = parse csvFile ""
+parseTextWithVars :: String -> Either ParseError VarText
+parseTextWithVars = parse textWithVars "(unknown)"
 
 main :: IO ()
 main = do
-  putStrLn "Ok"
+  let txt = "Hello `in1` there `out2``in2`"
+  case parseTextWithVars txt of
+    Left err -> print err
+    Right vt -> print vt
