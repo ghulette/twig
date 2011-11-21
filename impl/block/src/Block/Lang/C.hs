@@ -69,15 +69,16 @@ renderElt invars _ (InVar x) = invars !! x
 renderElt _ outvars (OutVar x) = outvars !! x
 
 convertElt :: VarTextElt -> Maybe CBlockElt
-convertElt (Lit s) = Just (Text s)
-convertElt (Var "in" n) = Just (InVar n)
-convertElt (Var "out" n) = Just (OutVar n)
-convertElt _ = Nothing
+convertElt t = case t of 
+  Lit s -> Just (Text s)
+  Var "in" n -> Just (InVar n)
+  Var "out" n -> Just (OutVar n)
+  _ -> Nothing
 
 mkCBlock :: Int -> Int -> String -> Maybe CBlock
 mkCBlock inn outn s = 
   case parseTextWithVars s of
     Left _ -> Nothing
-    Right varText -> do
-      elts <- mapM convertElt varText
+    Right ts -> do
+      elts <- mapM convertElt ts
       return (Basic inn outn elts)
