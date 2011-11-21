@@ -1,6 +1,7 @@
-module Block.Lang.C (render) where
+module Block.Lang.C (render,mkCBlock) where
 
 import Block
+import Block.Lang.Parser
 import Control.Monad.Supply
 
 type Id = String
@@ -67,5 +68,16 @@ renderElt _ _ (Text s) = s
 renderElt invars _ (InVar x) = invars !! x
 renderElt _ outvars (OutVar x) = outvars !! x
 
-parse :: String -> CBlock
-parse
+convertElt :: VarTextElt -> Maybe CBlockElt
+convertElt (Lit s) = Just (Text s)
+convertElt (Var "in" n) = Just (InVar n)
+convertElt (Var "out" n) = Just (OutVar n)
+convertElt _ = Nothing
+
+mkCBlock :: Int -> Int -> String -> Maybe CBlock
+mkCBlock inn outn s = 
+  case parseTextWithVars s of
+    Left _ -> Nothing
+    Right varText -> do
+      elts <- mapM convertElt varText
+      return (Basic inn outn elts)

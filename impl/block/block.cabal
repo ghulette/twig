@@ -10,5 +10,5 @@ Build-Type:     Simple
 Library
   Exposed-modules: Block,Block.Lang.C
   Hs-Source-Dirs:  src
-  Build-Depends:   base >= 4,containers,mtl >= 2,monad-supply
+  Build-Depends:   base >= 4,containers,mtl >= 2,parsec >= 3,monad-supply
   GHC-Options:     -O2 -Wall
