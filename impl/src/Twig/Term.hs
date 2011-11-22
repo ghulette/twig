@@ -2,6 +2,7 @@ module Twig.Term
 ( Term (..)
 , tupleConstructor
 , children
+, size
 , isLeaf
 , isTuple
 , pathM
@@ -31,6 +32,10 @@ tupleConstructor = "Tuple"
 
 children :: Term -> [Term]
 children (Term _ ts) = ts
+
+size :: Term -> Int
+size t | isTuple t = length (children t)
+       | otherwise = 1
 
 isLeaf :: Term -> Bool
 isLeaf (Term _ []) = True

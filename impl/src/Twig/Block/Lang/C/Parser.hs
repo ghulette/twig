@@ -1,4 +1,4 @@
-module Block.Lang.C.Parser 
+module Twig.Block.Lang.C.Parser 
 ( VarTextElt (..)
 , VarText
 , parseTextWithVars

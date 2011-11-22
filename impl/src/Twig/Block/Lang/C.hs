@@ -1,4 +1,4 @@
-module Twig.Block.Lang.C (render,mkCBlock) where
+module Twig.Block.Lang.C (CBlock,render,mkCBlock) where
 
 import Twig.Block
 import Twig.Block.Lang.C.Parser
@@ -17,7 +17,6 @@ data CBlock = Basic Int Int [CBlockElt]
 
 instance Block CBlock where
   permute n outs = Permute n outs
-  identity n = Permute n [1..n]
   invalid = undefined
 
   inputs (Basic n _ _) = n

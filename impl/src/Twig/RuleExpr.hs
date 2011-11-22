@@ -14,9 +14,9 @@ import qualified Twig.Env as Env
 import Twig.Term
 import Twig.Util.StringSub
 import Twig.Util.MonadWriter ()
+import Twig.Block.Lang.C
+import Twig.Block
 
-
-type Id = String
 
 -- Runtime exceptions
 
@@ -28,18 +28,15 @@ runtimeErr :: String -> a
 runtimeErr msg = throw (RuntimeException msg)
 
 
--- Values
+-- Expression types
 
+type Id = String
 data Proc = Proc [Id] RuleExpr
-
-type Trace = Supply Id [String]
-type AbstractStrategy w a = a -> Maybe (w,a)
-type Strategy = AbstractStrategy Trace Term
-
+type Strategy a = Term -> Maybe (a,Term)
 
 -- Environment
 
-bindVars :: Env Strategy -> [(Id,Strategy)] -> Env Strategy
+bindVars :: Env (Strategy a) -> [(Id,Strategy a)] -> Env (Strategy a)
 bindVars = foldl' $ flip $ uncurry Env.bind
 
 makeRuleEnv :: [(Id,Proc)] -> Env Proc
@@ -48,7 +45,7 @@ makeRuleEnv = Env.fromList
 -- Expressions
 
 data RuleExpr = Call Id [RuleExpr]
-              | Rule Pattern Pattern Trace
+              | Rule Pattern Pattern String
               | Success
               | Failure
               | Test RuleExpr
@@ -64,28 +61,29 @@ data RuleExpr = Call Id [RuleExpr]
               | BranchSome RuleExpr
               | Congruence [RuleExpr]
 
-eval :: RuleExpr -> Env Proc -> Env Strategy -> Strategy
+eval :: Block a => RuleExpr -> Env Proc -> Env (Strategy a) -> Strategy a
 eval (Rule lhs rhs m) _ _ t = do
   bindings <- match lhs t
   t' <- build bindings rhs
-  let m' = fmap (fmap (replace (Env.toList bindings))) m
+  let m' = invalid -- <-- Fix this!
+  -- let m' = fmap (fmap (replace (Env.toList bindings))) m
   return (m',t')
-eval Success _ _ t = Just (mempty,t)
+eval Success _ _ t = Just (identity (size t),t)
 eval Failure _ _ _ = Nothing
 eval (Test e) defs env t = 
   case eval e defs env t of
-    Just _ -> Just (mempty,t)
+    Just _ -> Just (identity (size t),t)
     Nothing -> Nothing
 eval (Neg e) defs env t = 
   case eval e defs env t of
     Just _ -> Nothing
-    Nothing -> Just (mempty,t)
+    Nothing -> Just (identity (size t),t)
 eval (Seq e1 e2) defs env t =
   case eval e1 defs env t of
     Nothing -> Nothing
     Just (m1,t') -> 
       case eval e2 defs env t' of
-        Just (m2,t'') -> Just (m1 `mappend` m2,t'')
+        Just (m2,t'') -> Just (m1 `seqn` m2,t'')
         Nothing -> Nothing
 eval (LeftChoice e1 e2) defs env t =
   case eval e1 defs env t of
@@ -106,23 +104,23 @@ eval (Choice _ _) _ _ _ = undefined
 --   (Just (t',m),Nothing) -> Just (t',m)
 --   (Nothing,Just (t',m)) -> Just (t',m)
 --   (Nothing,Nothing) -> Nothing
-eval (Path 0 e) defs env t = 
-  -- #0(s) just applies s to root
-  eval e defs env t 
-eval (Path i e) defs env t = 
-  pathM (fromInteger i) (eval e defs env) t
-eval (BranchOne e) defs env t =
-  oneM (eval e defs env) t
-eval (BranchAll e) defs env t =
-  allM (eval e defs env) t
-eval (BranchSome e) defs env t =
-  someM (eval e defs env) t
-eval (Congruence es) defs env t = do
-  let fs = map (\e -> eval e defs env) es
-  congruenceM fs t
-eval (Fix x e) defs env t = s t
-  where s = eval e defs env'
-        env' = Env.bind x s env
+-- eval (Path 0 e) defs env t = 
+--   -- #0(s) just applies s to root
+--   eval e defs env t 
+-- eval (Path i e) defs env t = 
+--   pathM (fromInteger i) (eval e defs env) t
+-- eval (BranchOne e) defs env t =
+--   oneM (eval e defs env) t
+-- eval (BranchAll e) defs env t =
+--   allM (eval e defs env) t
+-- eval (BranchSome e) defs env t =
+--   someM (eval e defs env) t
+-- eval (Congruence es) defs env t = do
+--   let fs = map (\e -> eval e defs env) es
+--   congruenceM fs t
+-- eval (Fix x e) defs env t = s t
+--   where s = eval e defs env'
+--         env' = Env.bind x s env
 eval (VarExpr x) defs env t =
   case Env.lookup x env of
     Nothing -> eval (Call x []) defs env t
@@ -154,7 +152,7 @@ normalize (BranchSome e) = BranchSome (normalize e)
 normalize (Congruence es) = Congruence (map normalize es)
 normalize x = x
 
-run :: Id -> Env Proc -> Strategy
+run :: Block a => Id -> Env Proc -> Strategy a
 run entry defs t = 
   case Env.lookup entry defs of 
     Just (Proc [] e) -> do

@@ -41,11 +41,11 @@ tuplePattern = do
 termPattern :: TwigParser Pattern
 termPattern = tuplePattern <|> variable <|> constant <?> "term pattern"
 
-trace :: TwigParser [String]
+trace :: TwigParser String
 trace = do
   reservedOp ":"
   m <- stringLiteral
-  return [m]
+  return m
 
 
 -- Terms (no variables)
@@ -87,7 +87,7 @@ ruleLit = brackets $ do
     reservedOp "->"
     rhs <- termPattern
     m <- option [] trace
-    return (Rule lhs rhs (return m))
+    return (Rule lhs rhs m)
 
 success :: TwigParser RuleExpr
 success = do

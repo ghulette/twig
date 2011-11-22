@@ -1,8 +1,9 @@
-module Twig.Block where
+module Twig.Block (Block (..)) where
 
 class Block a where
   permute :: Int -> [Int] -> a
   identity :: Int -> a
+  identity n = permute n [1..n]
   invalid :: a
   inputs :: a -> Int
   outputs :: a -> Int

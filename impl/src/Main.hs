@@ -6,6 +6,7 @@ import Twig.Parser
 import Twig.RuleExpr
 import Twig.Term
 import Twig.Env (Env)
+import Twig.Block.Lang.C
 
 
 -- Front end
@@ -30,7 +31,8 @@ runOne :: (Env Proc) -> (Id,Term) -> IO ()
 runOne env (x,t) = do
   putStrLn $ "Applying rule " ++ x ++ " to term " ++ (show t)
   putStr $ show t
-  case run x env t of
+  let runf = run :: Id -> Env Proc -> Strategy CBlock
+  case runf x env t of
     Just (_,t') -> do
       putStr " -> "
       print t'
