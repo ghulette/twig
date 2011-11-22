@@ -6,13 +6,13 @@ import Control.Exception
 import Data.Typeable (Typeable)
 import Data.List (foldl')
 import Control.Monad (when)
+import Control.Monad.Supply
 import Data.Monoid
 import Twig.Pattern (Pattern,match,build)
 import Twig.Env (Env)
 import qualified Twig.Env as Env
 import Twig.Term
 import Twig.Util.StringSub
-import Twig.Util.Supply
 import Twig.Util.MonadWriter ()
 
 

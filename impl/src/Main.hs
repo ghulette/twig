@@ -6,7 +6,6 @@ import Twig.Parser
 import Twig.RuleExpr
 import Twig.Term
 import Twig.Env (Env)
-import Twig.Util.Supply
 
 
 -- Front end
