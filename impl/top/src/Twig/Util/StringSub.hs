@@ -1,4 +1,4 @@
-module StringSub (replace) where
+module Twig.Util.StringSub (replace) where
 
 import Text.Regex
 import Data.List (foldl')

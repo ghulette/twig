@@ -1,12 +1,13 @@
 import Prelude hiding (catch)
 import Control.Exception
 import System.Environment (getArgs)
-import Parser
-import RuleExpr
-import Term
-import Env (Env)
-import Supply
-import AST
+import Twig.AST
+import Twig.Parser
+import Twig.RuleExpr
+import Twig.Term
+import Twig.Env (Env)
+import Twig.Util.Supply
+
 
 -- Front end
 

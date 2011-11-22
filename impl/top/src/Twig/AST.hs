@@ -1,7 +1,8 @@
-module AST where
+module Twig.AST where
 
-import Env
-import RuleExpr
+import Twig.Env (Env)
+import qualified Twig.Env as Env
+import Twig.RuleExpr
 
 data Top = Top [Unit]
 data Unit = Unit [Stmt]

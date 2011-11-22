@@ -1,15 +1,15 @@
-module Parser 
+module Twig.Parser 
 ( parseAST
 , parseTerms
 ) where
 
 import Text.Parsec
 import qualified Text.Parsec.Expr as Ex
-import Lexer
-import AST
-import Pattern
-import Term
-import RuleExpr
+import Twig.Lexer
+import Twig.AST
+import Twig.Pattern
+import Twig.Term
+import Twig.RuleExpr
 
 type TwigParser a = Parsec [Char] () a
 

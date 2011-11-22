@@ -1,4 +1,4 @@
-module Term
+module Twig.Term
 ( Term (..)
 , tupleConstructor
 , children
@@ -12,8 +12,8 @@ module Term
 ) where
 
 import Data.List (intercalate)
-import qualified Util
 import Control.Monad (guard)
+import qualified Twig.Util.List as List
 
 -- Terms
 
@@ -45,16 +45,16 @@ updateM f (Term t ts) = do
   return (mts >>= \ts' -> return $ Term t ts')
 
 pathM :: Monad m => Int -> (Term -> Maybe (m Term)) -> Term -> Maybe (m Term)
-pathM i f = updateM (Util.pathM i f)
+pathM i f = updateM (List.pathM i f)
 
 allM :: Monad m => (Term -> Maybe (m Term)) -> Term -> Maybe (m Term)
-allM f = updateM (Util.mapAllM f)
+allM f = updateM (List.mapAllM f)
 
 oneM :: Monad m => (Term -> Maybe (m Term)) -> Term -> Maybe (m Term)
-oneM f = updateM (Util.mapOneM f)
+oneM f = updateM (List.mapOneM f)
 
 someM :: Monad m => (Term -> Maybe (m Term)) -> Term -> Maybe (m Term)
-someM f = updateM (Util.mapSomeM f)
+someM f = updateM (List.mapSomeM f)
 
 congruenceM :: Monad m => [Term -> Maybe (m Term)] -> Term -> Maybe (m Term)
 congruenceM fs (Term t ts) = do

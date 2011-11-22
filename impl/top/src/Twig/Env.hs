@@ -1,16 +1,16 @@
-module Env 
-  ( Env
-  , fromList
-  , toList
-  , empty
-  , singleton
-  , bind
-  , unbind
-  , lookup
-  , unions
-  , bindUnique
-  , unionsUnique
-  ) where
+module Twig.Env 
+( Env
+, fromList
+, toList
+, empty
+, singleton
+, bind
+, unbind
+, lookup
+, unions
+, bindUnique
+, unionsUnique
+) where
 
 import Prelude hiding (lookup)
 import Control.Monad (guard,foldM)

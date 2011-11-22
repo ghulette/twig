@@ -1,4 +1,4 @@
-module Lexer where
+module Twig.Lexer where
 
 import Text.Parsec
 import qualified Text.Parsec.Token as Tok

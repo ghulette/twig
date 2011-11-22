@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module MonadWriter where
+module Twig.Util.MonadWriter where
 
 import Data.Monoid
 import Control.Monad ()

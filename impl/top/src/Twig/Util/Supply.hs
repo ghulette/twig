@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving,FlexibleInstances #-}
 
-module Supply where
+module Twig.Util.Supply where
 
 import Control.Monad.State
 import Data.Monoid

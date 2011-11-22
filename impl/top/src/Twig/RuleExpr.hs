@@ -1,19 +1,19 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module RuleExpr where
+module Twig.RuleExpr where
 
 import Control.Exception
 import Data.Typeable (Typeable)
 import Data.List (foldl')
 import Control.Monad (when)
-import MonadWriter ()
 import Data.Monoid
-import Pattern (Pattern,match,build)
-import Env (Env)
-import qualified Env
-import Term
-import StringSub
-import Supply
+import Twig.Pattern (Pattern,match,build)
+import Twig.Env (Env)
+import qualified Twig.Env as Env
+import Twig.Term
+import Twig.Util.StringSub
+import Twig.Util.Supply
+import Twig.Util.MonadWriter ()
 
 
 type Id = String

@@ -1,14 +1,14 @@
-module Pattern 
-  ( Pattern (..)
-  , match
-  , build
-  ) where
+module Twig.Pattern 
+( Pattern (..)
+, match
+, build
+) where
 
 import Control.Monad (guard)
 import Data.List (intercalate)
-import Term
-import Env (Env)
-import qualified Env as Env
+import Twig.Term
+import Twig.Env (Env)
+import qualified Twig.Env as Env
 
 
 data Pattern = Var String
