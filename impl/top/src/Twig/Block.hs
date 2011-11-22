@@ -1,4 +1,4 @@
-module Block where
+module Twig.Block where
 
 class Block a where
   permute :: Int -> [Int] -> a

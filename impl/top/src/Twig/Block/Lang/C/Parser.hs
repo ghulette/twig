@@ -1,4 +1,4 @@
-module Block.Lang.Parser 
+module Block.Lang.C.Parser 
 ( VarTextElt (..)
 , VarText
 , parseTextWithVars

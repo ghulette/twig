@@ -1,7 +1,7 @@
-module Block.Lang.C (render,mkCBlock) where
+module Twig.Block.Lang.C (render,mkCBlock) where
 
-import Block
-import Block.Lang.Parser
+import Twig.Block
+import Twig.Block.Lang.C.Parser
 import Control.Monad.Supply
 
 type Id = String
