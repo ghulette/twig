@@ -21,21 +21,21 @@ parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
 
-outputTrace :: Trace -> IO ()
-outputTrace m = do
-  let ns = [1..] :: [Int]
-  let ss = evalSupply ["gen" ++ (show x) | x <- ns] m
-  mapM_ putStrLn ss
+-- outputTrace :: Trace -> IO ()
+-- outputTrace m = do
+--   let ns = [1..] :: [Int]
+--   let ss = evalSupply ["gen" ++ (show x) | x <- ns] m
+--   mapM_ putStrLn ss
 
 runOne :: (Env Proc) -> (Id,Term) -> IO ()
 runOne env (x,t) = do
   putStrLn $ "Applying rule " ++ x ++ " to term " ++ (show t)
   putStr $ show t
   case run x env t of
-    Just (m,t') -> do
+    Just (_,t') -> do
       putStr " -> "
       print t'
-      outputTrace m
+      --outputTrace m
     Nothing -> putStrLn " -> *** No match ***"
   `catch` \(RuntimeException msg) -> do 
     putStrLn $ " -> Error: " ++ msg
