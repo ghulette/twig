@@ -41,10 +41,11 @@ tuplePattern = do
 termPattern :: TwigParser Pattern
 termPattern = tuplePattern <|> variable <|> constant <?> "term pattern"
 
-trace :: TwigParser String
-trace = do
-  reservedOp ":"
-  m <- stringLiteral
+block :: TwigParser String
+block = do
+  reservedOp "<<<"
+  m <- many (noneOf "<>") -- Fix this
+  reservedOp ">>>"
   return m
 
 
@@ -81,13 +82,18 @@ call = do
   args <- parens (ruleExpr `sepBy1` comma)
   return (Call x args)
 
-ruleLit :: TwigParser RuleExpr
+ruleLit :: TwigParser (Pattern,Pattern)
 ruleLit = brackets $ do
-    lhs <- termPattern
-    reservedOp "->"
-    rhs <- termPattern
-    m <- option [] trace
-    return (Rule lhs rhs m)
+  lhs <- termPattern
+  reservedOp "->"
+  rhs <- termPattern
+  return (lhs,rhs)
+
+primRule :: TwigParser RuleExpr
+primRule = do
+  (lhs,rhs) <- ruleLit
+  m <- option "" block
+  return (Rule lhs rhs m)
 
 success :: TwigParser RuleExpr
 success = do
@@ -134,7 +140,7 @@ ruleExpr = Ex.buildExpressionParser table factor
         factor =  parens ruleExpr
               <|> try call
               <|> var
-              <|> ruleLit
+              <|> primRule
               <|> fix
               <|> success 
               <|> failure
