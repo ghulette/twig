@@ -8,6 +8,7 @@ module Twig.RuleExpr
 , Id
 , Strategy
 , EvalException (..)
+, BlockBuilder
 , run
 ) where
 
@@ -15,15 +16,10 @@ import Control.Exception
 import Data.Typeable (Typeable)
 import Data.List (foldl')
 import Control.Monad (when)
-import Control.Monad.Supply
-import Data.Monoid
 import Twig.Pattern (Pattern,match,build)
 import Twig.Env (Env)
 import qualified Twig.Env as Env
 import Twig.Term
-import Twig.Util.StringSub
-import Twig.Util.MonadWriter ()
-import Twig.Block.Lang.C
 import Twig.Block
 
 
@@ -43,20 +39,19 @@ type Id = String
 data Proc = Proc [Id] RuleExpr
 type Strategy a = Term -> Maybe (a,Term)
 
+type BlockBuilder a = Int -> Int -> String -> a
+
 data EvalState a = EvalState 
   { defs :: Env Proc
   , env :: Env (Strategy a)
+  , mkBlock :: BlockBuilder a
   }
--- blockBuilder :: String -> Int -> Int -> a
 
 
 -- Environment
 
 bindVars :: Env (Strategy a) -> [(Id,Strategy a)] -> Env (Strategy a)
 bindVars = foldl' $ flip $ uncurry Env.bind
-
-makeRuleEnv :: [(Id,Proc)] -> Env Proc
-makeRuleEnv = Env.fromList
 
 
 -- Expressions
@@ -78,12 +73,11 @@ data RuleExpr = Call Id [RuleExpr]
               | Congruence [RuleExpr]
 
 eval :: Block a => RuleExpr -> EvalState a -> Strategy a
-eval (Rule lhs rhs m) _ t = do
+eval (Rule lhs rhs trc) st t = do
   bindings <- match lhs t
   t' <- build bindings rhs
-  let m' = invalid -- bf m (size t) (size t')
-  -- let m' = fmap (fmap (replace (Env.toList bindings))) m
-  return (m',t')
+  let blk = (mkBlock st) (size t) (size t') trc
+  return (blk,t')
 eval Success _ t = 
   Just (identity (size t),t)
 eval Failure _ _ = 
@@ -157,11 +151,11 @@ eval (Call x args) st t =
 -- normalize (Congruence es) = Congruence (map normalize es)
 -- normalize x = x
 
-run :: Block a => Id -> Env Proc -> Strategy a
-run entry defs t = 
+run :: Block a => Id -> Env Proc -> BlockBuilder a -> Strategy a
+run entry defs mkblk t = 
   case Env.lookup entry defs of 
     Just (Proc [] e) -> do
-      (t',ms) <- eval e (EvalState defs Env.empty) t
+      (t',ms) <- eval e (EvalState defs Env.empty mkblk) t
       return (t',ms)
     Just (Proc _ _) -> runtimeErr (entry ++ " cannot have args")
     Nothing -> runtimeErr (entry ++ " is not defined")
