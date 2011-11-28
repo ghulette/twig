@@ -30,6 +30,9 @@ instance Show Term where
 tupleConstructor :: String
 tupleConstructor = "Tuple"
 
+constructor :: Term -> String
+constructor (Term t _) = t
+
 children :: Term -> [Term]
 children (Term _ ts) = ts
 
@@ -42,7 +45,7 @@ isLeaf (Term _ []) = True
 isLeaf (Term _ _) = False
 
 isTuple :: Term -> Bool
-isTuple (Term f _) = f == tupleConstructor
+isTuple t = constructor t == tupleConstructor
 
 updateM :: Monad m => ([Term] -> Maybe (m [Term])) -> Term -> Maybe (m Term)
 updateM f (Term t ts) = do

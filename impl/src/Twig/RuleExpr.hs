@@ -105,9 +105,14 @@ eval (LeftChoice e1 e2) st t =
         Just (t',m) -> Just (t',m)
         Nothing -> Nothing
 eval (Path 0 e) st t = 
-   eval e st t -- #0(s) just applies s to root
--- eval (Path i e) defs env t = 
---   pathM (fromInteger i) (eval e defs env) t
+  eval e st t -- #0(s) just applies s to root
+eval (Path i e) st t = undefined
+  -- do
+  -- guard (isTuple t)
+  -- let ts = children t
+  -- tms <- pathM (fromInteger i) (eval e st) ts
+  -- let (ts,ms) = unzip tms
+  
 -- eval (BranchOne e) defs env t =
 --   oneM (eval e defs env) t
 -- eval (BranchAll e) defs env t =
