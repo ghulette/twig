@@ -1,4 +1,9 @@
-module Twig.AST where
+module Twig.AST 
+( Top (..)
+, Unit (..)
+, Stmt (..)
+, compile
+) where
 
 import Twig.Env (Env)
 import qualified Twig.Env as Env
