@@ -15,6 +15,7 @@ module Twig.RuleExpr
 import Control.Exception
 import Data.Typeable (Typeable)
 import Data.List (foldl')
+import Data.Maybe (fromJust)
 import Control.Monad (when,guard)
 import Twig.Pattern (Pattern,match,build)
 import Twig.Env (Env)
@@ -40,12 +41,14 @@ type Id = String
 data Proc = Proc [Id] RuleExpr
 type Strategy a = Term -> Maybe (a,Term)
 
-type BlockBuilder a = Int -> Int -> String -> a
+type BlockBuilder a = [String] -> [String] -> String -> a
+type DeclMap = String -> Maybe String
 
 data EvalState a = EvalState 
   { defs :: Env Proc
   , env :: Env (Strategy a)
   , mkBlock :: BlockBuilder a
+  , termToDecl :: DeclMap
   }
 
 
@@ -54,6 +57,10 @@ data EvalState a = EvalState
 bindVars :: Env (Strategy a) -> [(Id,Strategy a)] -> Env (Strategy a)
 bindVars = foldl' $ flip $ uncurry Env.bind
 
+termToTypes :: DeclMap -> Term -> [String]
+termToTypes tmap t = map (fromJust . tmap) ds
+  where ds = if isTuple t then map show (children t) else [show t]
+  
 
 -- Expressions
 
@@ -77,7 +84,8 @@ eval :: Block a => RuleExpr -> EvalState a -> Strategy a
 eval (Rule lhs rhs trc) st t = do
   bindings <- match lhs t
   t' <- build bindings rhs
-  let blk = (mkBlock st) (size t) (size t') trc
+  let toDecl = termToTypes (termToDecl st)
+  let blk = (mkBlock st) (toDecl t) (toDecl t') trc
   return (blk,t')
 eval Success _ t = 
   Just (identity (size t),t)
@@ -169,11 +177,11 @@ congruence ss t = do
 -- normalize (Congruence es) = Congruence (map normalize es)
 -- normalize x = x
 
-run :: Block a => Id -> Env Proc -> BlockBuilder a -> Strategy a
-run entry defs mkblk t = 
+run :: Block a => Id -> Env Proc -> BlockBuilder a -> DeclMap -> Strategy a
+run entry defs mkblk tmap t = 
   case Env.lookup entry defs of 
     Just (Proc [] e) -> do
-      (t',ms) <- eval e (EvalState defs Env.empty mkblk) t
+      (t',ms) <- eval e (EvalState defs Env.empty mkblk tmap) t
       return (t',ms)
     Just (Proc _ _) -> runtimeErr (entry ++ " cannot have args")
     Nothing -> runtimeErr (entry ++ " is not defined")

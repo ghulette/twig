@@ -10,6 +10,17 @@ import Twig.Term
 import Twig.Env (Env)
 import Twig.Block.Lang.C
 
+
+-- Term/type map
+
+termToCType :: String -> Maybe String
+termToCType c = case c of
+  "int" -> Just "int"
+  "float" -> Just "float"
+  "char" -> Just "char"
+  "ptr(char)" -> Just "char *"
+  _ -> Nothing
+
 -- Front end
 
 parse :: String -> IO (Env Proc)
@@ -23,13 +34,13 @@ parseInput x = case parseTerms x of
   Right terms -> return terms
 
 mkBlock :: BlockBuilder CBlock
-mkBlock inn outn txt = fromJust (mkCBlock inn outn txt)
+mkBlock inTypes outTypes txt = fromJust (mkCBlock inTypes outTypes txt)
 
 runOne :: (Env Proc) -> (Id,Term) -> IO ()
 runOne defs (x,t) = do
   putStrLn $ "Applying rule " ++ x ++ " to term " ++ (show t)
   putStr $ show t
-  case run x defs mkBlock t of
+  case run x defs mkBlock termToCType t of
     Just (b,t') -> do
       putStr " -> "
       print t'

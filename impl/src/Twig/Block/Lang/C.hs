@@ -76,10 +76,10 @@ convertElt t = case t of
   Var "out" n -> Just (OutVar n)
   _ -> Nothing
 
-mkCBlock :: Int -> Int -> String -> Maybe CBlock
-mkCBlock inn outn s = 
+mkCBlock :: [String] -> [String] -> String -> Maybe CBlock
+mkCBlock inTypes outTypes s = 
   case parseTextWithVars s of
     Left _ -> Nothing
     Right ts -> do
       elts <- mapM convertElt ts
-      return (Basic inn outn elts)
+      return (Basic (length inTypes) (length outTypes) elts)
