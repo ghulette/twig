@@ -9,11 +9,13 @@ type Id = String
 data CBlockElt = InVar Int
                | OutVar Int
                | Text String
+               deriving (Show)
 
 data CBlock = Basic Int Int [CBlockElt]
             | Permute Int [Int]
             | Seq CBlock CBlock
             | Par CBlock CBlock
+            deriving (Show)
 
 instance Block CBlock where
   permute n outs = Permute n outs

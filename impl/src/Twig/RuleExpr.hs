@@ -15,12 +15,13 @@ module Twig.RuleExpr
 import Control.Exception
 import Data.Typeable (Typeable)
 import Data.List (foldl')
-import Control.Monad (when)
+import Control.Monad (when,guard)
 import Twig.Pattern (Pattern,match,build)
 import Twig.Env (Env)
 import qualified Twig.Env as Env
 import Twig.Term
 import Twig.Block
+import Twig.Util.List
 
 
 -- Runtime exceptions
@@ -106,22 +107,16 @@ eval (LeftChoice e1 e2) st t =
         Nothing -> Nothing
 eval (Path 0 e) st t = 
   eval e st t -- #0(s) just applies s to root
-eval (Path i e) st t = undefined
-  -- do
-  -- guard (isTuple t)
-  -- let ts = children t
-  -- tms <- pathM (fromInteger i) (eval e st) ts
-  -- let (ts,ms) = unzip tms
-  
--- eval (BranchOne e) defs env t =
---   oneM (eval e defs env) t
--- eval (BranchAll e) defs env t =
---   allM (eval e defs env) t
--- eval (BranchSome e) defs env t =
---   someM (eval e defs env) t
--- eval (Congruence es) defs env t = do
---   let fs = map (\e -> eval e defs env) es
---   congruenceM fs t
+eval (Path i e) st t = 
+  branch (path (fromInteger i)) (eval e st) t
+eval (BranchOne e) st t = 
+  branch mapOne (eval e st) t
+eval (BranchAll e) st t =
+  branch mapAll (eval e st) t
+eval (BranchSome e) st t =
+  branch mapSome (eval e st) t
+eval (Congruence es) st t = 
+  congruence (map (\e -> eval e st) es) t
 eval (Fix x e) st t = f t
   where f = eval e st'
         st' = st {env = Env.bind x f (env st)}
@@ -138,6 +133,24 @@ eval (Call x args) st t =
       let ss = map (\arg -> eval arg st) args
       let st' = st {env = bindVars (env st) (zip params ss)}
       eval e st' t
+
+branch :: Block b => MaybeMap (b,Term) -> Strategy b -> Strategy b
+branch mapf s t = do
+  guard (isTuple t)
+  let ts = children t
+  let mts = zip (repeat (identity 1)) ts
+  mts' <- mapf (s . snd) mts
+  let (ms',ts') = unzip mts'
+  return (foldl1 par ms',t `withChildren` ts')
+
+congruence :: Block b => [Strategy b] -> Strategy b
+congruence ss t = do
+  guard (isTuple t)
+  let ts = children t
+  guard (length ss == length ts)
+  mts' <- sequence (zipWith ($) ss ts)
+  let (ms',ts') = unzip mts'
+  return (foldl1 par ms',t `withChildren` ts')
 
 -- reduce :: Eq a => (a -> a) -> a -> a
 -- reduce f x = case f x of x' | x' == x -> x'

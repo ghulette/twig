@@ -35,9 +35,10 @@ runOne defs (x,t) = do
   putStrLn $ "Applying rule " ++ x ++ " to term " ++ (show t)
   putStr $ show t
   case run x defs mkBlock t of
-    Just (_,t') -> do
+    Just (b,t') -> do
       putStr " -> "
       print t'
+      print b
       --outputTrace m
     Nothing -> putStrLn " -> *** No match ***"
   `catch` \(RuntimeException msg) -> do 
