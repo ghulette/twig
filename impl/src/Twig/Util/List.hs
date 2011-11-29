@@ -12,9 +12,9 @@ module Twig.Util.List
 ) where
 
 type MaybeMap a = (a -> Maybe a) -> [a] -> Maybe [a]
-
 type MaybeMapM m a = (a -> Maybe (m a)) -> [a] -> Maybe (m [a])
 
+-- Apply a function to a given element of the list.
 path :: Int -> MaybeMap a
 path i _ _ | i < 1 = Nothing
 path _ _ [] = Nothing
@@ -25,6 +25,8 @@ path i f (x:xs) = do
   xs' <- path (i-1) f xs
   return (x:xs')
 
+-- Apply a function to every element of a list - if any element fails, the whole
+-- map fails.
 mapAll :: MaybeMap a
 mapAll _ [] = Just []
 mapAll f (x:xs) = case f x of
@@ -33,6 +35,9 @@ mapAll f (x:xs) = case f x of
     Nothing -> Nothing
   Nothing -> Nothing
 
+-- Apply a function to exactly one element of a list - if no one element
+-- succeeds, the whole map fails. If more than one element would succeed, this
+-- function chooses the first one in the list.
 mapOne :: MaybeMap a
 mapOne _ [] = Nothing
 mapOne f (x:xs) = case f x of
@@ -41,6 +46,8 @@ mapOne f (x:xs) = case f x of
     Just xs' -> Just (x:xs')
     Nothing -> Nothing
 
+-- Apply a function to one or more elements of a list - if no elements succeed,
+-- the whole map fails.
 mapSome :: MaybeMap a
 mapSome _ [] = Nothing
 mapSome f (x:xs) = case f x of
