@@ -164,15 +164,8 @@ defStmt = do
   e <- ruleExpr
   return (DefStmt x params e)
 
-invStmt :: TwigParser Stmt
-invStmt = do
-  reserved "inv"
-  x1 <- ruleId
-  x2 <- ruleId
-  return (InvStmt x1 x2) 
-
 stmt :: TwigParser Stmt
-stmt = try defStmt <|> ruleStmt <|> invStmt <?> "Statement"
+stmt = try defStmt <|> ruleStmt <?> "Statement"
 
 unit :: TwigParser Unit
 unit = do
