@@ -28,12 +28,17 @@ text = do
   txt <- many1 (noneOf "$")
   return (Lit txt)
 
-var :: Parsec [Char] s VarTextElt
-var = do
-  kw <- many1 letter
+nat :: Parsec [Char] s Int
+nat = do
   nstrh <- oneOf "123456789"
   nstrt <- many digit
   let n = read (nstrh:nstrt)
+  return n
+
+var :: Parsec [Char] s VarTextElt
+var = do
+  kw <- many1 letter
+  n <- option 1 nat
   return (Var kw n)
 
 parseTextWithVars :: String -> Either ParseError VarText

@@ -1,6 +1,7 @@
 import Prelude hiding (catch)
 import Control.Exception
 import Data.Maybe (fromJust)
+import Data.List (intercalate)
 import System.Environment (getArgs)
 import Twig.AST
 import Twig.Parser
@@ -21,12 +22,6 @@ parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
 
--- outputTrace :: Trace -> IO ()
--- outputTrace m = do
---   let ns = [1..] :: [Int]
---   let ss = evalSupply ["gen" ++ (show x) | x <- ns] m
---   mapM_ putStrLn ss
-
 mkBlock :: BlockBuilder CBlock
 mkBlock inn outn txt = fromJust (mkCBlock inn outn txt)
 
@@ -38,8 +33,11 @@ runOne defs (x,t) = do
     Just (b,t') -> do
       putStr " -> "
       print t'
-      print b
-      --outputTrace m
+      let (txt,inputs,outputs) = render "_twig" b
+      putStrLn $ "Inputs: " ++ (intercalate ", " inputs)
+      putStrLn $ "Outputs: " ++ (intercalate ", " outputs)
+      putStrLn $ "Code:"
+      putStrLn txt
     Nothing -> putStrLn " -> *** No match ***"
   `catch` \(RuntimeException msg) -> do 
     putStrLn $ " -> Error: " ++ msg

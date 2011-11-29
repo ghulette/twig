@@ -66,8 +66,8 @@ renderM (Par b1 b2) inVars = do
 
 renderElt :: [Id] -> [Id] -> CBlockElt -> String
 renderElt _ _ (Text s) = s
-renderElt invars _ (InVar x) = invars !! x
-renderElt _ outvars (OutVar x) = outvars !! x
+renderElt invars _ (InVar x) = invars !! (x-1)
+renderElt _ outvars (OutVar x) = outvars !! (x-1)
 
 convertElt :: VarTextElt -> Maybe CBlockElt
 convertElt t = case t of 
