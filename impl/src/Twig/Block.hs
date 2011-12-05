@@ -1,7 +1,6 @@
 module Twig.Block (Block (..)) where
 
 class Block a where
-  mkBlock :: Int -> Int -> String -> a
   permute :: Int -> [Int] -> a
   identity :: Int -> a
   identity n = permute n [1..n]

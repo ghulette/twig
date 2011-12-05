@@ -7,6 +7,7 @@ module Twig.RuleExpr
 , Proc (..)
 , Id
 , Strategy
+, Trace
 , EvalException (..)
 , run
 ) where
@@ -38,12 +39,12 @@ runtimeErr msg = throw (RuntimeException msg)
 type Id = String
 data Proc = Proc [Id] RuleExpr
 type Strategy a = Term -> Maybe (a,Term)
-type DeclMap = String -> Maybe String
+type Trace a = Term -> Term -> String -> a
 
 data EvalState a = EvalState 
-  { defs :: Env Proc
-  , env :: Env (Strategy a)
-  , termToDecl :: DeclMap
+  { defs  :: Env Proc
+  , env   :: Env (Strategy a)
+  , trace :: Trace a
   }
 
 
@@ -71,10 +72,10 @@ data RuleExpr = Call Id [RuleExpr]
               | Congruence [RuleExpr]
 
 eval :: Block a => RuleExpr -> EvalState a -> Strategy a
-eval (Rule lhs rhs trc) _ t = do
+eval (Rule lhs rhs trc) st t = do
   bindings <- match lhs t
   t' <- build bindings rhs
-  let blk = mkBlock (size t) (size t') trc
+  let blk = (trace st) t t' trc
   return (blk,t')
 eval Success _ t = 
   Just (identity (size t),t)
@@ -149,11 +150,11 @@ congruence ss t = do
   let (ms',ts') = unzip mts'
   return (foldl1 par ms',t `withChildren` ts')
 
-run :: Block a => Id -> Env Proc -> DeclMap -> Strategy a
-run entry defs tmap t = 
+run :: Block a => Id -> Env Proc -> Trace a -> Strategy a
+run entry defs trace t = 
   case Env.lookup entry defs of 
     Just (Proc [] e) -> do
-      (t',ms) <- eval e (EvalState defs Env.empty tmap) t
+      (t',ms) <- eval e (EvalState defs Env.empty trace) t
       return (t',ms)
     Just (Proc _ _) -> runtimeErr (entry ++ " cannot have args")
     Nothing -> runtimeErr (entry ++ " is not defined")

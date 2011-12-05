@@ -9,17 +9,6 @@ import Twig.Term
 import Twig.Env (Env)
 import Twig.Block.Lang.C
 
-
--- Term/type map
-
-termToCType :: String -> Maybe String
-termToCType c = case c of
-  "int" -> Just "int"
-  "float" -> Just "float"
-  "char" -> Just "char"
-  "ptr(char)" -> Just "char *"
-  _ -> Nothing
-
 -- Front end
 
 parse :: String -> IO (Env Proc)
@@ -32,11 +21,14 @@ parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
 
+trace :: Trace CBlock
+trace ins outs t = mkCBlock (size ins) (size outs) t
+
 runOne :: (Env Proc) -> (Id,Term) -> IO ()
 runOne defs (x,t) = do
   putStrLn $ "Applying rule " ++ x ++ " to term " ++ (show t)
   putStr $ show t
-  case run x defs termToCType t of
+  case run x defs trace t of
     Just (b,t') -> do
       putStr " -> "
       print t'

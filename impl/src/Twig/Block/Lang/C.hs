@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Twig.Block.Lang.C (CBlock,render,mkCBlock) where
+module Twig.Block.Lang.C (CBlock,render,mkCBlock,parseCType) where
 
 import Control.Exception
 import Data.Typeable (Typeable)
@@ -20,6 +20,16 @@ instance Exception CBlockException
 
 type Id = String
 
+data CType = Void
+           | Char
+           | Short
+           | Int
+           | Long
+           | Float
+           | Double
+           | Ptr CType
+           deriving (Eq,Show)
+
 data CBlockElt = InVar Int
                | OutVar Int
                | Text String
@@ -33,9 +43,7 @@ data CBlock = Basic Int Int [CBlockElt]
 
 -- Block interface
 
-instance Block CBlock where
-  mkBlock = mkCBlock
-  
+instance Block CBlock where  
   permute n outs = Permute n outs
   invalid = undefined
 
@@ -54,6 +62,14 @@ instance Block CBlock where
              | otherwise = invalid
 
 -- C-specific functions
+
+parseCType :: String -> Maybe CType
+parseCType c = case c of
+  "int" -> Just Int
+  "char" -> Just Char
+  "float" -> Just Float
+  "ptr(char)" -> Just (Ptr Char)
+  _ -> Nothing
 
 varIds :: Id -> [Id]
 varIds prefix = map ((prefix ++) . show) [(1 :: Integer)..]
