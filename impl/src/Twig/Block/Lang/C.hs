@@ -1,8 +1,22 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Twig.Block.Lang.C (CBlock,render,mkCBlock) where
 
+import Control.Exception
+import Data.Typeable (Typeable)
 import Twig.Block
 import Twig.Block.Lang.C.Parser
 import Control.Monad.Supply
+
+-- Exceptions
+
+data CBlockException = ParseException String
+                     | InvalidEltException String
+                     deriving (Typeable,Show)
+
+instance Exception CBlockException
+
+-- Types
 
 type Id = String
 
@@ -17,7 +31,11 @@ data CBlock = Basic Int Int [CBlockElt]
             | Par CBlock CBlock
             deriving (Show)
 
+-- Block interface
+
 instance Block CBlock where
+  mkBlock = mkCBlock
+  
   permute n outs = Permute n outs
   invalid = undefined
 
@@ -35,6 +53,8 @@ instance Block CBlock where
   seqn b1 b2 | outputs b1 == inputs b2 = Seq b1 b2
              | otherwise = invalid
 
+-- C-specific functions
+
 varIds :: Id -> [Id]
 varIds prefix = map ((prefix ++) . show) [(1 :: Integer)..]
 
@@ -49,10 +69,10 @@ renderM (Basic _ outn ts) inVars = do
   outVars <- supplies outn
   let txt = concatMap (renderElt inVars outVars) ts
   return (txt,outVars)
-renderM (Permute numIns ins) inVars = renderM permuteBlk inVars
-  where numOuts = length ins
+renderM (Permute numIns mapping) inVars = renderM permuteBlk inVars
+  where numOuts = length mapping
         f = \o i -> [OutVar o,Text "=",InVar i,Text ";\n"]
-        body = concat (zipWith f [1..numOuts] ins)
+        body = concat (zipWith f [1..numOuts] mapping)
         permuteBlk = Basic numIns numOuts body
 renderM (Seq b1 b2) inVars = do
   (txt1,midVars) <- renderM b1 inVars
@@ -69,17 +89,15 @@ renderElt _ _ (Text s) = s
 renderElt invars _ (InVar x) = invars !! (x-1)
 renderElt _ outvars (OutVar x) = outvars !! (x-1)
 
-convertElt :: VarTextElt -> Maybe CBlockElt
+convertElt :: VarTextElt -> CBlockElt
 convertElt t = case t of 
-  Lit s -> Just (Text s)
-  Var "in" n -> Just (InVar n)
-  Var "out" n -> Just (OutVar n)
-  _ -> Nothing
+  Lit s -> Text s
+  Var "in" n -> InVar n
+  Var "out" n -> OutVar n
+  Var x _ -> throw (InvalidEltException (x ++ " is not a valid variable name"))
 
-mkCBlock :: [String] -> [String] -> String -> Maybe CBlock
-mkCBlock inTypes outTypes s = 
+mkCBlock :: Int -> Int -> String -> CBlock
+mkCBlock numIn numOut s = 
   case parseTextWithVars s of
-    Left _ -> Nothing
-    Right ts -> do
-      elts <- mapM convertElt ts
-      return (Basic (length inTypes) (length outTypes) elts)
+    Left err -> throw (ParseException (show err))
+    Right ts -> Basic numIn numOut (map convertElt ts)

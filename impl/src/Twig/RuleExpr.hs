@@ -8,14 +8,12 @@ module Twig.RuleExpr
 , Id
 , Strategy
 , EvalException (..)
-, BlockBuilder
 , run
 ) where
 
 import Control.Exception
 import Data.Typeable (Typeable)
 import Data.List (foldl')
-import Data.Maybe (fromJust)
 import Control.Monad (when,guard)
 import Twig.Pattern (Pattern,match,build)
 import Twig.Env (Env)
@@ -40,14 +38,11 @@ runtimeErr msg = throw (RuntimeException msg)
 type Id = String
 data Proc = Proc [Id] RuleExpr
 type Strategy a = Term -> Maybe (a,Term)
-
-type BlockBuilder a = [String] -> [String] -> String -> a
 type DeclMap = String -> Maybe String
 
 data EvalState a = EvalState 
   { defs :: Env Proc
   , env :: Env (Strategy a)
-  , mkBlock :: BlockBuilder a
   , termToDecl :: DeclMap
   }
 
@@ -55,12 +50,7 @@ data EvalState a = EvalState
 -- Environment
 
 bindVars :: Env (Strategy a) -> [(Id,Strategy a)] -> Env (Strategy a)
-bindVars = foldl' $ flip $ uncurry Env.bind
-
-termToTypes :: DeclMap -> Term -> [String]
-termToTypes tmap t = map (fromJust . tmap) ds
-  where ds = if isTuple t then map show (children t) else [show t]
-  
+bindVars = foldl' $ flip $ uncurry Env.bind  
 
 -- Expressions
 
@@ -81,11 +71,10 @@ data RuleExpr = Call Id [RuleExpr]
               | Congruence [RuleExpr]
 
 eval :: Block a => RuleExpr -> EvalState a -> Strategy a
-eval (Rule lhs rhs trc) st t = do
+eval (Rule lhs rhs trc) _ t = do
   bindings <- match lhs t
   t' <- build bindings rhs
-  let toDecl = termToTypes (termToDecl st)
-  let blk = (mkBlock st) (toDecl t) (toDecl t') trc
+  let blk = mkBlock (size t) (size t') trc
   return (blk,t')
 eval Success _ t = 
   Just (identity (size t),t)
@@ -160,28 +149,11 @@ congruence ss t = do
   let (ms',ts') = unzip mts'
   return (foldl1 par ms',t `withChildren` ts')
 
--- reduce :: Eq a => (a -> a) -> a -> a
--- reduce f x = case f x of x' | x' == x -> x'
---                          x' -> reduce f x'
--- 
--- normalize :: RuleExpr -> RuleExpr
--- normalize (Seq a (LeftChoice b c)) = LeftChoice (Seq a b) (Seq a c)
--- normalize (Seq (LeftChoice a b) c) = LeftChoice (Seq a c) (Seq b c)
--- normalize (Test e) = Test (normalize e)
--- normalize (Neg e) = Neg (normalize e)
--- normalize (Fix x e) = Fix x (normalize e)
--- normalize (Path i e) = Path i (normalize e)
--- normalize (BranchOne e) = BranchOne (normalize e)
--- normalize (BranchAll e) = BranchAll (normalize e)
--- normalize (BranchSome e) = BranchSome (normalize e)
--- normalize (Congruence es) = Congruence (map normalize es)
--- normalize x = x
-
-run :: Block a => Id -> Env Proc -> BlockBuilder a -> DeclMap -> Strategy a
-run entry defs mkblk tmap t = 
+run :: Block a => Id -> Env Proc -> DeclMap -> Strategy a
+run entry defs tmap t = 
   case Env.lookup entry defs of 
     Just (Proc [] e) -> do
-      (t',ms) <- eval e (EvalState defs Env.empty mkblk tmap) t
+      (t',ms) <- eval e (EvalState defs Env.empty tmap) t
       return (t',ms)
     Just (Proc _ _) -> runtimeErr (entry ++ " cannot have args")
     Nothing -> runtimeErr (entry ++ " is not defined")

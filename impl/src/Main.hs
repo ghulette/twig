@@ -1,6 +1,5 @@
 import Prelude hiding (catch)
 import Control.Exception
-import Data.Maybe (fromJust)
 import Data.List (intercalate)
 import System.Environment (getArgs)
 import Twig.AST
@@ -33,14 +32,11 @@ parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
 
-mkBlock :: BlockBuilder CBlock
-mkBlock inTypes outTypes txt = fromJust (mkCBlock inTypes outTypes txt)
-
 runOne :: (Env Proc) -> (Id,Term) -> IO ()
 runOne defs (x,t) = do
   putStrLn $ "Applying rule " ++ x ++ " to term " ++ (show t)
   putStr $ show t
-  case run x defs mkBlock termToCType t of
+  case run x defs termToCType t of
     Just (b,t') -> do
       putStr " -> "
       print t'
