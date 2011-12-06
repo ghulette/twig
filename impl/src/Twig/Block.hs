@@ -13,7 +13,7 @@ class Block a where
 -- Block laws
 -- Parallel composition laws
 -- inputs  (x `par` y) == inputs x + inputs y
--- outputs (x `par` y) == inputs x + inputs y
+-- outputs (x `par` y) == outputs x + outputs y
 
 -- Sequential composition laws
 -- inputs  (x `seqn` y) == inputs x
