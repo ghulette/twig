@@ -41,7 +41,7 @@ data Proc = Proc [Id] RuleExpr
 type Strategy a = Term -> Maybe (a,Term)
 type Trace a = Term -> Term -> String -> a
 
-data EvalState a = EvalState 
+data EvalState a = EvalState
   { defs  :: Env Proc
   , env   :: Env (Strategy a)
   , trace :: Trace a
