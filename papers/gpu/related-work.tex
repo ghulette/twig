@@ -4,8 +4,8 @@
 
 Numerous systems have been created in recent years to address the GPU
 programming problem that provide an abstraction above low level interfaces such
-as OpenCL or CUDA. These include the PGI Accelerate model~\cite{pgi-accelerate}
-or the HMPP programming system~\cite{hmpp}. While both of these systems provide
+as OpenCL or CUDA. These include the PGI Accelerate model\cite{pgi-accelerate}
+or the HMPP programming system\cite{hmpp}. While both of these systems provide
 an abstraction above the low level programming library, we believe that they
 hide too much from the programmer. There is little room for tuning of the way
 the lower level interface to the accelerator is used -- the programmer is
@@ -25,7 +25,7 @@ user. Thus, with Twig, users are free to adjust either the low level generated
 code, or the high level protocol logic, as required by the application.
 
 The closest work to that which we describe is Reppy's Application Specific
-Foreign Function Interface Generator, FIG~\cite{reppy06fig}. In that work, a
+Foreign Function Interface Generator, FIG\cite{reppy06fig}. In that work, a
 similar formal approach was taken specifically to the generate bindings between
 programs in two different programming languages. We have found that very similar
 issues arise in building bindings between devices in a hybrid system. These
@@ -45,7 +45,7 @@ to support high-level programming by deferring challenging problems to automated
 tools. In particular, the telescoping languages effort sought to provide the
 ability to build high-level problem-solving languages that used scripting
 languages to coordinate functionality present in domain-specific
-libraries~\cite{kennedy00telescoping}. Much of the work then focused on compiler
+libraries\cite{kennedy00telescoping}. Much of the work then focused on compiler
 optimization methods and targeting potentially distributed, grid-based
 environments. Interestingly, one of the compilation techniques that was called
 out as part of the telescoping languages strategy was that of automated
@@ -57,7 +57,7 @@ equivalent to the identity function and can therefore be eliminated.
 
 Code generation approaches have had notable success in the computational science
 field, an exemplar being the Tensor Contraction Engine
-(TCE)~\cite{baumgartner05synthesis}. The TCE allows computational chemists to
+(TCE)\cite{baumgartner05synthesis}. The TCE allows computational chemists to
 write tensor contraction operations in a high level language similar to
 Mathematica, leaving it up to the TCE tool to generate the corresponding
 collections of loops that implement the operations. The advantage of this

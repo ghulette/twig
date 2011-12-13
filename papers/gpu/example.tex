@@ -2,31 +2,35 @@
 
 \section{Example}
 
-The following example shows how Twig is used, and how reductions can eliminate
-redundant memory copies.
+The code example in Figure~\ref{fig:example-code} shows how Twig is used, and
+how reductions can eliminate redundant memory copies.
 
+\begin{figure}[ht]
 \begin{verbatim}
-copyToGPU = [array(float) -> gpu(array(float))] {
+copyToGPU=[array(float) -> gpu(array(float))]{
   cudaMalloc((void **)&$out,SIZE);
   cudaMemcpy($out,$in,SIZE,cudaMemcpyHostToDevice);
 }
 
-copyFromGPU = [gpu(array(float)) -> array(float)] {
+copyFromGPU=[gpu(array(float)) -> array(float)]{
   $out = malloc(SIZE * sizeof(float));
   cudaMemcpy($out,$in,SIZE,cudaMemcpyHostToDevice);
 }
 
-kernel{k} = [gpu(array(float)) -> gpu(array(float))] {
+kernel{k}=[gpu(array(float)) -> gpu(array(float))]{
   $k <<<N_BLOCKS,BLOCK_SIZE>>>($in, N);
   $out = $in;
 }
 
-runKernel{k} = copyToGPU;kernel{k};copyFromGPU
+runKernel{k}=copyToGPU;kernel{k};copyFromGPU
 
-main = runKernel(foo);runKernel(bar)
+main=runKernel(foo);runKernel(bar)
 
 reduce copyArrayFromGPU;copyArrayToGPU -> id
 \end{verbatim}
+\caption{Twig code example}
+\label{fig:example-code}
+\end{figure}
 
 This example is simplified in the interest of brevity and clarity. In
 particular, we assume that the array size, block size, and other parameters are

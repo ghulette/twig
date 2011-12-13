@@ -3,48 +3,45 @@
 \section{Twig's Semantics}
 \label{semantics}
 
-Twig is based on a core semantics called System
-S~\cite{Visser:1998p333}, augmented with semantics for generating code
-and specialized to operate on types instead of general terms. Twig
-uses the operators of System S to combine primitive \emph{rules} into
-more complex transformations on types. These transformations are then
-applied to a given type, resulting in a new type and generating code
-as a side effect. In this section we describe the basics of Twig's
-language.
+Twig is based on a core semantics called System S\cite{Visser:1998p333},
+augmented with semantics for generating code and specialized to operate on types
+instead of general terms. Twig uses the operators of System S to combine
+primitive \emph{rules} into more complex transformations on types. These
+transformations are then applied to a given type, resulting in a new type and
+generating code as a side effect. In this section we describe the basics of
+Twig's language.
 
 Here, we give an abbreviated and mostly informal description of Twig's
-semantics, focusing on how they are used to support GPU accelerator
-programming.  The full semantics and features of the language will be
-provided in a forthcoming paper.
+semantics, focusing on how they are used to support GPU accelerator programming.
+The full semantics and features of the language will be provided in a
+forthcoming paper.
 
 \subsection{Values}
 
-Values in Twig can be any valid \emph{term} representing a type in the
-target language. Terms are tree structured data with labeled internal
-nodes. Examples of terms include simple values like \texttt{int} and
-\texttt{float}, as well as compound types like \texttt{ptr(int)},
-which might represent a pointer to an integer in C.
+Values in Twig can be any valid \emph{term} representing a type in the target
+language. Terms are tree structured data with labeled internal nodes. Examples
+of terms include simple values like \texttt{int} and \texttt{float}, as well as
+compound types like \texttt{ptr(int)}, which might represent a pointer to an
+integer in C.
 
-The mapping between terms in Twig and types in the target language is
-considered to be a configuration option controllable by the
-programmer. Furthermore, the mapping need not be injective, i.e. users
-are free to have multiple values in Twig map to the same type in
-C. For example, you might use distinct Twig values \texttt{string} and
-\texttt{ptr(char)}, but map both to a pointer to \texttt{char}
-(\texttt{char *}) in C.
+The mapping between terms in Twig and types in the target language is considered
+to be a configuration option controllable by the programmer. Furthermore, the
+mapping need not be injective, i.e. users are free to have multiple values in
+Twig map to the same type in C. For example, you might use distinct Twig values
+\texttt{string} and \texttt{ptr(char)}, but map both to a pointer to
+\texttt{char} (\texttt{char *}) in C.
 
-Twig also includes support for terms representing groups of values,
-i.e.  \emph{tuples}, and operations on groups. We omit the semantics
-here for lack of space.
+Twig also includes support for terms representing groups of values, i.e.
+\emph{tuples}, and operations on groups. We omit the semantics here for lack of
+space.
 
 \subsection{Rules}
 \label{sec:rules}
 
-The most basic building blocks of a Twig program are called
-\emph{primitive rules}. A primitive rule describes a transformation
-from one term to another.  For example, in C it is easy to convert an
-integer value to floating point, and we can write this rule in Twig as
-follows:
+The most basic building blocks of a Twig program are called \emph{primitive
+rules}. A primitive rule describes a transformation from one term to another.
+For example, in C it is easy to convert an integer value to floating point, and
+we can write this rule in Twig as follows:
 
 \begin{verbatim}
 [int -> float]
@@ -56,8 +53,8 @@ is the term \texttt{int}, then the output will be the term \texttt{float}. If
 the input is not \texttt{int}, then the output will be the special value $\bot$,
 which can be read as ``undefined'' or simply ``failure.''
 
-Rules can also have \emph{variables} in place of terms or sub-terms. For
-example the primitive rule
+Rules can also have \emph{variables} in place of terms or sub-terms. For example
+the primitive rule
 
 \begin{verbatim}
 [ptr(X) -> X]
@@ -87,7 +84,7 @@ and so on.
 It is important to understand that Twig does not check the generated code in any
 way beyond what was just described -- the generation procedure is mostly
 syntactic. This approach is similar to the code generation strategy used in
-SWIG~\cite{swig}.
+SWIG\cite{swig}.
 
 \subsection{Combinators}
 
@@ -257,5 +254,5 @@ and one or both apply within the program. Twig will continually rewrite
 \texttt{foo;bar} to \texttt{baz}, and then back again, ad infinitum.
 
 Twig's reductions are based on the theory of term rewriting; for a formal
-discussion see~\cite{baader98rewriting}. In this case Twig's expressions, not
+discussion see\cite{baader98rewriting}. In this case Twig's expressions, not
 its values, are the terms being rewritten.

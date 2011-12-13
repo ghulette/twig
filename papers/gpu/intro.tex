@@ -36,7 +36,7 @@ specific instance of this problem presented by GPU-based accelerators.
 We hypothesize that one can avoid the complexity that this intermingling of
 computational and protocol logic without resorting to specialized programming
 systems such as vendor-specific directive methods like the PGI
-Accelerator~\cite{pgi-accelerate} or HMPP~\cite{hmpp} systems. An abstraction is
+Accelerator\cite{pgi-accelerate} or HMPP\cite{hmpp} systems. An abstraction is
 possible by extending the type system of a traditional language such that
 protocol logic can be turned into a problem of reasoning about types alone.
 
@@ -51,6 +51,8 @@ a minimal and orthogonal extension to the type system of an existing language
 can aid users of existing languages without being forced to adopt a single
 vendor-defined model.
 
+\vfill
+\pagebreak
 \subsection{The Twig Approach}
 
 In this paper we present a high-level programming language called \emph{Twig}
@@ -70,7 +72,7 @@ requiring only the compilation tools of the base language and standardized
 libraries (such as OpenCL) for supporting hybrid processing.
 
 Twig achieves these goals by leveraging the theory of term
-rewriting~\cite{baader98rewriting}, along with a scheme which uses data types to
+rewriting\cite{baader98rewriting}, along with a scheme which uses data types to
 direct the generation of code in the target language. In particular, we augment
 existing data types in the target language with a notion of \emph{location},
 e.g., an array of floats located on a GPU, or an integer located in main memory.
