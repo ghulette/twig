@@ -6,6 +6,7 @@ module Twig.Term
 , size
 , isLeaf
 , isTuple
+, toList
 ) where
 
 import Data.List (intercalate)
@@ -43,3 +44,7 @@ isLeaf (Term _ _) = False
 
 isTuple :: Term -> Bool
 isTuple t = constructor t == tupleConstructor
+
+toList :: Term -> [Term]
+toList t | isTuple t = children t
+toList t | otherwise = [t]

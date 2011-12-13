@@ -22,7 +22,11 @@ parseInput x = case parseTerms x of
   Right terms -> return terms
 
 trace :: Trace CBlock
-trace ins outs txt = mkCBlock (size ins) (size outs) txt
+trace inTerm outTerm txt = do
+  let termToCType = mapM (parseCType . show) . toList
+  inCTypes <- termToCType inTerm
+  outCTypes <- termToCType outTerm
+  mkCBlock inCTypes outCTypes txt
 
 runOne :: (Env Proc) -> (Id,Term) -> IO ()
 runOne defs (x,t) = do

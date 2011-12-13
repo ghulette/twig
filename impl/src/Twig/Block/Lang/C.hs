@@ -65,11 +65,12 @@ instance Block CBlock where
 
 parseCType :: String -> Maybe CType
 parseCType c = case c of
-  "int" -> Just Int
-  "char" -> Just Char
-  "float" -> Just Float
+  "void"      -> Just Void
+  "char"      -> Just Char
+  "int"       -> Just Int
+  "float"     -> Just Float
   "ptr(char)" -> Just (Ptr Char)
-  _ -> Nothing
+  _           -> Nothing
 
 varIds :: Id -> [Id]
 varIds prefix = map ((prefix ++) . show) [(1 :: Integer)..]
@@ -112,8 +113,8 @@ convertElt t = case t of
   Var "out" n -> OutVar n
   Var x _ -> throw (InvalidEltException (x ++ " is not a valid variable name"))
 
-mkCBlock :: Int -> Int -> String -> CBlock
-mkCBlock numIn numOut s = 
+mkCBlock :: [CType] -> [CType] -> String -> Maybe CBlock
+mkCBlock ins outs s = 
   case parseTextWithVars s of
-    Left err -> throw (ParseException (show err))
-    Right ts -> Basic numIn numOut (map convertElt ts)
+    Left _ -> Nothing
+    Right ts -> Just $ Basic (length ins) (length outs) (map convertElt ts)

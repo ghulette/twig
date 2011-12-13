@@ -39,7 +39,7 @@ runtimeErr msg = throw (RuntimeException msg)
 type Id = String
 data Proc = Proc [Id] RuleExpr
 type Strategy a = Term -> Maybe (a,Term)
-type Trace a = Term -> Term -> String -> a
+type Trace a = Term -> Term -> String -> Maybe a
 
 data EvalState a = EvalState
   { defs  :: Env Proc
@@ -72,10 +72,10 @@ data RuleExpr = Call Id [RuleExpr]
               | Congruence [RuleExpr]
 
 eval :: Block a => RuleExpr -> EvalState a -> Strategy a
-eval (Rule lhs rhs trc) st t = do
+eval (Rule lhs rhs txt) st t = do
   bindings <- match lhs t
   t' <- build bindings rhs
-  let blk = (trace st) t t' trc
+  blk <- (trace st) t t' txt
   return (blk,t')
 eval Success _ t = 
   Just (identity (size t),t)
