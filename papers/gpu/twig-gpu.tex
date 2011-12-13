@@ -4,6 +4,7 @@
 \usepackage{proof}
 \usepackage{url}
 \usepackage{color}
+\usepackage{censor}
 
 \newcommand{\todonote}[1]{\textcolor{blue}{{\bf TODO:} {\it #1}}}
 \newcommand{\comment}[1]{\textcolor{red}{{\bf COMMENT:} {\it #1}}}
@@ -11,6 +12,8 @@
 \newcommand{\arr}[1]{\ensuremath\xrightarrow{#1}}
 
 \begin{document}
+  
+%\StopCensoring
 
 \title{A Type-based Approach to Separating\\Protocol from Application Logic:\\A
 Case Study in Hybrid Computer Programming}
@@ -19,20 +22,20 @@ Case Study in Hybrid Computer Programming}
 
 \author{
 % 1st. author
-\alignauthor Geoffrey C. Hulette\\
-  \affaddr{University of Oregon}\\
-  \affaddr{Eugene, OR}\\
-  \email{ghulette@cs.uoregon.edu}
+\alignauthor \censor{Geoffrey C. Hulette}\\
+  \affaddr{\censor{University of Oregon}}\\
+  \affaddr{\censor{Eugene, OR}}\\
+  \email{\censor{ghulette@cs.uoregon.edu}}
 % 2nd. author
-\alignauthor Matthew J. Sottile\\
-  \affaddr{Galois, Inc.}\\
-  \affaddr{Portland, OR}\\
-  \email{mjsottile@computer.org}
+\alignauthor \censor{Matthew J. Sottile}\\
+  \affaddr{\censor{Galois, Inc.}}\\
+  \affaddr{\censor{Portland, OR}}\\
+  \email{\censor{mjsottile@computer.org}}
 % 3rd author
-\alignauthor Allen D. Malony\\
-  \affaddr{University of Oregon}\\
-  \affaddr{Eugene, OR}\\
-  \email{malony@cs.uoregon.edu}
+\alignauthor \censor{Allen D. Malony}\\
+  \affaddr{\censor{University of Oregon}}\\
+  \affaddr{\censor{Eugene, OR}}\\
+  \email{\censor{malony@cs.uoregon.edu}}
 }
 
 \CopyrightYear{2011}
@@ -51,8 +54,8 @@ Case Study in Hybrid Computer Programming}
 
 \section{Acknowledgements}
 
-This work was supported in part by the Department of Energy Office of Science,
-Advanced Scientific Computing Research.
+% This work was supported in part by the Department of Energy Office of Science,
+% Advanced Scientific Computing Research.
 
 % \pagebreak
 \bibliographystyle{abbrv}
