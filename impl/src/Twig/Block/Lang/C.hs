@@ -35,7 +35,7 @@ data CBlockElt = InVar Int
                | Text String
                deriving (Show)
 
-data CBlock = Basic Int Int [CBlockElt]
+data CBlock = Basic [CType] [CType] [CBlockElt]
             | Permute Int [Int]
             | Seq CBlock CBlock
             | Par CBlock CBlock
@@ -47,12 +47,12 @@ instance Block CBlock where
   permute n outs = Permute n outs
   invalid = undefined
 
-  inputs (Basic n _ _) = n
+  inputs (Basic inTypes _ _) = length inTypes
   inputs (Par b1 b2) = inputs b1 + inputs b2
   inputs (Seq b1 _) = inputs b1
   inputs (Permute n _) = n 
 
-  outputs (Basic _ n _) = n
+  outputs (Basic _ outTypes _) = length outTypes
   outputs (Par b1 b2) = outputs b1 + outputs b2
   outputs (Seq _ b2) = outputs b2
   outputs (Permute _ outs) = length outs
@@ -63,6 +63,7 @@ instance Block CBlock where
 
 -- C-specific functions
 
+-- This should be expanded into an actual parser?
 parseCType :: String -> Maybe CType
 parseCType c = case c of
   "void"      -> Just Void
@@ -82,15 +83,13 @@ render prefix b = (flip evalSupply) (varIds prefix) $ do
   return (txt,inVars,outVars)
 
 renderM :: CBlock -> [Id] -> Supply Id (String,[Id])
-renderM (Basic _ outn ts) inVars = do
-  outVars <- supplies outn
+renderM (Basic _ outTypes ts) inVars = do
+  outVars <- supplies (length outTypes)
   let txt = concatMap (renderElt inVars outVars) ts
   return (txt,outVars)
-renderM (Permute numIns mapping) inVars = renderM permuteBlk inVars
-  where numOuts = length mapping
-        f = \o i -> [OutVar o,Text "=",InVar i,Text ";\n"]
-        body = concat (zipWith f [1..numOuts] mapping)
-        permuteBlk = Basic numIns numOuts body
+renderM (Permute _ mapping) inVars = do
+  let outVars = map (\i -> inVars !! (pred i)) mapping
+  return ("",outVars)
 renderM (Seq b1 b2) inVars = do
   (txt1,midVars) <- renderM b1 inVars
   (txt2,outVars) <- renderM b2 midVars
@@ -117,4 +116,4 @@ mkCBlock :: [CType] -> [CType] -> String -> Maybe CBlock
 mkCBlock ins outs s = 
   case parseTextWithVars s of
     Left _ -> Nothing
-    Right ts -> Just $ Basic (length ins) (length outs) (map convertElt ts)
+    Right ts -> Just $ Basic ins outs (map convertElt ts)
