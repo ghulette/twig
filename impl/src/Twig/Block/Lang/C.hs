@@ -70,8 +70,11 @@ parseCType :: String -> Maybe CType
 parseCType c = case c of
   "void"      -> Just Void
   "char"      -> Just Char
+  "short"     -> Just Short
   "int"       -> Just Int
+  "long"      -> Just Long
   "float"     -> Just Float
+  "double"    -> Just Double
   "ptr(char)" -> Just (Ptr Char)
   _           -> Nothing
   
