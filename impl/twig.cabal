@@ -9,5 +9,5 @@ Build-Type:     Simple
 Executable twig
   Main-Is:        Main.hs
   Hs-Source-Dirs: src
-  Build-Depends:  base >= 4, parsec >= 3.1, containers, mtl, regex-compat, monad-supply
+  Build-Depends:  base >= 4, parsec >= 3.1, containers, monad-supply
   GHC-Options:    -O2 -Wall
