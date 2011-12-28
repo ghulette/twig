@@ -41,6 +41,8 @@ data CBlock = Basic [CType] [CType] [CBlockElt]
             | Par CBlock CBlock
             deriving (Show)
 
+type CDecl = (Id,CType)
+
 -- Block interface
 
 instance Block CBlock where  
@@ -72,38 +74,65 @@ parseCType c = case c of
   "float"     -> Just Float
   "ptr(char)" -> Just (Ptr Char)
   _           -> Nothing
+  
+renderCType :: CType -> String
+renderCType c = case c of
+  Void   -> "void"
+  Char   -> "char"
+  Short  -> "short"
+  Int    -> "int"
+  Long   -> "long"
+  Float  -> "float"
+  Double -> "double"
+  Ptr x  -> "*" ++ renderCType x
 
 varIds :: Id -> [Id]
 varIds prefix = map ((prefix ++) . show) [(1 :: Integer)..]
 
+
+-- Rendering CBlocks to a string, input vars, and output vars.
+
 render :: String -> CBlock -> (String,[String],[String])
 render prefix b = (flip evalSupply) (varIds prefix) $ do
   inVars <- supplies (inputs b)
-  (txt,outVars) <- renderM b inVars
-  return (txt,inVars,outVars)
+  (decls,txt,outVars) <- renderM b inVars
+  let header = unlines (map renderDecl decls)
+  return (header ++ txt,inVars,outVars)
 
-renderM :: CBlock -> [Id] -> Supply Id (String,[Id])
+renderM :: CBlock -> [Id] -> Supply Id ([CDecl],String,[Id])
 renderM (Basic _ outTypes ts) inVars = do
   outVars <- supplies (length outTypes)
+  let decls = zip outVars outTypes
   let txt = concatMap (renderElt inVars outVars) ts
-  return (txt,outVars)
+  return (decls,txt,outVars)
 renderM (Permute _ mapping) inVars = do
   let outVars = map (\i -> inVars !! (pred i)) mapping
-  return ("",outVars)
+  return ([],"",outVars)
 renderM (Seq b1 b2) inVars = do
-  (txt1,midVars) <- renderM b1 inVars
-  (txt2,outVars) <- renderM b2 midVars
-  return (txt1++txt2,outVars)
+  (decl1,txt1,midVars) <- renderM b1 inVars
+  (decl2,txt2,outVars) <- renderM b2 midVars
+  return (decl1++decl2,txt1++txt2,outVars)
 renderM (Par b1 b2) inVars = do
   let (inVars1,inVars2) = splitAt (inputs b1) inVars
-  (txt1,outVars1) <- renderM b1 inVars1
-  (txt2,outVars2) <- renderM b2 inVars2
-  return (txt1++txt2,outVars1++outVars2)
+  (decl1,txt1,outVars1) <- renderM b1 inVars1
+  (decl2,txt2,outVars2) <- renderM b2 inVars2
+  return (decl1++decl2,txt1++txt2,outVars1++outVars2)
 
 renderElt :: [Id] -> [Id] -> CBlockElt -> String
 renderElt _ _ (Text s) = s
 renderElt invars _ (InVar x) = invars !! (x-1)
 renderElt _ outvars (OutVar x) = outvars !! (x-1)
+
+renderDecl :: CDecl -> String
+renderDecl (x,t) = (renderCType t) ++ " " ++ x
+
+-- Parsing CBlocks from a string
+
+mkCBlock :: [CType] -> [CType] -> String -> Maybe CBlock
+mkCBlock ins outs s = 
+  case parseTextWithVars s of
+    Left _ -> Nothing
+    Right ts -> Just $ Basic ins outs (map convertElt ts)
 
 convertElt :: VarTextElt -> CBlockElt
 convertElt t = case t of 
@@ -112,8 +141,3 @@ convertElt t = case t of
   Var "out" n -> OutVar n
   Var x _ -> throw (InvalidEltException (x ++ " is not a valid variable name"))
 
-mkCBlock :: [CType] -> [CType] -> String -> Maybe CBlock
-mkCBlock ins outs s = 
-  case parseTextWithVars s of
-    Left _ -> Nothing
-    Right ts -> Just $ Basic ins outs (map convertElt ts)
