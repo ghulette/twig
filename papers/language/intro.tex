@@ -2,34 +2,28 @@
 
 \section{Introduction}
 
-Set up multi-target problem.
+Introduce Twig as a more formal alternative to Swig.
 
-Why is formal term rewriting better than SWIG?
+Swig introduced the concept of \emph{typemaps}, i.e. snippets of code that could
+be used to convert data from one type to another in a given language. While
+powerful, typemaps are not especially flexible -- you need to have a typemap for
+every pair of types you want to convert. Creating such a set of typemaps is an
+$n^2$ problem given $n$ types. Once we consider user-defined types, the problem
+may become quite large.
 
-Twig has several advantages over SWIG:
+Twig builds on the ideas introduced in Swig and Fig.
 
-\begin{enumerate}
-\item Twig typemaps are composable.
-\item Twig typemaps are polymorphic.
-\end{enumerate}
+extends the ideas of Swig, with a notion of composable typemaps. We base
+our design on Fig, but extend it in a few important ways.
 
-Structure in Twig terms.
+First, Twig is not restricted to generate Moby bindings. It uses a novel model
+for code generation that is both abstract and formal, and which is easy to
+implement for both imperative and functional-style languages.
 
-First, we have n-ary tuples, which are constructed using \texttt{tuple} and may
-contain any number of children. Special operations are \texttt{branch},
-\texttt{congruence}, \texttt{pick}, and \texttt{permute}.
+Second, Twig adds support for \emph{functors} -- a notion of typemaps
+parameterized by other typemaps. Functors allow us to compose complex, layered
+type conversions.
 
-Second, we have functors, which capture the intuitive idea of collections or
-contexts.
-
-% array(X), array is a functor
-% [array(X) -> tree(X)]
-%
-% fmap id = id
-% (fmap f) . (fmap g) = fmap (f . g)
-% 
-% [array(_,int) -> ] {
-%   for(\$i=0;\$i < n;\$i++){
-%     
-%   }
-% }
+Third, Twig adds \emph{reductions} -- the ability for authors to provide rules
+which can rewrite composite typemaps to simpler transformations according to
+either general typemap algebra or domain-specific rules.

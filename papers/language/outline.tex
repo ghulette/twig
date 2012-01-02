@@ -14,15 +14,16 @@
 
 \maketitle
 
-
 \section{Introduction}
 
 Introduce Twig as a more formal alternative to Swig.
 
 Swig introduced the concept of \emph{typemaps}, i.e. snippets of code that could
 be used to convert data from one type to another in a given language. While
-powerful, typemaps are not especially flexible -- you need to write a custom
-typemap for every pair of types you want to convert.
+powerful, typemaps are not especially flexible -- you need to have a typemap for
+every pair of types you want to convert. Creating such a set of typemaps is an
+$n^2$ problem given $n$ types. Once we consider user-defined types, the problem
+may become quite large.
 
 Twig extends the ideas of Swig, with a notion of composable typemaps. We base
 our design on Fig, but extend it in a few important ways.
