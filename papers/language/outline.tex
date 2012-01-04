@@ -18,26 +18,15 @@
 
 Introduce Twig as a more formal alternative to Swig.
 
-Swig introduced the concept of \emph{typemaps}, i.e. snippets of code that could
-be used to convert data from one type to another in a given language. While
-powerful, typemaps are not especially flexible -- you need to have a typemap for
-every pair of types you want to convert. Creating such a set of typemaps is an
-$n^2$ problem given $n$ types. Once we consider user-defined types, the problem
-may become quite large.
+Swig introduced the concept of \emph{typemaps}, i.e. snippets of code that could be used to convert data from one type to another in a given language. While powerful, typemaps are not especially flexible -- you need to have a typemap for every pair of types you want to convert. Creating such a set of typemaps is an $n^2$ problem given $n$ types. Once we consider user-defined types, the problem may become quite large.
 
-Twig extends the ideas of Swig, with a notion of composable typemaps. We base
-our design on Fig, but extend it in a few important ways.
+Twig extends the ideas of Swig, with a notion of composable typemaps. We base our design on Fig, but extend it in a few important ways.
 
-First, Twig is not restricted to generate Moby bindings. It uses a novel model
-for code generation that is both abstract and formal, and which is easy to
-implement for both imperative and functional-style languages.
+First, Twig is not restricted to generate Moby bindings. It uses a novel model for code generation that is both abstract and formal, and which is easy to implement for both imperative and functional-style languages.
 
-Second, Twig adds support for \emph{functors} -- a novel notion of datatypes
-which contain other datatypes, and allow for compound conversions.
+Second, Twig adds support for \emph{functors} -- a novel notion of datatypes which contain other datatypes, and allow for compound conversions.
 
-Third, Twig adds \emph{reductions} -- the ability for authors to provide rules
-which can rewrite composite typemaps to simpler transformations according to
-either general typemap algebra or domain-specific rules.
+Third, Twig adds \emph{reductions} -- the ability for authors to provide rules which can rewrite composite typemaps to simpler transformations according to either general typemap algebra or domain-specific rules.
 
 \section{Related Work}
 
