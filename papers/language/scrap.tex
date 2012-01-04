@@ -1,0 +1,5 @@
+Typemapping transformations can be quite simple, such as when internal representations of the data types in question are identical or very similar. Other typemaps may be quite complex, such as converting an array from a row-major representation to a column-major one.
+
+What do we mean by preservation of value? Clearly, preservation of value will be imperfect in many otherwise desirable cases. 
+
+Swig originally introduced the concept of \emph{typemaps}, i.e. snippets of code that could be used to convert data from one type to another in a given language. While powerful, typemaps are not especially flexible -- a new typemap is required for every pair of types you want to convert. Thus, for $n$ types, $n^2$ typemaps are needed. Once we consider user-defined types, the problem size may become quite large. Twig cannot eliminate this problem entirely, but it does alleviate the burden on programmers by allowing typemaps to be composed. This reduces much of the repetitive coding that would otherwise be required, especially for user-defined types.

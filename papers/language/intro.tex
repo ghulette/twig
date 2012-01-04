@@ -2,28 +2,53 @@
 
 \section{Introduction}
 
-Introduce Twig as a more formal alternative to Swig.
+Twig is a new language for writing \emph{typemaps} -- programs
+that transform data from one type to another, while preserving (as
+much as possible) the underlying value of the data. Typemaps have
+proven useful in many kinds of programming and especially
+automated code generation, where we require a transformation to
+pass a single nominal value across a pair of mismatched types that
+we know to be interchangeable in some way. The best-known example
+of this problem is found in multi-language programming. For
+example, a programmer may wish to pass a Python integer to a C
+function, where a C int is expected. If we have a typemap that
+performs the transformation from Python integers to C integers,
+then an automated tool can generate the conversion code
+automatically, and expose the C function in Python via a generated
+wrapper.
 
-Swig introduced the concept of \emph{typemaps}, i.e. snippets of code that could
-be used to convert data from one type to another in a given language. While
-powerful, typemaps are not especially flexible -- you need to have a typemap for
-every pair of types you want to convert. Creating such a set of typemaps is an
-$n^2$ problem given $n$ types. Once we consider user-defined types, the problem
-may become quite large.
+There are a number of existing tools and languages for creating
+typemaps and generating code from them. Twig builds on existing
+typemap tools in several ways.
 
-Twig builds on the ideas introduced in Swig and Fig.
+First, Twig's typemaps are composable, i.e., new typemaps may be
+constructed by combining old ones. Thus, complex typemap
+transformations may be built from simpler ones. Our notion of
+typemap composition is based on the formalisms used in
+Fig\cite{reppy:fig}, but we extend and refine that work in some
+key ways. In particular, we introduce a notion of functors over
+typemaps. Functors permit typemaps to be parameterized with other
+typemaps, allowing nested transformations to be cleanly expressed.
 
-extends the ideas of Swig, with a notion of composable typemaps. We base
-our design on Fig, but extend it in a few important ways.
+Second, Twig incorporates a robust, formal model of code
+generation. This allows Twig to generate code based on typemaps in
+many different target languages.
 
-First, Twig is not restricted to generate Moby bindings. It uses a novel model
-for code generation that is both abstract and formal, and which is easy to
-implement for both imperative and functional-style languages.
+Finally, Twig includes a facility for \emph{reducing} typemaps by
+exploiting identity relationships among typemap expressions. Some
+reductions are based on a universal ``algebra of typemaps,'' while
+others are domain-specific and must be described by the user. We
+have show in our prior work \cite{ourselves} that typemap
+reduction can be used to optimize certain transformations. Since
+reductions are covered in our previous work, we will not address
+them here.
 
-Second, Twig adds support for \emph{functors} -- a notion of typemaps
-parameterized by other typemaps. Functors allow us to compose complex, layered
-type conversions.
-
-Third, Twig adds \emph{reductions} -- the ability for authors to provide rules
-which can rewrite composite typemaps to simpler transformations according to
-either general typemap algebra or domain-specific rules.
+In this paper, we will describe Twig's formal language structure,
+and then show how this structure allows us to express complex
+typemaps more concisely than with traditional tools. First, we
+review existing approaches to typemaps and related problems.
+Second, we present the semantics for Twig's code generation model,
+and then the semantics for the typemap language itself. Third, we
+present a typemap example in Swig, and show how the same problem
+can be solved more concisely and clearly in Twig. Finally, we
+conclude with ideas for future work.
