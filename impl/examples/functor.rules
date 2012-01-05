@@ -5,13 +5,13 @@ map = [X -> Y => array(X) -> array(Y)] <<<
   }
 >>>
 
-intToFloat = [int -> float] <<< 
+intToFloat = [int -> float] <<<
   $out = (float)$in;
 >>>
 
 r1 = map . intToFloat
 
--- Closing map over intToFloat is equivalent to the following
+-- Closing map over intToFloat is (should be) equivalent to the following:
 
 mapInToFloat = [array(int) -> array(float)] <<<
   $out = new array();
