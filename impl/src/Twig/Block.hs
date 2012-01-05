@@ -1,14 +1,17 @@
-module Twig.Block (Block (..)) where
+module Twig.Block (Block (..),BlockFunc (..)) where
 
-class Block a where
-  permute :: Int -> [Int] -> a
-  identity :: Int -> a
+class Block b where
+  permute :: Int -> [Int] -> b
+  identity :: Int -> b
   identity n = permute n [1..n]
-  invalid :: a
-  inputs :: a -> Int
-  outputs :: a -> Int
-  seqn :: a -> a -> a
-  par :: a -> a -> a
+  invalid :: b
+  inputs :: b -> Int
+  outputs :: b -> Int
+  seqn :: b -> b -> b
+  par :: b -> b -> b
+
+class BlockFunc f where
+  close :: Block b => f -> b -> b
 
 -- Block laws
 -- Parallel composition laws

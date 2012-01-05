@@ -1,0 +1,26 @@
+map = [X -> Y => array(X) -> array(Y)] <<<
+  $out = new array();
+  for(int i=0; i < $in.length(); i++) {
+    $f1($in[i];$out[i]) // syntax?
+  }
+>>>
+
+intToFloat = [int -> float] <<< 
+  $out = (float)$in;
+>>>
+
+r1 = map . intToFloat
+
+-- Closing map over intToFloat is equivalent to the following
+
+mapInToFloat = [array(int) -> array(float)] <<<
+  $out = new array();
+  for(int i=0; i < $in.length(); i++) {
+    int f_in;             // declare inputs
+    float f_out;          // declare outputs
+    f_in = $in[i];
+    f_out = (float)f_in;  // apply f
+    $out[i] = f_out;
+  }
+>>>
+
