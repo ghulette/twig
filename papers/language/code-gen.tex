@@ -3,7 +3,7 @@
 \section{Code generation}
 \label{sec:code-gen}
 
-To generate code, Twig relies on an abstract, language-independent model with a small number of basic operations. This simplified model is useful for formulating Twig's semantics, described in Section~\ref{sec:semantics}. It is also helpful in clarifying the precise operations which Twig supports, without getting bogged down in the (potentially complicated) details of outputting code for a particular programming language.
+To generate code, Twig relies on an abstract, language-independent model with a small number of basic operations. This simplified model is useful for formulating Twig's core semantics, described in Section~\ref{sec:semantics}. It is also helpful in clarifying the precise operations which Twig supports, without getting bogged down in the (potentially complicated) details of outputting code for a particular programming language.
 
 Twig generates code in units called \emph{blocks}. The term ``block'' is somewhat overloaded -- our usage differs from the norm. In Twig, a block of code represents anything that performs some operation on a set of inputs, and which produces a set of outputs. Blocks may have zero or more inputs and outputs. See Figure~\ref{fig:blocks} for a visual representation. Blocks can also be combined in two different ways: \emph{sequentially}, or \emph{in parallel}. These operations are described in more detail below.
 
@@ -58,16 +58,14 @@ Among the permutation blocks, there are a set of elements for which we provide s
 \mathtt{out}(x+y) &=& \mathtt{out}(y)
 \end{eqnarray*}
  
-Note that the condition that the number of outputs on the left side equal the number of inputs on the right implies that $M$ is not closed under sequential composition. We take care in the design of the rest of Twig's semantics to ensure that this is never a problem.
+Note that the condition that the number of outputs on the left side equal the number of inputs on the right implies that $M$ is not closed under sequential composition. The result of sequencing blocks where the inputs and outputs are mismatched is undefined. We take care in the design of Twig's semantics to ensure that this case is never encountered.
 
-The second operation is \emph{parallel composition}, where two blocks execute
-independently of one another. We represent this operation as multiplication
-($\times$) and say that
+The second operation is \emph{parallel composition}, where two blocks execute independently of one another. We represent this operation as multiplication ($\times$) and say that
 
 \[
 \infer
-{x \times y \in M}
-{x \in M \quad y \in M}
+  {x \times y \in M}
+  {x \in M \quad y \in M}
 \]
 
 and we define
@@ -105,6 +103,6 @@ I_n = (I_1)^n
 
 That is, $I_n$ is equivalent to the $n$-way parallel composition of $I_1$.
 
-When $n$ is implied from the context we will sometimes write $I$ for $I_n$. For example, $x+I$ as a shorthand to refer to $x+I_n$ where $n = \mathtt{out}(x)$.
+When $n$ is implied from the context we will sometimes write $I$ for $I_n$. For example, we use $x+I$ as a shorthand to refer to $x+I_n$ where $n = \mathtt{out}(x)$.
 
 Using this simple system for composition, a wide variety of code can be generated.
