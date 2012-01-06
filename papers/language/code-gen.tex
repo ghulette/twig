@@ -3,9 +3,16 @@
 \section{Code generation}
 \label{sec:code-gen}
 
-To generate code, Twig relies on an abstract, language-independent model with a small number of basic operations. This simplified model is useful for formulating Twig's core semantics, described in Section~\ref{sec:semantics}. It is also helpful in clarifying the precise operations which Twig supports, without getting bogged down in the (potentially complicated) details of outputting code for a particular programming language.
+One of our goals for Twig was that it be able to generate code in many different target languages. To that end, Twig's semantics rely on an abstract, language-independent model for code generation, with a small number of basic operations. To incorporate a new target language, it suffices to implement only these operations. There is no need to modify the core Twig interpreter, which assumes nothing beyond the abstract model.
 
-Twig generates code in units called \emph{blocks}. The term ``block'' is somewhat overloaded -- our usage differs from the norm. In Twig, a block of code represents anything that performs some operation on a set of inputs, and which produces a set of outputs. Blocks may have zero or more inputs and outputs. See Figure~\ref{fig:blocks} for a visual representation. Blocks can also be combined in two different ways: \emph{sequentially}, or \emph{in parallel}. These operations are described in more detail below.
+Our simplified code generation model is used in formulating Twig's core semantics, described in Section~\ref{sec:semantics}. It is also helpful in clarifying the precise operations which Twig supports, without getting bogged down in the (potentially rather complicated) details of outputting code for a particular target programming language.
+
+In Section~\ref{sec:code-gen:abstract}, we describe the abstract code generation model, apart from any specific target programming language, including the formal semantics. Then, in Section~\ref{sec:code-gen:c} we show how we use the model to generate C code.
+
+\subsection{Abstract Code Generation}
+\label{sec:code-gen:abstract}
+
+In Twig, the unit of code to be generated is called a \emph{block}. Intuitively, a block represents some code in the target language, which accepts inputs and produces outputs. Figure~\ref{fig:blocks} contains a visual representation of two blocks. Blocks can be combined in two different ways: \emph{sequentially}, or \emph{in parallel}, and there are a few ``special'' built-in blocks with some useful properties.
 
 \begin{figure}[ht]
 \centering
@@ -16,7 +23,7 @@ Twig generates code in units called \emph{blocks}. The term ``block'' is somewha
 
 \subsection{Block Composition}
 
-As mentioned above, Twig provides two fundamental binary operations on blocks. The first is the \emph{sequential composition} operator, represented by the addition symbol ($+$). Sequencing connects two blocks of code by ``wiring'' the outputs of the first block into the inputs of the second. In C, this is done by creating temporary variables which are substituted into the original blocks. For example, see Figure~\ref{fig:codegen-seq}, which builds on Figure~\ref{fig:blocks}.
+The first of Twig's elementary block operations is  \emph{sequential composition}, represented by the addition symbol ($+$). Sequencing connects two blocks of code by ``wiring'' the outputs of the first block into the inputs of the second. 
 
 \begin{figure}[ht]
 \centering
@@ -44,7 +51,6 @@ The permutation blocks are referred to as $\Pi_m(i_1,\ldots,i_n)$, and represent
 
 Among the permutation blocks, there are a set of elements for which we provide special rules; namely, a set of \emph{identity} permutations. The simplest of these is $\Pi_1(1)$, which acts as an identity transformation with one input and one output. We refer to this element as $I_1$. In fact, there are an unlimited number of identity transformations, which take $n$ inputs to $n$ outputs, unchanged. These are referred to as $I_n$, where $1 \leq n$, and $I_n = \Pi_n(1,2,\ldots,n)$. The blocks $I_n$ are left- and right-identity elements under a sequence operation. We sometimes use $I_n$ as a kind of ``no-op.''
 
-% The following stuff is not in the GPU paper.
 \subsection{Formal semantics}
 
 \[
@@ -106,3 +112,8 @@ That is, $I_n$ is equivalent to the $n$-way parallel composition of $I_1$.
 When $n$ is implied from the context we will sometimes write $I$ for $I_n$. For example, we use $x+I$ as a shorthand to refer to $x+I_n$ where $n = \mathtt{out}(x)$.
 
 Using this simple system for composition, a wide variety of code can be generated.
+
+\subsection{Generating C}
+\label{sec:code-gen:c}
+
+Implementation for C.
