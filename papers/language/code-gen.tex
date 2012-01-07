@@ -90,14 +90,13 @@ That is, $I_n$ is equivalent to the $n$-way parallel composition of $I_1$.
 
 When $n$ is implied from the context, we will sometimes write $I$ for $I_n$. For example, we use $x+I$ as a shorthand to refer to $x+I_n$ where $n$ is understood to be $\mathtt{out}(x)$.
 
-\subsection{Concrete Code Generation}
+It is worth noting that \emph{any} object that provides and conforms to the operations above can be ``generated'' by Twig. Because the system is so general, this could include trivial or non-sensical implementations. To be used as we intended, the code generation implementation should conform to the intuitive interpretation of blocks and their composition.
 
-It is worth noting that \emph{any} object that provides the operations above can be ``generated'' by Twig. Because the system is so general, this could include trivial or non-sensical  implementations.
-
-To be used as we intended, the code generation implementation should conform to the intuitive interpretation of blocks and their composition.
 
 \subsection{Generating C}
 \label{sec:code-gen:c}
+
+In this section we describe how the model described above can be made to generate C code.
 
 Figure~\ref{fig:blocks} contains a visual representation of two blocks of C code.
 
