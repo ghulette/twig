@@ -96,9 +96,19 @@ It is worth noting that \emph{any} object that provides and conforms to the oper
 \subsection{Generating C}
 \label{sec:code-gen:c}
 
-In this section we describe how the model described above can be made to generate C code.
+Now we will show how the model described above can be adapted to generate C code. 
 
-Figure~\ref{fig:blocks} contains a visual representation of two blocks of C code.
+You will notice that in the abstract model, we provide no way to construct ``primitive'' blocks, i.e., blocks that contain actual code. The only primitive blocks defined are the special permutation blocks, which by definition do nothing to the values. So, the first thing we need is a way to construct a primitive block from an arbitrary chunk of C code.
+
+A primitive C block is just a string of C code with some annotations to indicate the inputs and outputs. In fact, our implementation makes no attempt to parse the C language \emph{per se} -- it simply accepts the C code as plain text.
+
+We represent the inputs and outputs of each block as specially generated variables in C. To make use of the inputs and outputs, a block uses the escaped values \texttt{\$in1}, \texttt{\$in2}, etc. to represent the first, second, and so on values. Analogously, \texttt{\$out1}, \texttt{\$out2}, etc. represent the outputs. For the common case where a block has just one input and/or output, we allow \texttt{\$in} as a synonym for \texttt{\$in1}, and \texttt{\$out} for \texttt{\$out1}. When the code is rendered, these placeholders will be replaced with generated unique variable names. For example, the text 
+
+\begin{verbatim}
+$out = foo($in);
+\end{verbatim}
+
+represents a primitive C block with one input and one output. Figure~\ref{fig:blocks} shows a visual representation of two primitive blocks of C code.
 
 \begin{figure}[ht]
 \centering
@@ -107,7 +117,7 @@ Figure~\ref{fig:blocks} contains a visual representation of two blocks of C code
 \label{fig:blocks}
 \end{figure}
 
-Twig's implementation takes care of declaring and uniquely naming temporary variables to accomplish sequencing. See Figure~\ref{fig:codegen-seq}.
+To accomplish block sequencing in C, Twig generates variable names such that the output(s) of the first block in the sequence are the same as the inputs(s) of the second, and the text is concatenated. See Figure~\ref{fig:codegen-seq} for an example.
 
 \begin{figure}[ht]
 \centering
@@ -116,7 +126,7 @@ Twig's implementation takes care of declaring and uniquely naming temporary vari
 \label{fig:codegen-seq}
 \end{figure}
 
-Twig implements parallel composition by independently naming variables. An example is shown in Figure~\ref{fig:codegen-par}.
+Parallel composition for C is accomplished similarly; Twig generates independently-named variables for the inputs and outputs of the two blocks, and then concatenates the text. An example is shown in Figure~\ref{fig:codegen-par}.
 
 \begin{figure}[ht]
 \centering
@@ -124,3 +134,7 @@ Twig implements parallel composition by independently naming variables. An examp
 \caption{Two blocks from Figure~\ref{fig:blocks} composed in parallel. Renaming is performed such that the composed block has two inputs and two outputs.}
 \label{fig:codegen-par}
 \end{figure}
+
+Finally, to implement the special permutation and identity blocks, it suffices to perform the appropriate bookkeeping on the variable names. The identity block, $I_1$, requires no generated code at all -- the variable name on the input is simply used for the output as well. More complex permutations work similarly -- Twig will rearrage the generated variable names, but no actual code needs to be generated.
+
+Note that this implementation does not allocate or free memory, or otherwise perform resource management as part of the permutation operations. This implies that the generated code will follow C's semantics for passing by value versus reference. The Twig user must keep these rules in mind when designing and using C typemaps.
