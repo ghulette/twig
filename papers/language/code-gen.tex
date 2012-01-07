@@ -12,61 +12,35 @@ In Section~\ref{sec:code-gen:abstract}, we describe the abstract code generation
 \subsection{Abstract Code Generation}
 \label{sec:code-gen:abstract}
 
-In Twig, the unit of code to be generated is called a \emph{block}. Intuitively, a block represents some code in the target language, which accepts inputs and produces outputs. Figure~\ref{fig:blocks} contains a visual representation of two blocks. Blocks can be combined in two different ways: \emph{sequentially}, or \emph{in parallel}, and there are a few ``special'' built-in blocks with some useful properties.
+In Twig, a unit of code to be generated is called a \emph{block}. Intuitively, a block represents some code in the target language, which accepts inputs and produces outputs. We call the set blocks $M$, and we say that for all $x \in M$ we have the functions 
 
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.75\columnwidth]{images/code-gen1}
-\caption{Two basic blocks, A and B. Inputs are on top, outputs on the bottom.}
-\label{fig:blocks}
-\end{figure}
+\begin{eqnarray*}
+\mathtt{in} : M \to \mathbb{N}^0\\
+\mathtt{out} : M \to \mathbb{N}^0
+\end{eqnarray*}
 
-\subsection{Block Composition}
+That is, \texttt{in} and \texttt{out} will map a block to the  number of its inputs and outputs, respectively. Note that either or both may be zero for a given $x$.
 
-The first of Twig's elementary block operations is  \emph{sequential composition}, represented by the addition symbol ($+$). Sequencing connects two blocks of code by ``wiring'' the outputs of the first block into the inputs of the second. 
+\subsubsection{Sequential Composition}
 
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.75\columnwidth]{images/code-gen2}
-\caption{Two blocks from Figure~\ref{fig:blocks} composed sequentially. The variable ``tmp'' is created, and renaming performed, so that the output of block A would flow to the input of block B.}
-\label{fig:codegen-seq}
-\end{figure}
-
-Twig's implementation takes care of declaring and uniquely naming temporary variables to accomplish sequencing.
-
-The second operator is \emph{parallel composition}. Under this operator, two blocks are combined so as to execute independently of one another, but to appear as one single block. We represent this operation with the multiplication operator ($\times$). An example is shown in Figure~\ref{fig:codegen-par}.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.75\columnwidth]{images/code-gen3}
-\caption{Two blocks from Figure~\ref{fig:blocks} composed in parallel. Renaming is performed such that the composed block has two inputs and two outputs.}
-\label{fig:codegen-par}
-\end{figure}
-
-\subsection{Special Blocks}
-
-Twig defines a special set of blocks called \emph{permutation} blocks. These blocks have some special properties, which we will exploit for the purposes of rewriting programs to remove redundant memory copies. In particular, some kinds of blocks act as a kind of identity element when composed with others.
-
-The permutation blocks are referred to as $\Pi_m(i_1,\ldots,i_n)$, and represent the primitive operation of rearranging $m$ inputs to $n$ outputs, possibly in a different order, and possibly duplicating or dropping elements. The data is only passed through, and are otherwise unchanged.
-
-Among the permutation blocks, there are a set of elements for which we provide special rules; namely, a set of \emph{identity} permutations. The simplest of these is $\Pi_1(1)$, which acts as an identity transformation with one input and one output. We refer to this element as $I_1$. In fact, there are an unlimited number of identity transformations, which take $n$ inputs to $n$ outputs, unchanged. These are referred to as $I_n$, where $1 \leq n$, and $I_n = \Pi_n(1,2,\ldots,n)$. The blocks $I_n$ are left- and right-identity elements under a sequence operation. We sometimes use $I_n$ as a kind of ``no-op.''
-
-\subsection{Formal semantics}
+The first of Twig's elementary block operations is called  \emph{sequential composition}, which we represent as addition ($+$). Intuitively, sequencing represents connecting two blocks  ``vertically,'' by feeding the outputs of the first block to the inputs of the second. Formally, we define the subset $x+y$ by
 
 \[
 \infer
-{x+y \in M}
-{x \in M \quad y \in M \quad \mathtt{out}(x) = \mathtt{in}(y)}
+  {x+y \in M}
+  {x \in M \quad y \in M \quad \mathtt{out}(x) = \mathtt{in}(y)}
 \]
 
 \begin{eqnarray*}
-\mathtt{in} (x+y) &=& \mathtt{in}(x)\\
-\mathtt{out}(x+y) &=& \mathtt{out}(y)
+\mathtt{in} (x+y) &\equiv& \mathtt{in}(x)\\
+\mathtt{out}(x+y) &\equiv& \mathtt{out}(y)
 \end{eqnarray*}
- 
-Note that the condition that the number of outputs on the left side equal the number of inputs on the right implies that $M$ is not closed under sequential composition. The result of sequencing blocks where the inputs and outputs are mismatched is undefined. We take care in the design of Twig's semantics to ensure that this case is never encountered.
 
-The second operation is \emph{parallel composition}, where two blocks execute independently of one another. We represent this operation as multiplication ($\times$) and say that
+Note that the condition that the number of outputs on the left side be equal to the number of inputs on the right implies that $M$ is not closed under sequential composition. The result of sequencing blocks where the inputs and outputs are mismatched is undefined. We take care in the design of the rest of Twig's semantics to avoid this case.
+
+\subsubsection{Parallel Composition}
+
+The second elementary operator is called \emph{parallel composition}. We represent this operation with the multiplication operator ($\times$). Intuitively, parallel composition fuses two blocks ``horizontally,'' where each block executes independently of one another, but they appear as a single block with combined inputs and outputs. Formally, we define $\times$ as
 
 \[
 \infer
@@ -77,31 +51,36 @@ The second operation is \emph{parallel composition}, where two blocks execute in
 and we define
 
 \begin{eqnarray*}
-\mathtt{in} (x \times y) =& \mathtt{in}(x)  + \mathtt{in}(y)\\ 
-\mathtt{out}(x
-\times y) =& \mathtt{out}(x) + \mathtt{out}(y) \end{eqnarray*}
+\mathtt{in} (x \times y) &\equiv& \mathtt{in}(x)  + \mathtt{in}(y)\\ 
+\mathtt{out}(x \times y) &\equiv& \mathtt{out}(x) + \mathtt{out}(y) \end{eqnarray*}
 
 Note that $M$ is closed under parallel composition.
 
-We define a set of special elements in $M$, namely $\Pi_m(i_1,\ldots,i_n)$, where $i_1,\ldots,i_n \in \lbrace i | 1 \leq i \leq m \rbrace$. These are called \emph{permutation} elements, and represent the primitive operation of rearranging $m$ inputs to $n$ outputs, possibly in a different order, and possibly duplicating or dropping elements. The elements are only passed through, and are otherwise unchanged.
+\subsubsection{Special Blocks}
 
-Among the permutation elements, there are a set of elements for which we provide special rules; namely, a set of \emph{identity} permutations. The simplest of these is $\Pi_1(1)$, which acts as an identity transformation with one input and one output. We refer to this element as $I_1$. In fact, there are an unlimited number of identity transformations, which take $n$ inputs to $n$ outputs, unchanged. These are referred to as $I_n$, where $1 \leq n$, and $I_n = \Pi_n(1,2,\ldots,n)$. Clearly,
+In the abstract model, we single out a set of special elements in $M$ called \emph{permutation} elements. These elements are intended to represent the primitive operation of taking $m$ inputs and rearranging them into $n$ outputs, possibly in a different order, and possibly duplicating or dropping elements. The intended interpretation is that the actual values are unchanged by the operation. Formally, we name the block representing the permutation of $m$ inputs to $n$ outputs $\Pi_m(i_1,\ldots,i_n)$, where $i_1,\ldots,i_n \in \lbrace i | 1 \leq i \leq m \rbrace$.
+
+An interesting subset of the permutation elements are \emph{identity} permutations. The simplest of these is $\Pi_1(1)$, which acts as an identity transformation with one input and one output. That is, the block $\Pi_1(1)$ takes its single input and passes it unchanged to its single output. We refer to this element as $I_1$. In fact, there are an unlimited number of identity transformations, which take $n$ inputs to $n$ outputs, unchanged and without reordering. These are referred to as $I_n$, where $1 \leq n$, and $I_n = \Pi_n(1,2,\ldots,n)$. Clearly, we can infer that
 
 \[
 \mathtt{in}(I_n) = \mathtt{out}(I_n) = n
 \]
 
-Since the elements $I_n$ are intended to represent identity operations, we assign them a special meaning. Namely,
+Since the elements $I_n$ are intended to represent identity operations, we assign them a special meaning in the composition semantics. Namely, we define
 
 \[
-\infer{x + I_n \to x}{\mathtt{out}(x) = n} 
+\infer
+  {x + I_n \to x}
+  {\mathtt{out}(x) = n}
 \qquad
-\infer{I_n + x \to x}{\mathtt{in}(x) = n}
+\infer
+  {I_n + x \to x}
+  {\mathtt{in}(x) = n}
 \]
 
-That is, $I_n$ acts as both a left- and right-identity when sequenced with a block $x$. We sometimes use $I_n$ as a kind of ``no-op.''
+That is, $I_n$ acts as both a left- and right-identity when it is combined in sequence with a block $x$ (with the appropriate number of inputs or outputs). We sometimes use $I_n$ as a kind of ``no-op.''
 
-It is worth noting one further identity, namely
+It is worth noting one further identity, namely that
 
 \[
 I_n = (I_1)^n
@@ -109,11 +88,40 @@ I_n = (I_1)^n
 
 That is, $I_n$ is equivalent to the $n$-way parallel composition of $I_1$.
 
-When $n$ is implied from the context we will sometimes write $I$ for $I_n$. For example, we use $x+I$ as a shorthand to refer to $x+I_n$ where $n = \mathtt{out}(x)$.
+When $n$ is implied from the context, we will sometimes write $I$ for $I_n$. For example, we use $x+I$ as a shorthand to refer to $x+I_n$ where $n$ is understood to be $\mathtt{out}(x)$.
 
-Using this simple system for composition, a wide variety of code can be generated.
+\subsection{Concrete Code Generation}
+
+It is worth noting that \emph{any} object that provides the operations above can be ``generated'' by Twig. Because the system is so general, this could include trivial or non-sensical  implementations.
+
+To be used as we intended, the code generation implementation should conform to the intuitive interpretation of blocks and their composition.
 
 \subsection{Generating C}
 \label{sec:code-gen:c}
 
-Implementation for C.
+Figure~\ref{fig:blocks} contains a visual representation of two blocks of C code.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.75\columnwidth]{images/code-gen1}
+\caption{Two basic blocks, A and B. Inputs are on top, outputs on the bottom.}
+\label{fig:blocks}
+\end{figure}
+
+Twig's implementation takes care of declaring and uniquely naming temporary variables to accomplish sequencing. See Figure~\ref{fig:codegen-seq}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.75\columnwidth]{images/code-gen2}
+\caption{Two blocks from Figure~\ref{fig:blocks} composed sequentially. The variable ``tmp'' is created, and renaming performed, so that the output of block A would flow to the input of block B.}
+\label{fig:codegen-seq}
+\end{figure}
+
+Twig implements parallel composition by independently naming variables. An example is shown in Figure~\ref{fig:codegen-par}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.75\columnwidth]{images/code-gen3}
+\caption{Two blocks from Figure~\ref{fig:blocks} composed in parallel. Renaming is performed such that the composed block has two inputs and two outputs.}
+\label{fig:codegen-par}
+\end{figure}
