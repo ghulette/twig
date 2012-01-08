@@ -137,4 +137,4 @@ Parallel composition for C is accomplished similarly; Twig generates independent
 
 Finally, to implement the special permutation and identity blocks, it suffices to perform the appropriate bookkeeping on the variable names. The identity block, $I_1$, requires no generated code at all -- the variable name on the input is simply used for the output as well. More complex permutations work similarly -- Twig will rearrage the generated variable names, but no actual code needs to be generated.
 
-Note that this implementation does not allocate or free memory, or otherwise perform resource management as part of the permutation operations. This implies that the generated code will follow C's semantics for passing by value versus reference. The Twig user must keep these rules in mind when designing and using C typemaps.
+Note that this implementation does not allocate or free memory, or otherwise perform resource management as part of the permutation operations. This implies that the generated code will follow C's semantics for passing by value versus reference. The user must keep these rules in mind when designing and using C typemaps in Twig.

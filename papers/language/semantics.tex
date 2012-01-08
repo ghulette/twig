@@ -3,7 +3,7 @@
 \section{Twig}
 \label{sec:semantics}
 
-Twig is based on a core semantics called \emph{System S}~\cite{system-s}. System S was originally designed for specifying term rewriting systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, which performs the transformation. We extend the semantics of System S in order to have the evaluation of the transformation generate code as a side effect. In this way, domain specific code can be generated depending on the input types. In this section we describe the basics of Twig's language.
+Twig is based on a core semantics called \emph{System S}~\cite{system-s}, originally designed for specifying term rewriting systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, which performs the transformation. We extend the semantics of System S in order to have the evaluation of the transformation generate code as a side effect. In this way, domain specific code can be generated depending on the input types. In this section we describe the basics of Twig's language.
 
 \subsection{Values}
 
@@ -11,7 +11,7 @@ Values in Twig can be any valid \emph{term}. Terms are tree structured data with
 
 The mapping between terms in Twig and types in the target language is considered to be a configuration option, controllable by the programmer. Furthermore, the mapping need not be injective, i.e., multiple values in Twig may map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
 
-Twig has just one special kind of term: tuples. Tuples are represented with either a special constructor \texttt{tuple}, or equivalently (and preferably) with no constructor at all. For example, \texttt{(string,int)} is the same as \texttt{tuple(string,int)}), and represents a pair of two types (a \texttt{string} and an \texttt{int}) in C. The \texttt{tuple} constructor syntax is more verbose, so we typically eschew it in practice; however, it is convenient for our presentation of the formal semantics for tuple operators below.
+Twig has just one special kind of term: tuples. Tuples are represented as a set of sub-terms with either a special constructor \texttt{tuple}, or equivalently (and preferably) with no constructor at all. For example, \texttt{(string,int)} is the same as \texttt{tuple(string,int)}), and represents a pair of two types (a \texttt{string} and an \texttt{int}). The \texttt{tuple} constructor syntax is more verbose, so we typically eschew it in practice; however, it is convenient for our presentation of the formal semantics for tuple operators below.
 
 \subsection{Rules}
 
