@@ -7,7 +7,7 @@ Twig is based on a core semantics called \emph{System S}~\cite{system-s}, origin
 
 \subsection{Values}
 
-Values in Twig can be any valid \emph{term}. Terms are tree structured data with labeled internal nodes. Examples of terms include simple values like \texttt{int} and \texttt{float}, as well as compound types like \texttt{ptr(int)}, which represents a pointer to an integer.
+Values in Twig can be any valid \emph{term}. Terms are tree structured data with labeled internal nodes. Examples of terms include simple values like \texttt{int} and \texttt{float}, as well as compound types like \texttt{ptr(int)}, which represents a pointer to an integer. More complicated terms may involve multiple child terms, and may be nested to any depth. For example, \texttt{struct(int,float,struct(ptr(char)))} can represent a structure with three fields: an \texttt{int}, a \texttt{float}, and a second structure with a single string \texttt{char} pointer field.
 
 The mapping between terms in Twig and types in the target language is considered to be a configuration option, controllable by the programmer. Furthermore, the mapping need not be injective, i.e., multiple values in Twig may map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
 
@@ -17,7 +17,7 @@ Twig has just one special kind of term: tuples. Tuples are represented as a set 
 
 % Formalize this section.
 
-The most basic building blocks of a Twig program are called \emph{primitive rules}. A primitive rule describes a transformation from one term to another. For example, in C it is easy to convert an integer value to floating point, and we can write this rule in Twig as follows:
+The basic building blocks of a Twig program are called \emph{primitive rules}. A primitive rule describes a transformation from one term to another. For example, in C it is easy to convert an integer value to floating point, and we can write this rule in Twig as follows:
 
 \begin{verbatim}
 [int -> float]
@@ -103,7 +103,7 @@ Another important binary operator is \emph{left-biased choice}. This operator wi
 \caption{Semantics for left-biased choice}
 \end{figure}
 
-Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators. These include constant operators, operators which discard their results, and a fix point operator for recursion.
+Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators, such as constant operators, and operators which discard their results.
 
 \begin{figure}[ht]
 \label{fig:basic}
@@ -134,14 +134,6 @@ Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators. Th
   {t \arr{\lnot s} (t,I)}
   {t \arr{s} \bot}
 \]
-
-% Include fix-point operator?
-% \[
-% \infer{t \arr{\mu x(s)} t'}{t \arr{s[x := \mu x(s)]} t'}
-% \qquad 
-% \infer{t \arr{\mu x(s)} \bot}{t \arr{s[x := \mu x(s)]} \bot}
-% \]
-
 \caption{Semantics for basic operators}
 \end{figure}
 
@@ -195,7 +187,7 @@ The \emph{branch} operator on tuples applies a tuple of rules to a single term, 
 \caption{Semantics for branch operator}
 \end{figure}
 
-Finally, we have the \emph{projection} and \emph{path} operators, which extract a single element from a tuple, and apply a rule to a single element, respectively. The semantics are given in Figure~\ref{fig:projection} and Figure~\ref{fig:path}.
+Finally, we have the \emph{projection} operator which extract a single element from a tuple, and its close relative, the \emph{path} operator, which applies a rule to a single element. The semantics are given in Figure~\ref{fig:projection} and Figure~\ref{fig:path}.
 
 \begin{figure}[ht]
 \label{fig:projection}
@@ -222,20 +214,6 @@ Finally, we have the \emph{projection} and \emph{path} operators, which extract 
 \]
 \caption{Semantics for path operator}
 \end{figure}
-
-% Include map operator?
-% \[
-% \infer{
-%   \mathtt{tuple}(t_1,\ldots,t_n)
-%   \arr{\mathtt{\#map}(s)}
-%   \mathtt{tuple}(t_1',\ldots,t_n')
-% }{t_1 \arr{s} t_1' \quad \ldots \quad t_n \arr{s} t_n'}
-% \]
-% \[
-% \infer
-% {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\mathtt{\#map}(s)} \bot}
-% {t_i \arr{s} \bot}
-% \]
 
 \subsection{Expression names}
 \label{section:names}
