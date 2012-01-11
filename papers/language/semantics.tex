@@ -3,27 +3,27 @@
 \section{Twig}
 \label{sec:semantics}
 
-Twig is based on a core semantics called \emph{System S}~\cite{system-s}, originally designed for specifying term rewriting systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, which performs the transformation. We extend the semantics of System S in order to have the evaluation of the transformation generate code as a side effect. In this way, domain specific code can be generated depending on the input types. In this section we describe the basics of Twig's language.
+Twig is based on a core semantics called \emph{System S}~\cite{system-s}, originally designed for specifying term rewriting systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, which performs the transformation. We extend the semantics of System S in order to have the evaluation of the transformation generate code as a side effect. In this way, domain specific code can be generated depending on the input types. In this section we describe the semantics of Twig's language.
 
 \subsection{Values}
 
-Values in Twig can be any valid \emph{term}. Terms are tree structured data with labeled internal nodes. Examples of terms include simple values like \texttt{int} and \texttt{float}, as well as compound types like \texttt{ptr(int)}, which represents a pointer to an integer. More complicated terms may involve multiple child terms, and may be nested to any depth. For example, \texttt{struct(int,float,struct(ptr(char)))} can represent a structure with three fields: an \texttt{int}, a \texttt{float}, and a second structure with a single string \texttt{char} pointer field.
+Values in Twig can be any valid \emph{term}. Terms are tree structured data with labeled internal nodes. Examples of terms include simple values like \texttt{int} and \texttt{float}, as well as compound types like \texttt{ptr(int)}, which represents a pointer to an integer. More complicated terms may involve multiple child terms, and may be nested to any depth. For example, \texttt{struct(int,float,struct(ptr(char)))} may represent a structure with three fields: an \texttt{int}, a \texttt{float}, and a second structure with a single string ( pointer to \texttt{char}) field.
 
-The mapping between terms in Twig and types in the target language is considered to be a configuration option, controllable by the programmer. Furthermore, the mapping need not be injective, i.e., multiple values in Twig may map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
+The mapping between terms in Twig and types in the target language is considered to be a configuration option, controllable by the user and customizable to the domain. Furthermore, the mapping need not be injective, i.e., multiple values in Twig may map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
 
-Twig has just one special kind of term: tuples. Tuples are represented as a set of sub-terms with either a special constructor \texttt{tuple}, or equivalently (and preferably) with no constructor at all. For example, \texttt{(string,int)} is the same as \texttt{tuple(string,int)}), and represents a pair of two types (a \texttt{string} and an \texttt{int}). The \texttt{tuple} constructor syntax is more verbose, so we typically eschew it in practice; however, it is convenient for our presentation of the formal semantics for tuple operators below.
+Twig has just one special kind of term: tuples. Tuples may have any length, and the elements of the tuple are represented as the sub-terms of a term with a special constructor: \texttt{tuple}. Alternately, Twig's syntax considers the absense of any constructor to denote the \texttt{tuple} constructor. For example, the syntax \texttt{(string,int)} is interpreted as the term \texttt{tuple(string,int)}). This term represents a tuple of length two, whose first element is \texttt{string} and whose second element is \texttt{int}. The \texttt{tuple} constructor syntax is more verbose, so we typically will eschew it in practice; it is convenient, however, for our presentation of the formal semantics below.
 
 \subsection{Rules}
 
-% Formalize this section.
+The basic building blocks of a Twig program are called \emph{primitive rules}. A primitive rule describes a transformation from one term to another. Since Twig's terms represent types, a primitive rule in Twig describes how to transform an instance of one type into an instance of another.
 
-The basic building blocks of a Twig program are called \emph{primitive rules}. A primitive rule describes a transformation from one term to another. For example, in C it is easy to convert an integer value to floating point, and we can write this rule in Twig as follows:
+For example, in C it is easy to convert an integer value to floating point, and we can write this rule in Twig as follows:
 
 \begin{verbatim}
 [int -> float]
 \end{verbatim}
 
-The term to the left of the arrow is the input, and the term to the right is the output. In this example, the rule says that if the input value is \texttt{int} then it will be rewritten to the value \texttt{float}. If the input is not \texttt{int} then it will be rewritten to the distinguished value $\bot$, which can be read as ``undefined'' or simply ``failure.''
+The term to the left of the arrow is the input, and the term to the right is the output. In this example, the rule says that if the input value is \texttt{int} then it will be rewritten to the value \texttt{float}. If the input term does not match \texttt{int} then it will be rewritten to the distinguished value $\bot$, which can be read as ``undefined'' or simply ``failure.''
 
 Rules can also have \emph{variables} in place of terms or sub-terms. For example the rule
 
@@ -31,14 +31,14 @@ Rules can also have \emph{variables} in place of terms or sub-terms. For example
 [ptr(X) -> X]
 \end{verbatim}
 
-rewrites any pointer type to its referent. The variable \texttt{X} is bound to the corresponding value of the matched input on the right, and that value is then substituted for the variable where it appears on the left. Variables match whole sub-terms only; e.g., rules such as \texttt{[X(int) -> X]} are invalid.
+rewrites any pointer type to its referent. The variable \texttt{X} is bound to the corresponding value of the matched input on the right, and that value is then substituted for the variable where it appears on the left. Variables may stand in place of terms only, not constructors; e.g., rules such as \texttt{[X(int) -> X]} are invalid.
 
-Finally, primitive rules may generate code as a side effect of successful application. To include code with a rule, you put it immediately after the rule definition and surround it with braces, like so:
+Finally, primitive rules may generate code as a side effect of successful application. Code is associated with a rule by including it immediately after the rule definition and surrounding it with triple-angle brances, like so:
 
 \begin{verbatim}
-[int -> float] {
+[int -> float] <<<
   $out = (float)$in;
-}
+>>>
 \end{verbatim}
 
 As part of the code generation, Twig will assign \texttt{\$in} and \texttt{\$out} elements generated C variable names, and ensure that they are declared with the appropriate type. If there are multiple inputs or outputs, then the relevant placeholders are enumerated; e.g., \texttt{\$in1}, \texttt{\$in2}, and so on.
