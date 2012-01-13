@@ -57,7 +57,7 @@ Primitive rules have a block of code associated with them. Upon successful appli
 >>>
 \end{verbatim}
 
-Block construction is dependent on the target language; in this case, we have provided a block of C code. The target language must be specified as a parameter to the Twig runtime (in our current implementation, as a command line option). This means that the text between the \texttt{<<<} and \texttt{>>>} is dependent on the chosen block implementation. A target langauge specific procedure is passed the text, along with the input and output term(s). It can then construct the block however it sees fit. In our C block implementation, for example, variable names are generated and the terms are used to determine the appropriate types for declaring those variables in a prelude section of the code. Other target languages might choose very different block construction mechanisms.
+Block construction is dependent on the target language; in this case, we have provided a block of escaped C code (as described in Section~\ref{sec:code-gen:c}). The target language must be specified as a parameter to the Twig runtime (in our current implementation, as a command line option). This means that the text between the \texttt{<<<} and \texttt{>>>} is dependent on the chosen block implementation. A target langauge specific procedure is passed the text, along with the input and output term(s). It can then construct the block however it sees fit. In our C block implementation, for example, variable names are generated and the terms are used to determine the appropriate types for declaring those variables in a prelude section of the code. Other target languages might choose very different block construction mechanisms.
 
 It is important to understand that Twig does not check the block code in any way (although the block implementation could), and that the code generation procedure is strictly syntactic. This scheme is similar to that used by SWIG~\cite{swig}.
 
@@ -87,7 +87,8 @@ The first and arguably most useful of Twig's combinators is the \emph{sequence} 
 \infer
   {t \arr{s_1;s_2} (t'',m_1+m_2)}
   {t \arr{s_1} (t',m_1) \quad t' \arr{s_2} (t'',m_2)}
-\qquad
+\]
+\[
 \infer
   {t \arr{s_1;s_2} \bot}
   {t \arr{s_1} \bot}
@@ -107,11 +108,12 @@ Another important operator is \emph{left-biased choice}. This operator will atte
 \infer
   {t \arr{s_1|s_2} (t',m_1)}
   {t \arr{s_1} (t',m_1)}
-\qquad 
+\qquad
 \infer
   {t \arr{s_1|s_2} (t',m_2)}
   {t \arr{s_1} \bot \quad t \arr{s_2} (t',m_2)}
-\qquad
+\]
+\[
 \infer
   {t \arr{s_1|s_2} \bot}
   {t \arr{s_1} \bot \quad t \arr{s_2} \bot}
@@ -119,7 +121,7 @@ Another important operator is \emph{left-biased choice}. This operator will atte
 \caption{Semantics for left-biased choice}
 \end{figure}
 
-Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators, such as constant operators, and operators which discard their results.
+Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators. Identity (\texttt{id}) will always succeed, returning its input and an identity block, failure (\texttt{fail}) will always return \texttt{$\bot$}. Test (\texttt{?}) succeeds only if its single paramter expression succeeds, but it returns the original term. Negation \texttt{$\lnot$} succeeds only if its parameter expression fails, returning the original term.
 
 \begin{figure}[ht]
 \label{fig:basic}
@@ -127,12 +129,12 @@ Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators, su
 \infer
   {t \arr{\mathtt{id}} (t,I)}
   {}
-\qquad
+\]
+\[
 \infer
   {t \arr{\mathtt{fail}} \bot}
   {}
 \]
-
 \[
 \infer
   {t \arr{?s} (t,I)}
@@ -141,7 +143,8 @@ Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators, su
 \infer
   {t \arr{?s} \bot}
   {t \arr{s} \bot}
-\qquad
+\]
+\[
 \infer
   {t \arr{\lnot s} \bot}
   {t \arr{s} (t',m)}
@@ -153,7 +156,7 @@ Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators, su
 \caption{Semantics for basic operators}
 \end{figure}
 
-Twig also provides some special operators for tuples. The semantics in Figure~\ref{fig:all-tuples} apply to all the tuple operators, and state simply that tuple operators will fail if the input term is not a tuple, or if the rule references a tuple element out of bounds.
+Twig also provides some special operators for tuples. The semantics in Figure~\ref{fig:all-tuples} apply to all the tuple operators, and state that the operators will fail if the input term is not a tuple, or if the rule tries to reference a tuple element that is out of bounds for the input.
 
 \begin{figure}[ht]
 \label{fig:all-tuples}
@@ -169,7 +172,7 @@ Twig also provides some special operators for tuples. The semantics in Figure~\r
 \caption{Common semantics for tuple operators}
 \end{figure}
 
-One important tuple operator is \emph{congruence}, which applies a tuple of rules to a tuple of values, and returns a tuple of results or failure if any one rule application fails. The semantics are given in Figure~\ref{fig:congruence}.
+One important tuple operator is \emph{congruence}, which applies a tuple of expressions to the elements of a tuple term, pairwise, and returns a tuple of results, or else failure in case any rule application fails. Upon success, the returned block is the parallel composition of the individual result blocks. The semantics for congruence are shown in Figure~\ref{fig:congruence}.
 
 \begin{figure}[ht]
 \label{fig:congruence}
@@ -186,13 +189,13 @@ One important tuple operator is \emph{congruence}, which applies a tuple of rule
 \caption{Semantics for congruence operator}
 \end{figure}
 
-The \emph{branch} operator on tuples applies a tuple of rules to a single term, and produces a tuple of results with one element per rule. The branch operator has several semantic variants; we present one in Figure~\ref{fig:branch} wherein the branch operation fails if any single rule fails. We elide the other semantics, as well as the \emph{map} operator, which are similar in principle.
+The \emph{branch} operator on tuples applies a tuple of rules to a single term, and produces a tuple of results with one element per rule. The branch operator has several semantic variants; we present one in Figure~\ref{fig:branch} wherein the branch operation fails if any single rule fails. Notice how the branch operator semantics use the fanout block, defined in Section~\ref{sec:code-gen:special}. We elide the other semantics, as well as the \emph{map} operator, which are similar in principle.
 
 \begin{figure}[ht]
 \label{fig:branch}
 \[
 \infer
-  {t \arr{\mathtt{\#branch}(s_1,\ldots,s_n)} (\mathtt{tuple}(t_1',\ldots,t_n'),I_n + (m_1 \times \ldots \times m_n))}
+  {t \arr{\mathtt{\#branch}(s_1,\ldots,s_n)} (\mathtt{tuple}(t_1',\ldots,t_n'),F_n + (m_1 \times \ldots \times m_n))}
   {t \arr{s_1} (t_1',m_1) \quad \ldots \quad t \arr{s_n} (t_n',m_n)}
 \]
 \[
@@ -203,13 +206,13 @@ The \emph{branch} operator on tuples applies a tuple of rules to a single term, 
 \caption{Semantics for branch operator}
 \end{figure}
 
-Finally, we have the \emph{projection} operator which extract a single element from a tuple, and its close relative, the \emph{path} operator, which applies a rule to a single element. The semantics are given in Figure~\ref{fig:projection} and Figure~\ref{fig:path}.
+Finally, we have the \emph{projection} operator which extracts a single element from a tuple, and its close relative, the \emph{path} operator, which applies a rule to a single tuple element. The semantics are given in Figure~\ref{fig:projection} and Figure~\ref{fig:path}.
 
 \begin{figure}[ht]
 \label{fig:projection}
 \[
 \infer
-  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} (t_i,\Pi_{\{i\}})}
+  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} (t_i,\Pi_1(i))}
   {}
 \]
 \caption{Semantics for projection operator}
@@ -237,9 +240,9 @@ Finally, we have the \emph{projection} operator which extract a single element f
 For convenience, Twig allows rules and rule expressions to be assigned names, like so:
 
 \begin{verbatim}
-intToFloat = [int -> float] {
+intToFloat = [int -> float] <<<
   $out = (float)$in;
-}
+>>>
 \end{verbatim}
 
 This assigns a primitive rule to the name \texttt{intToFloat}. Names must begin with lower-case letters, and can only be used once. Now that name can be used in place of the rule itself in expressions, like this:
@@ -250,9 +253,9 @@ pairOfIntsToFloats = (intToFloat,intToFloat)
 
 A Twig program is a list of such name/expression assignments. There is a special expression name, \texttt{main}, which designates the top-level expression for the program.
 
-\subsection{Integration with C}
-\label{twig:concrete-code-gen}
-
-Twig is capable of generating any procedural language, but in practice implementations must take the target language into account. Our current implementation of Twig is targeted to generate C code. For convenience, our implementation will handle tasks such as declaring variables, generating unique names, and ensuring that for sequencing blocks the outputs are assigned to the inputs in the appropriate way.
-
-Optionally, generated code may be wrapped in a C function body, with parameters corresponding to the inputs, and return value corresponding to the output. In this case, Twig insists that the code block have a non-tuple output type, since C functions cannot return multiple values.
+% \subsection{Integration with C}
+% \label{twig:concrete-code-gen}
+% 
+% Twig is capable of generating any procedural language, but in practice implementations must take the target language into account. Our current implementation of Twig is targeted to generate C code. For convenience, our implementation will handle tasks such as declaring variables, generating unique names, and ensuring that for sequencing blocks the outputs are assigned to the inputs in the appropriate way.
+% 
+% Optionally, generated code may be wrapped in a C function body, with parameters corresponding to the inputs, and return value corresponding to the output. In this case, Twig insists that the code block have a non-tuple output type, since C functions cannot return multiple values.

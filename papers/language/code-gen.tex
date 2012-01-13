@@ -57,6 +57,7 @@ and we define
 Note that $M$ is closed under parallel composition.
 
 \subsubsection{Special Blocks}
+\label{sec:code-gen:special}
 
 In the abstract model, we single out a set of special elements in $M$ called \emph{permutation} elements. These elements are intended to represent the primitive operation of taking $m$ inputs and rearranging them into $n$ outputs, possibly in a different order, and possibly duplicating or dropping elements. The intended interpretation is that the actual values are unchanged by the operation. Formally, we name the block representing the permutation of $m$ inputs to $n$ outputs $\Pi_m(i_1,\ldots,i_n)$, where $i_1,\ldots,i_n \in \lbrace i | 1 \leq i \leq m \rbrace$.
 
@@ -83,12 +84,20 @@ That is, $I_n$ acts as both a left- and right-identity when it is combined in se
 It is worth noting one further identity, namely that
 
 \[
-I_n = (I_1)^n
+I_n \equiv (I_1)^n
 \]
 
 That is, $I_n$ is equivalent to the $n$-way parallel composition of $I_1$.
 
 When $n$ is implied from the context, we will sometimes write $I$ for $I_n$. For example, we use $x+I$ as a shorthand to refer to $x+I_n$ where $n$ is understood to be $\mathtt{out}(x)$.
+
+Another important special block is the \emph{fanout} block, which takes a single input and copies it to $n$ outputs. We denote this block $F_n$. This turns out to be just another special case of the permutation block, so we can define 
+
+\[
+F_n \equiv \Pi_1(1,\ldots,n) 
+\]
+
+for the fanout block with $n$ outputs.
 
 It is worth noting that \emph{any} object that provides and conforms to the operations above can be ``generated'' by Twig. Because the system is so general, this could include trivial or non-sensical implementations. To be used as we intended, the code generation implementation should conform to the intuitive interpretation of blocks and their composition.
 
