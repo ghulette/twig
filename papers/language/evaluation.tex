@@ -4,4 +4,22 @@
 
 Evaluation. 
 
+\begin{verbatim}
+%typemap(in) int {
+    $1 = PyInt_AsLong($input);
+}
+%typemap(out) int {
+    $result = PyInt_FromLong($1);
+}
+\end{verbatim}
+
+\begin{verbatim}
+%typemap(in) int {
+    $1 = PyInt_AsLong($input);
+}
+%typemap(out) int {
+    $result = PyInt_FromLong($1);
+}
+\end{verbatim}
+
 % Show a simple example written in both Swig and Twig, and show how Twig's composition operators make the code cleaner.
