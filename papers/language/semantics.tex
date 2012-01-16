@@ -43,13 +43,13 @@ Rules can also have \emph{variables} in place of terms or sub-terms. For example
 
 transforms any pointer type to its referent. The variable \texttt{X} is bound to the corresponding value of the matched input on the right, and that value is then substituted for the variable where it appears on the left. Variables may stand in place of terms only, not constructors; e.g., rules such as \texttt{[X(int) -> X]} are invalid.
 
-We must now make clear what we mean when we say that the input term \emph{matches} the input pattern. In effect, the input term is \emph{unified}\cite{baader98rewriting} with the input pattern. In fact, the algorithm used is simpler than full unification, since no terms are equated and the input term may not contain variables. If the unification is successful, we say that the term \emph{matched}. The bound variables (if any) are saved in order to construct the output term via substitution.
+We must now make clear what we mean when we say that the input term \emph{matches} the input pattern. In effect, the input term is \emph{unified}\cite{baader98rewriting} with the input pattern. In fact, the algorithm used is simpler than ``full'' unification, since there is no equational theory and the input term may not contain variables (i.e., must be ground). If the unification is successful, we say that the term \emph{matched}. The bound variables (if any) are saved in order to construct the output term via substitution.
 
 % Probably should talk about variable binding, e.g. how (X,X) will match a pair of identical terms.
 
 \subsubsection{Blocks}
 
-Primitive rules have a block of code associated with them. Upon successful application, the block is emited as described in Section~\ref{sec:semantics}. A block is associated with a rule by including it immediately after the rule definition and surrounding it with triple-angle brances, like so:
+Primitive rules are associated with have a block. The block is constructed based on some target language-dependent text, which appears immediately after the rule definition and is surrounded by triple-angle brances, like so:
 
 \begin{verbatim}
 [int -> float] <<<
@@ -57,7 +57,7 @@ Primitive rules have a block of code associated with them. Upon successful appli
 >>>
 \end{verbatim}
 
-Block construction is dependent on the target language; in this case, we have provided a block of escaped C code (as described in Section~\ref{sec:code-gen:c}). The target language must be specified as a parameter to the Twig runtime (in our current implementation, as a command line option). This means that the text between the \texttt{<<<} and \texttt{>>>} is dependent on the chosen block implementation. A target langauge specific procedure is passed the text, along with the input and output term(s). It can then construct the block however it sees fit. In our C block implementation, for example, variable names are generated and the terms are used to determine the appropriate types for declaring those variables in a prelude section of the code. Other target languages might choose very different block construction mechanisms.
+Block construction depends on the target language; in this case, we have provided a block of escaped C code (as described in Section~\ref{sec:code-gen:c}). The target language must be specified as a parameter to the Twig runtime (in our current implementation, as a command line option). This means that the text between the \texttt{<<<} and \texttt{>>>} is interpreted based on the chosen block implementation. A target langauge specific procedure is passed the text, along with the input and output term(s). It can then construct the block however it sees fit. In our C block implementation, for example, variable names are generated and the terms are used to determine the appropriate types for declaring those variables in a prelude section of the code. Other target languages might choose very different block construction mechanisms.
 
 It is important to understand that Twig does not check the block code in any way (although the block implementation could), and that the code generation procedure is strictly syntactic. This scheme is similar to that used by SWIG~\cite{swig}.
 
