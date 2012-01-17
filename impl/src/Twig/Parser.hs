@@ -11,7 +11,7 @@ import Twig.Pattern
 import Twig.Term
 import Twig.RuleExpr
 
-type TwigParser a = Parsec [Char] () a
+type TwigParser a = Parsec String () a
 
 -- Term patterns
 

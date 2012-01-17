@@ -14,28 +14,28 @@ data VarTextElt = Lit String
 
 type VarText = [VarTextElt]
 
-textWithVars :: Parsec [Char] s VarText
+textWithVars :: Parsec String () VarText
 textWithVars = do
   result <- many elt
   eof
   return result
 
-elt :: Parsec [Char] s VarTextElt
+elt :: Parsec String () VarTextElt
 elt = (char '$' >> var) <|> text <?> "Text or variable"
 
-text :: Parsec [Char] s VarTextElt
+text :: Parsec String () VarTextElt
 text = do
   txt <- many1 (noneOf "$")
   return (Lit txt)
 
-nat :: Parsec [Char] s Int
+nat :: Parsec String () Int
 nat = do
   nstrh <- oneOf "123456789"
   nstrt <- many digit
   let n = read (nstrh:nstrt)
   return n
 
-var :: Parsec [Char] s VarTextElt
+var :: Parsec String () VarTextElt
 var = do
   kw <- many1 letter
   n <- option 1 nat
