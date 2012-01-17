@@ -7,9 +7,17 @@ In contrast to projects such as Fig, we have designed Twig as an enhanced versio
 Twig has several advantages over Swig's existing typemap facility.
 
 \begin{enumerate}
-  \item Sequencing - simple typemaps can be sequenced to produce more complex typemaps.
-  \item Choice - Using the choice combinator, conditionally-generated typemaps become possible.
-  \item Tuples - Twig allows sets of types to be mapped together, using tuples. This is a common problem -- consider function argument lists, or a pointer paired with a length to form an array.
-  \item Type variables - allows polymorphic typemaps, e.g., \texttt{[ptr(A) -> A]}.
-  \item Twig can generate target languages other than C.
+  \item Sequencing: simple typemaps can be sequenced to produce more complex typemaps.
+  \item Choice: Using the choice combinator, conditionally-generated typemaps become possible.
+  \item Tuples: Twig allows sets of types to be mapped together, using tuples. This is a common problem -- consider function argument lists, or a pointer paired with a length to form an array.
+  \item Type variables: allows polymorphic typemaps, e.g., \texttt{[ptr(A) -> A]}.
+  \item Target langauge: Twig can be extended to generate target languages other than C.
+\end{enumerate}
+
+Twig also extends Fig's notion of typemaps:
+
+\begin{enumerate}
+  \item Tuples: Fig's typemaps also support tuple types, but these are directly supported by the underlying target language, Moby. Our tuple types are supported by the notion of blocks, which retains the ability to generate C code or other target languages.
+  \item Type variables: allows polymorphic typemaps, e.g., \texttt{[ptr(A) -> A]}.
+  \item Target language: Twig can generate languages other than C.
 \end{enumerate}
