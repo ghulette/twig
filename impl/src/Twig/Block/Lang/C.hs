@@ -127,7 +127,8 @@ renderElt invars _ (InVar x) = invars !! (x-1)
 renderElt _ outvars (OutVar x) = outvars !! (x-1)
 
 renderDecl :: CDecl -> String
-renderDecl (x,t) = (renderCType t) ++ " " ++ x
+renderDecl (x,t) = (renderCType t) ++ " " ++ x ++ ";"
+
 
 -- Parsing CBlocks from a string
 

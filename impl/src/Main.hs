@@ -16,7 +16,7 @@ parse x = case parseAST x of
   Left err -> fail (show err)
   Right ast -> return (compile ast)
 
-parseInput :: String -> IO [(Id,Term)]
+parseInput :: String -> IO [Term]
 parseInput x = case parseTerms x of
   Left err -> fail (show err)
   Right terms -> return terms
@@ -28,15 +28,15 @@ trace inTerm outTerm txt = do
   outCTypes <- termToCType outTerm
   mkCBlock inCTypes outCTypes txt
 
-runOne :: (Env Proc) -> (Id,Term) -> IO ()
-runOne defs (x,t) = do
-  putStrLn $ "Applying rule " ++ x ++ " to term " ++ (show t)
+runOne :: (Env Proc) -> Id -> Term -> IO ()
+runOne defs rule t = do
+  putStrLn $ "Applying rule " ++ rule ++ " to term " ++ (show t)
   putStr $ show t
-  case run x defs trace t of
+  case run rule defs trace t of
     Just (b,t') -> do
       putStr " -> "
       print t'
-      let (txt,inputs,outputs) = render "_twig" b
+      let (txt,inputs,outputs) = render "__gen" b
       putStrLn $ "Inputs: " ++ (intercalate ", " inputs)
       putStrLn $ "Outputs: " ++ (intercalate ", " outputs)
       putStrLn $ "Code:"
@@ -47,9 +47,9 @@ runOne defs (x,t) = do
 
 main :: IO ()
 main = do
-  [rulesFile] <- getArgs
+  [rulesFile,mainRule] <- getArgs
   rulesInput <- readFile rulesFile
   env <- parse rulesInput
   termsInput <- getContents
   terms <- parseInput termsInput
-  mapM_ (\x -> runOne env x >> putStrLn "") terms
+  mapM_ (runOne env mainRule) terms

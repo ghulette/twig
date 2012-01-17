@@ -177,19 +177,10 @@ ast = do
   u <- unit
   return (Top [u])
 
-
--- Term inputs
-
-application :: TwigParser (Id,Term)
-application = do
-  x <- ruleId
-  t <- term
-  return (x,t)
-
 -- Wrappers
 
 parseAST :: String -> Either ParseError Top
 parseAST = parse (allOf ast) "Twig"
 
-parseTerms :: String -> Either ParseError [(Id,Term)]
-parseTerms = parse (allOf (many application)) "Terms"
+parseTerms :: String -> Either ParseError [Term]
+parseTerms = parse (allOf (many term)) "Terms"
