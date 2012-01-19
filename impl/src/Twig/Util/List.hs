@@ -1,6 +1,7 @@
 module Twig.Util.List 
 ( MaybeMap
 , MaybeMapM
+, permute
 , path
 , mapAll
 , mapOne
@@ -11,8 +12,18 @@ module Twig.Util.List
 , mapSomeM
 ) where
 
+import Control.Monad (guard)
+
 type MaybeMap a = (a -> Maybe a) -> [a] -> Maybe [a]
 type MaybeMapM m a = (a -> Maybe (m a)) -> [a] -> Maybe (m [a])
+
+permute :: [a] -> [Int] -> Maybe [a]
+permute _ [] = Just []
+permute es (n:ns) = do
+  guard (n < length es)
+  let e = es !! n
+  es' <- permute es ns
+  return (e:es')
 
 -- Apply a function to a given element of the list.
 path :: Int -> MaybeMap a

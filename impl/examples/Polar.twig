@@ -1,3 +1,5 @@
+-- TODO: Add array conversion, show composition
+
 -- (x,y) to r
 c2pr = [(float,float) -> float] <<<
   $out = sqrt($in1 * $in1 + $in2 * $in2);
@@ -8,7 +10,6 @@ c2pt = [(float,float) -> float] <<<
   $out = atan2($in2,$in1);
 >>>
 
-
 -- Polar to Cartesian
 
 -- (r,theta) -> x
@@ -17,9 +18,9 @@ p2cx = [(float,float) -> float] <<<
 >>>
 
 -- (r,theta) -> y
-p2cx = [(float,float) -> float] <<<
+p2cy = [(float,float) -> float] <<<
   $out = $in1 * sin($in2);
 >>>
 
 -- (r,theta) -> (x,y)
-p2c = #all(p2cx,p2cy)
+p2c = &1(1,1);{p2cx,p2cy}

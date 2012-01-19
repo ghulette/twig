@@ -124,6 +124,14 @@ branch = do
                 <|> (natural >>= \i  -> return (Path i))
                 <?> "branch operator"
 
+permute :: TwigParser RuleExpr
+permute = do
+  reservedOp "&"
+  w <- natural
+  parens $ do
+    ns <- natural `sepBy` comma
+    return (Permute w (map pred ns))
+
 congruence :: TwigParser RuleExpr
 congruence = do
   xs <- braces (ruleExpr `sepBy` comma)
@@ -145,6 +153,7 @@ ruleExpr = Ex.buildExpressionParser table factor
               <|> success 
               <|> failure
               <|> congruence
+              <|> permute
               <?> "factor"
 
 -- AST

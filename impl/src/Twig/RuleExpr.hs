@@ -21,7 +21,8 @@ import Twig.Env (Env)
 import qualified Twig.Env as Env
 import Twig.Term
 import Twig.Block
-import Twig.Util.List
+import Twig.Util.List (MaybeMap)
+import qualified Twig.Util.List as L
 
 
 -- Runtime exceptions
@@ -65,10 +66,11 @@ data RuleExpr = Call Id [RuleExpr]
               | VarExpr Id
               | Seq RuleExpr RuleExpr
               | LeftChoice RuleExpr RuleExpr
-              | Path Integer RuleExpr
+              | Path Int RuleExpr
               | BranchOne RuleExpr
               | BranchAll RuleExpr
               | BranchSome RuleExpr
+              | Permute Int [Int]
               | Congruence [RuleExpr]
 
 eval :: Block a => RuleExpr -> EvalState a -> Strategy a
@@ -106,13 +108,24 @@ eval (LeftChoice e1 e2) st t =
 eval (Path 0 e) st t = 
   eval e st t -- #0(s) just applies s to root
 eval (Path i e) st t = 
-  branch (path (fromInteger i)) (eval e st) t
+  branch (L.path i) (eval e st) t
 eval (BranchOne e) st t = 
-  branch mapOne (eval e st) t
+  branch L.mapOne (eval e st) t
 eval (BranchAll e) st t =
-  branch mapAll (eval e st) t
+  branch L.mapAll (eval e st) t
 eval (BranchSome e) st t =
-  branch mapSome (eval e st) t
+  branch L.mapSome (eval e st) t
+eval (Permute 1 ns) _ t = do
+  ts' <- L.permute [t] ns
+  let t' = tuple ts'
+  return (permute 1 ns,t')
+eval (Permute w ns) _ t = do
+  let tt = tuplify t
+  let ts = children tt
+  guard (length ts == w)
+  ts' <- L.permute ts ns
+  let t' = untuplify (tt `withChildren` ts')
+  return (permute w ns,t')
 eval (Congruence es) st t = 
   congruence (map (\e -> eval e st) es) t
 eval (Fix x e) st t = f t
