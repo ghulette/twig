@@ -130,7 +130,7 @@ permute = do
   w <- natural
   parens $ do
     ns <- natural `sepBy` comma
-    return (Permute w (map pred ns))
+    return (Permute w ns)
 
 congruence :: TwigParser RuleExpr
 congruence = do

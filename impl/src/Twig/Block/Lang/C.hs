@@ -144,4 +144,3 @@ convertElt t = case t of
   Var "in" n -> InVar n
   Var "out" n -> OutVar n
   Var x _ -> throw (InvalidEltException (x ++ " is not a valid variable name"))
-

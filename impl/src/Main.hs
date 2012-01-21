@@ -23,7 +23,7 @@ parseInput x = case parseTerms x of
 
 trace :: Trace CBlock
 trace inTerm outTerm txt = do
-  let termToCType = mapM (parseCType . show) . toList
+  let termToCType = mapM (parseCType . show) . flatten
   inCTypes <- termToCType inTerm
   outCTypes <- termToCType outTerm
   mkCBlock inCTypes outCTypes txt
@@ -36,6 +36,7 @@ runOne defs rule t = do
     Just (b,t') -> do
       putStr " -> "
       print t'
+      print b
       let (txt,inputs,outputs) = render "__gen" b
       putStrLn $ "Inputs: " ++ (intercalate ", " inputs)
       putStrLn $ "Outputs: " ++ (intercalate ", " outputs)
@@ -50,6 +51,7 @@ main = do
   [rulesFile,mainRule] <- getArgs
   rulesInput <- readFile rulesFile
   env <- parse rulesInput
+  print env
   termsInput <- getContents
   terms <- parseInput termsInput
   mapM_ (runOne env mainRule) terms

@@ -4,12 +4,11 @@ module Twig.Term
 , children
 , tuple
 , withChildren
-, size
 , isLeaf
 , isTuple
-, tuplify
-, untuplify
-, toList
+, size
+, flatSize
+, flatten
 ) where
 
 import Data.List (intercalate)
@@ -40,10 +39,6 @@ children (Term _ ts) = ts
 withChildren :: Term -> [Term] -> Term
 withChildren (Term t _) ts = Term t ts
 
-size :: Term -> Int
-size t | isTuple t = length (children t)
-       | otherwise = 1
-
 isLeaf :: Term -> Bool
 isLeaf (Term _ []) = True
 isLeaf (Term _ _) = False
@@ -51,14 +46,19 @@ isLeaf (Term _ _) = False
 isTuple :: Term -> Bool
 isTuple t = constructor t == tupleConstructor
 
-tuplify :: Term -> Term
-tuplify t = if isTuple t then t else Term tupleConstructor [t]
+size :: Term -> Int
+size t | isTuple t = length (children t)
+       | otherwise = 1
 
-untuplify :: Term -> Term
-untuplify t = case t of
-  (Term x [t']) | x == tupleConstructor -> untuplify t'
-  _ -> t 
+-- flatten and flatSize both remove tuple constructors at the top level
+-- E.g., (x,y) -> [x,y], size 2
+-- ((x,y),z) -> [x,y,z], size 2
+-- (foo(x),(y,z)) -> [foo(x),y,z], size 3
 
-toList :: Term -> [Term]
-toList t | isTuple t = children t
-toList t | otherwise = [t]
+flatSize :: Term -> Int
+flatSize t | isTuple t = sum (map size (children t))
+           | otherwise = 1
+
+flatten :: Term -> [Term]
+flatten t | isTuple t = concatMap flatten (children t)
+          | otherwise = [t]

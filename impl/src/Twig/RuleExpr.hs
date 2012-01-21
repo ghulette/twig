@@ -38,7 +38,7 @@ runtimeErr msg = throw (RuntimeException msg)
 -- Expression types
 
 type Id = String
-data Proc = Proc [Id] RuleExpr
+data Proc = Proc [Id] RuleExpr deriving Show
 type Strategy a = Term -> Maybe (a,Term)
 type Trace a = Term -> Term -> String -> Maybe a
 
@@ -72,6 +72,7 @@ data RuleExpr = Call Id [RuleExpr]
               | BranchSome RuleExpr
               | Permute Int [Int]
               | Congruence [RuleExpr]
+              deriving (Show)
 
 eval :: Block a => RuleExpr -> EvalState a -> Strategy a
 eval (Rule lhs rhs txt) st t = do
@@ -80,17 +81,17 @@ eval (Rule lhs rhs txt) st t = do
   blk <- (trace st) t t' txt
   return (blk,t')
 eval Success _ t = 
-  Just (identity (size t),t)
+  Just (identity (flatSize t),t)
 eval Failure _ _ = 
   Nothing
 eval (Test e) st t = 
   case eval e st t of
-    Just _ -> Just (identity (size t),t)
+    Just _ -> Just (identity (flatSize t),t)
     Nothing -> Nothing
 eval (Neg e) st t = 
   case eval e st t of
     Just _ -> Nothing
-    Nothing -> Just (identity (size t),t)
+    Nothing -> Just (identity (flatSize t),t)
 eval (Seq e1 e2) st t =
   case eval e1 st t of
     Nothing -> Nothing
@@ -115,16 +116,13 @@ eval (BranchAll e) st t =
   branch L.mapAll (eval e st) t
 eval (BranchSome e) st t =
   branch L.mapSome (eval e st) t
-eval (Permute 1 ns) _ t = do
-  ts' <- L.permute [t] ns
-  let t' = tuple ts'
-  return (permute 1 ns,t')
 eval (Permute w ns) _ t = do
-  let tt = tuplify t
-  let ts = children tt
+  -- Still broken?
+  guard (isTuple t)
+  let ts = children t
   guard (length ts == w)
-  ts' <- L.permute ts ns
-  let t' = untuplify (tt `withChildren` ts')
+  ts' <- L.permute ts (map pred ns) -- L.permute is 0-based
+  let t' = t `withChildren` ts'
   return (permute w ns,t')
 eval (Congruence es) st t = 
   congruence (map (\e -> eval e st) es) t
@@ -149,7 +147,8 @@ branch :: Block b => MaybeMap (b,Term) -> Strategy b -> Strategy b
 branch mapf s t = do
   guard (isTuple t)
   let ts = children t
-  let mts = zip (repeat (identity 1)) ts
+  let ms = map (identity . flatSize) ts
+  let mts = zip ms ts
   mts' <- mapf (s . snd) mts
   let (ms',ts') = unzip mts'
   return (foldl1 par ms',t `withChildren` ts')
