@@ -71,6 +71,7 @@ data RuleExpr = Call Id [RuleExpr]
               | BranchAll RuleExpr
               | BranchSome RuleExpr
               | Permute Int [Int]
+              | Fan [RuleExpr]
               | Congruence [RuleExpr]
               deriving (Show)
 
@@ -116,14 +117,31 @@ eval (BranchAll e) st t =
   branch L.mapAll (eval e st) t
 eval (BranchSome e) st t =
   branch L.mapSome (eval e st) t
+eval (Permute 1 ns) _ t = do
+  ts <- L.permute [t] (map pred ns) -- L.permute is 0-based
+  let t' = tuple ts
+  let tw = flatSize t 
+  let plcs = [1..tw]
+  let plcGrps = [plcs]
+  plcGrps' <- L.permute plcGrps (map pred ns)
+  let plcs' = concat plcGrps'
+  return (permute tw plcs',t')
 eval (Permute w ns) _ t = do
-  -- Still broken?
   guard (isTuple t)
   let ts = children t
   guard (length ts == w)
+  let grps = map flatSize ts
+  let grpw = sum grps
+  let plcs = [1..grpw]
+  let plcGrps = L.group plcs grps
+  plcGrps' <- L.permute plcGrps (map pred ns)
+  let plcs' = concat plcGrps'
   ts' <- L.permute ts (map pred ns) -- L.permute is 0-based
   let t' = t `withChildren` ts'
-  return (permute w ns,t')
+  return (permute grpw plcs',t')
+eval (Fan es) st t = do
+  let fan = take (length es) (repeat 1)
+  eval (Permute 1 fan `Seq` Congruence es) st t
 eval (Congruence es) st t = 
   congruence (map (\e -> eval e st) es) t
 eval (Fix x e) st t = f t

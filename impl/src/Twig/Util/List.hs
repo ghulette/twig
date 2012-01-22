@@ -2,6 +2,7 @@ module Twig.Util.List
 ( MaybeMap
 , MaybeMapM
 , permute
+, group
 , path
 , mapAll
 , mapOne
@@ -24,6 +25,12 @@ permute es (n:ns) = do
   let e = es !! n
   es' <- permute es ns
   return (e:es')
+
+group :: [a] -> [Int] -> [[a]]
+group [] []     = []
+group _ []      = undefined -- Too few groups
+group [] _      = undefined -- Too few elements
+group xs (n:ns) = take n xs : group (drop n xs) ns
 
 -- Apply a function to a given element of the list.
 path :: Int -> MaybeMap a
