@@ -1,4 +1,4 @@
--- TODO: Add array conversion, show composition
+-- Cartesian to Polar
 
 -- (x,y) to r
 c2pr = [(float,float) -> float] <<<
@@ -9,6 +9,10 @@ c2pr = [(float,float) -> float] <<<
 c2pt = [(float,float) -> float] <<<
   $out = atan2($in2,$in1);
 >>>
+
+-- (x,y) -> (r,theta)
+c2p = &1(1,1);{p2cx,p2cy}
+
 
 -- Polar to Cartesian
 
