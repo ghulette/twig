@@ -1,0 +1,18 @@
+-- Array transformations
+
+newArray = [int -> array(int)] <<<
+  $out = malloc($in,sizeof(int));
+>>>
+
+freeArray = [array(int) -> ()] <<<
+  free($in1);
+>>>
+
+r1 = [(array(X),int) -> ptr(Y) | X -> Y] <<<
+  // We should probably have a facility for generating
+  // temp vars like i
+  for(int i=0; i < $in2; i++) {
+    // Invoke X->Y, how?
+    $out[i] = (float)$in1[i];
+  }
+>>>
