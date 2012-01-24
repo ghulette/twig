@@ -11,6 +11,13 @@ import Twig.Block.Lang.C
 
 -- Front end
 
+userTypes :: String -> Maybe CType
+userTypes c = case c of
+  "polarf" -> Just (Struct "PolarF")
+  "polard" -> Just (Struct "PolarD")
+  "pt"     -> Just (Struct "Pt")
+  _        -> Nothing
+
 parse :: String -> IO (Env Proc)
 parse x = case parseAST x of
   Left err -> fail (show err)
@@ -23,7 +30,7 @@ parseInput x = case parseTerms x of
 
 trace :: Trace CBlock
 trace inTerm outTerm txt = do
-  let termToCType = mapM (parseCType . show) . flatten
+  let termToCType = mapM (parseCType userTypes . show) . flatten
   inCTypes <- termToCType inTerm
   outCTypes <- termToCType outTerm
   mkCBlock inCTypes outCTypes txt
@@ -36,7 +43,7 @@ runOne defs rule t = do
     Just (b,t') -> do
       putStr " -> "
       print t'
-      let (txt,inputs,outputs) = render "__gen" b
+      let (txt,inputs,outputs) = render "gen" b
       putStrLn $ "Inputs: " ++ (intercalate ", " inputs)
       putStrLn $ "Outputs: " ++ (intercalate ", " outputs)
       putStrLn $ "Code:"

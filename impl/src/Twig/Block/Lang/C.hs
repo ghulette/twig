@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Twig.Block.Lang.C (CBlock,render,mkCBlock,parseCType) where
+module Twig.Block.Lang.C (CBlock,CType(..),render,mkCBlock,parseCType) where
 
 import Control.Exception
 import Data.Typeable (Typeable)
@@ -28,6 +28,7 @@ data CType = Void
            | Float
            | Double
            | Ptr CType
+           | Struct String
            deriving (Eq,Show)
 
 data CBlockElt = InVar Int
@@ -66,8 +67,8 @@ instance Block CBlock where
 -- C-specific functions
 
 -- This should be expanded into an actual parser?
-parseCType :: String -> Maybe CType
-parseCType c = case c of
+parseCType :: (String -> Maybe CType) -> String -> Maybe CType
+parseCType user c = case c of
   "void"      -> Just Void
   "char"      -> Just Char
   "short"     -> Just Short
@@ -76,18 +77,19 @@ parseCType c = case c of
   "float"     -> Just Float
   "double"    -> Just Double
   "ptr(char)" -> Just (Ptr Char)
-  _           -> Nothing
+  _           -> user c
   
 renderCType :: CType -> String
 renderCType c = case c of
-  Void   -> "void"
-  Char   -> "char"
-  Short  -> "short"
-  Int    -> "int"
-  Long   -> "long"
-  Float  -> "float"
-  Double -> "double"
-  Ptr x  -> "*" ++ renderCType x
+  Void     -> "void"
+  Char     -> "char"
+  Short    -> "short"
+  Int      -> "int"
+  Long     -> "long"
+  Float    -> "float"
+  Double   -> "double"
+  Ptr x    -> "*" ++ renderCType x
+  Struct s -> "struct " ++ s
 
 varIds :: Id -> [Id]
 varIds prefix = map ((prefix ++) . show) [(1 :: Integer)..]
