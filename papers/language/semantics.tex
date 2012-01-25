@@ -57,7 +57,7 @@ Primitive rules are associated with have a block. The block is constructed based
 >>>
 \end{verbatim}
 
-Block construction depends on the target language; in this case, we have provided a block of escaped C code (as described in Section~\ref{sec:code-gen:c}). The target language must be specified as a parameter to the Twig runtime (in our current implementation, as a command line option). This means that the text between the \texttt{<<<} and \texttt{>>>} is interpreted based on the chosen block implementation. A target langauge specific procedure is passed the text, along with the input and output term(s). It can then construct the block however it sees fit. In our C block implementation, for example, variable names are generated and the terms are used to determine the appropriate types for declaring those variables in a prelude section of the code. Other target languages might choose very different block construction mechanisms.
+Block construction depends on the target language; in this case, we have provided a block of escaped C code (as described in Section~\ref{sec:code-gen:c}). The target language must be specified as a parameter to the Twig runtime (in our current implementation, as a command line option). This means that the text between the \verb|<<<| and \verb|>>>| is interpreted based on the chosen block implementation. A target langauge specific procedure is passed the text, along with the input and output term(s). It can then construct the block however it sees fit. In our C block implementation, for example, variable names are generated and the terms are used to determine the appropriate types for declaring those variables in a prelude section of the code. Other target languages might choose very different block construction mechanisms.
 
 It is important to understand that Twig does not check the block code in any way (although the block implementation could), and that the code generation procedure is strictly syntactic. This scheme is similar to that used by SWIG~\cite{swig}.
 
@@ -156,7 +156,7 @@ Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators. Id
 \caption{Semantics for basic operators}
 \end{figure}
 
-Twig also provides some special operators for tuples. The semantics in Figure~\ref{fig:all-tuples} apply to all the tuple operators, and state that the operators will fail if the input term is not a tuple, or if the rule tries to reference a tuple element that is out of bounds for the input.
+Twig also provides some special operators for tuples. The semantics in Figure~\ref{fig:all-tuples} apply to all of the following tuple operators, unless otherwise indicated. These semantics state that a tuple operator will fail if the input term is not a tuple, or if the rule tries to reference a tuple element that is out of bounds.
 
 \begin{figure}[ht]
 \label{fig:all-tuples}
@@ -189,41 +189,40 @@ One important tuple operator is \emph{congruence}, which applies a tuple of expr
 \caption{Semantics for congruence operator}
 \end{figure}
 
-The \emph{branch} operator on tuples applies a tuple of rules to a single term, and produces a tuple of results with one element per rule. The branch operator has several semantic variants; we present one in Figure~\ref{fig:branch} wherein the branch operation fails if any single rule fails. Notice how the branch operator semantics use the fanout block, defined in Section~\ref{sec:code-gen:special}. We elide the other semantics, as well as the \emph{map} operator, which are similar in principle.
+The family of \emph{branch} operators on tuples applies a single rule to one, all, or some of the tuple's elements, depending on the variation. In Figure~\ref{fig:branch} we present the semantics for the case where the rule applies to a single element: the first element, from left to right, for which the rule application does not fail. The other elements of the tuple are passed through wherein the branch operation fails if any single rule fails. Note the branch operator's use of a fanout block, defined in Section~\ref{sec:code-gen:special}. We elide the semantics of the other branch operators for lack of space.
 
-\begin{figure}[ht]
+\begin{figure*}[ht]
 \label{fig:branch}
 \[
 \infer
-  {t \arr{\mathtt{\#branch}(s_1,\ldots,s_n)} (\mathtt{tuple}(t_1',\ldots,t_n'),F_n + (m_1 \times \ldots \times m_n))}
-  {t \arr{s_1} (t_1',m_1) \quad \ldots \quad t \arr{s_n} (t_n',m_n)}
+  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\mathtt{\#one}(s)} (\mathtt{tuple}(\ldots,t_i',\ldots),(I \times \ldots \times m_i \times \ldots \times I))}
+  {t_i \arr{s} (t_i',m_i)}
 \]
 \[
 \infer
-  {t \arr{\mathtt{\#branch}(\ldots,s_i,\dots)} \bot}
-  {t \arr{s_i} \bot}
+  {\mathtt{tuple}(t_1,\ldots,t_n) \arr{\mathtt{\#one}(s)} \bot}
+  {t_1 \arr{s} \bot \quad \ldots \quad t_n \arr{s} \bot}
 \]
-\caption{Semantics for branch operator}
-\end{figure}
+\caption{Semantics for branch-one operator}
+\end{figure*}
 
-Finally, we have the \emph{projection} operator which extracts a single element from a tuple, and its close relative, the \emph{path} operator, which applies a rule to a single tuple element. The semantics are given in Figure~\ref{fig:projection} and Figure~\ref{fig:path}.
+Next, we have the \emph{projection} operator which extracts a single indexed element from a tuple, and its close relative, the \emph{path} operator, which applies a rule to a single indexed tuple element, leaving the other elements untouched. The semantics are given in Figure~\ref{fig:projection} and Figure~\ref{fig:path}.
 
 \begin{figure}[ht]
 \label{fig:projection}
 \[
 \infer
-  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} (t_i,\Pi_1(i))}
+  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} (t_i,\Pi(i))}
   {}
 \]
 \caption{Semantics for projection operator}
 \end{figure}
 
-
 \begin{figure}[ht]
 \label{fig:path}
 \[
 \infer
-  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} (\mathtt{tuple}(\ldots,t_i',\ldots), I_1 \times \ldots \times m \times \ldots \times I_1)}
+  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} (\mathtt{tuple}(\ldots,t_i',\ldots), I \times \ldots \times m \times \ldots \times I)}
   {t_i \arr{s} (t_i',m)}
 \]
 \[
@@ -233,6 +232,25 @@ Finally, we have the \emph{projection} operator which extracts a single element 
 \]
 \caption{Semantics for path operator}
 \end{figure}
+
+Finally, the \emph{permutation} operator allows arbitrary permutation of a tuple's elements, including duplicating or dropping elements. The semantics are given in Figure~\ref{fig:permute}. We also define a special case ``fan out'' operator, which allow non-tuple terms to be duplicated.
+
+\begin{figure}[ht]
+\label{fig:permute}
+\[
+\infer
+  {\mathtt{tuple}(t_1,\ldots,t_k) \arr{\#\mathtt{permute}_k(i_1,\ldots,i_n)} (\mathtt{tuple}(t_{i_1},\ldots,t_{i_n}),I)}
+  {}
+\]
+\[
+\infer
+  {t \arr{\mathtt{\#fan(n)}} (\mathtt{tuple}(t,\ldots,t),I)}
+  {}
+\]
+
+\caption{Semantics for permutation ($\&$) operator}
+\end{figure}
+
 
 \subsection{Expression names}
 \label{section:names}
