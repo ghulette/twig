@@ -11,7 +11,7 @@ Values in Twig can be any valid \emph{term}. Terms are tree structured data with
 
 The mapping between terms in Twig and types in the target language is considered to be a configuration option, controllable by the user and customizable to the domain. Furthermore, the mapping need not be injective, i.e., multiple values in Twig may map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
 
-Twig has just one special kind of term: tuples. Tuples may have any length, and the elements of the tuple are represented as the sub-terms of a term with a special constructor: \texttt{tuple}. Alternately, Twig's syntax considers the absense of any constructor to denote the \texttt{tuple} constructor. For example, the syntax \texttt{(string,int)} is interpreted as the term \texttt{tuple(string,int)}). This term represents a tuple of length two, whose first element is \texttt{string} and whose second element is \texttt{int}. The \texttt{tuple} constructor syntax is more verbose, so we typically will eschew it in practice; it is convenient, however, for our presentation of the formal semantics below.
+Twig has just one special kind of term: tuples. Tuples may have any length, and the elements of the tuple are represented as the sub-terms of a term with a special constructor: \texttt{tuple}. Alternately, Twig's syntax considers the absense of any constructor to denote the \texttt{tuple} constructor. For example, the syntax \texttt{(string,int)} is interpreted as the term \texttt{tuple(string,int)}). This term represents a tuple of length two, whose first element is \texttt{string} and whose second element is \texttt{int}. We will sometimes write $\mathtt{tuple}_n(\ldots)$ to indicate a tuple of length $n$, where the length is not otherwise clear from the context. The \texttt{tuple} constructor syntax is more verbose, so we typically will eschew it in practice; it is convenient, however, for our presentation of the formal semantics below.
 
 \subsection{Expressions}
 
@@ -222,8 +222,8 @@ Next, we have the \emph{projection} operator which extracts a single indexed ele
 \label{fig:path}
 \[
 \infer
-  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} (\mathtt{tuple}(\ldots,t_i',\ldots), I \times \ldots \times m \times \ldots \times I)}
-  {t_i \arr{s} (t_i',m)}
+  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} (\mathtt{tuple}(\ldots,t_i',\ldots), I \times \ldots \times m_i \times \ldots \times I)}
+  {t_i \arr{s} (t_i',m_i)}
 \]
 \[
 \infer
@@ -235,20 +235,24 @@ Next, we have the \emph{projection} operator which extracts a single indexed ele
 
 Finally, the \emph{permutation} operator allows arbitrary permutation of a tuple's elements, including duplicating or dropping elements. The semantics are given in Figure~\ref{fig:permute}. We also define a special case ``fan out'' operator, which allow non-tuple terms to be duplicated.
 
-\begin{figure}[ht]
+\begin{figure*}[htb]
 \label{fig:permute}
 \[
 \infer
-  {\mathtt{tuple}(t_1,\ldots,t_k) \arr{\#\mathtt{permute}_k(i_1,\ldots,i_n)} (\mathtt{tuple}(t_{i_1},\ldots,t_{i_n}),I)}
+  {\mathtt{tuple}(t_1,\ldots,t_k) \arr{\#\mathtt{permute}_k(i_1,\ldots,i_n)} (\mathtt{tuple}(t_{i_1},\ldots,t_{i_n}),\Pi_k(i_1,\ldots,i_n))}
   {}
 \]
+\caption{Semantics for permutation operator}
+\end{figure*}
+
+\begin{figure}[ht]
+\label{fig:fan}
 \[
 \infer
-  {t \arr{\mathtt{\#fan(n)}} (\mathtt{tuple}(t,\ldots,t),I)}
+  {t \arr{\mathtt{\#fan(n)}} (\mathtt{tuple}_n(t,\ldots,t),\Pi_1(1,\ldots,1)))}
   {}
 \]
-
-\caption{Semantics for permutation ($\&$) operator}
+\caption{Semantics for fan operator}
 \end{figure}
 
 
