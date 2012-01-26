@@ -1,0 +1,60 @@
+-- Example converting polar coordinates to cartesian.
+
+-- (r,theta) -> x (single)
+p2cxf = [(float,float) -> float] <<<
+  $out = $in1 * cosf($in2);
+>>>
+
+-- (r,theta) -> y (single)
+p2cyf = [(float,float) -> float] <<<
+  $out = $in1 * sinf($in2);
+>>>
+
+-- (r,theta) -> (x,y) (single)
+p2cf = &1(1,1);({p2cxf,p2cyf}
+
+-- (r,theta) -> x (double)
+p2cxd = [(double,double) -> double] <<<
+  $out = $in1 * cos($in2);
+>>>
+
+-- (r,theta) -> y (double)
+p2cyd = [(double,double) -> double] <<<
+  $out = $in1 * sin($in2);
+>>>
+
+-- (r,theta) -> (x,y) (double)
+p2cd = &1(1,1);({p2cxd,p2cyd}
+
+-- (r,theta) -> (x,y) (single)
+p2c = p2cf|p2cd
+
+
+-- Extract r and theta from two different structs, one single and one double
+
+pptf = [polarf -> (float,float)] <<<
+  $out1 = $in.r;
+  $out2 = $in.theta;
+>>>
+
+pptd = [polard -> (double,double)] <<<
+  $out1 = $in.dist;
+  $out2 = $in.angle;
+>>>
+
+
+-- Put x and y into a Cartesian point struct with single-precision fields
+
+pt = [(float,float) -> pt] <<<
+  $out.x = $in1;
+  $out.y = $in2;
+>>>
+
+d2f = [double -> float] <<<
+  $out = (float)$in;
+>>>
+
+-- Convert a polar coordinate in either a float struct or a double struct to a 
+-- pt (with float fields).
+-- [polarf -> pt] | [polard -> pt]
+convertPolarToCart = (pptf|pptd);p2c;({d2f,d2f}|T);pt

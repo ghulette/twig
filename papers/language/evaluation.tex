@@ -2,22 +2,152 @@
 
 \section{Evaluation}
 
-In contrast to projects such as Fig, we have designed Twig as an enhanced version of the typemap facility already found in Swig.
-
-Twig has several advantages over Swig's existing typemap facility.
+Twig has several advantages over typemap facilities such as those found in Swig.
 
 \begin{enumerate}
-  \item Sequencing: simple typemaps can be sequenced to produce more complex typemaps.
-  \item Choice: Using the choice combinator, conditionally-generated typemaps become possible.
-  \item Tuples: Twig allows sets of types to be mapped together, using tuples. This is a common problem -- consider function argument lists, or a pointer paired with a length to form an array.
-  \item Type variables: allows polymorphic typemaps, e.g., \texttt{[ptr(A) -> A]}.
-  \item Target langauge: Twig can be extended to generate target languages other than C.
+
+\item Sequencing: simple typemaps can be composed in sequence to produce more complex transformations.
+
+\item Choice: Using the choice combinator, a single typemap may generate multiple variations of a transformation, depending on the input.
+
+\item Tuples: Twig allows sets of types to be mapped together, using tuples. This is a common problem -- consider function argument lists, or a pointer paired with a length to form an array.
+
+\item Type variables: allows polymorphic typemaps, e.g., \texttt{[ptr(A) -> A]}.
+  
+\item Target langauge flexibility: Twig can be extended to generate target languages other than C.
+
 \end{enumerate}
 
-Twig also extends Fig's notion of typemaps:
+Twig also improves on Fig in a number of ways:
 
 \begin{enumerate}
-  \item Tuples: Fig's typemaps also support tuple types, but these are directly supported by the underlying target language, Moby. Our tuple types are supported by the notion of blocks, which retains the ability to generate C code or other target languages.
-  \item Type variables: allows polymorphic typemaps, e.g., \texttt{[ptr(A) -> A]}.
-  \item Target language: Twig can generate languages other than C.
+
+\item Type variables: allows polymorphic typemaps.
+
+\item Target language: Fig is intimately tied to its target language, Moby; whereas Twig can be extended to generate a variety of mainstream languages, notably C.
+
 \end{enumerate}
+
+We will now walk through the construction of a simple typemap for converting from polar to Cartesian coordinates. First, we define a typemap that takes a pair representing the distance and angle of a point in polar coordinates to the $x$ component of the equivalent point in Cartesian space.
+
+\begin{verbatim}
+p2cxf = [(float,float) -> float] <<<
+  $out = $in1 * cosf($in2);
+>>>
+\end{verbatim}
+
+We name this rule \texttt{p2cxf}, and associate with it a block of C code which performs the transformation. We can construct a similar rule which converts the same values to the $y$ component in Cartesian space.
+
+\begin{verbatim}
+p2cyf = [(float,float) -> float] <<<
+  $out = $in1 * sinf($in2);
+>>>
+\end{verbatim}
+
+Now, with these two rules we can use the \emph{fan out} operator to take a pair of \texttt{float}s, and duplicate it. Using the sequence operator, we can pass the result to the congruence of the two rules. This effectively defines a new rule, which will convert a pair of \texttt{floats} representing polar coorindates to a pair of floats in Cartesian space.
+
+\begin{verbatim}
+p2cf = #fan(2);{p2cxf,p2cyf}
+\end{verbatim}
+
+We name this rule \texttt{p2cf}. We can also define a set of  rules which are essentially the same, except that they transform on \texttt{double} values instead of \texttt{float}s (and which uses the appropriate C function variants).
+
+\begin{verbatim}
+p2cxd = [(double,double) -> double] <<<
+  $out = $in1 * cos($in2);
+>>>
+
+p2cyd = [(double,double) -> double] <<<
+  $out = $in1 * sin($in2);
+>>>
+
+p2cd = #fan(2);{p2cxd,p2cyd}
+\end{verbatim}
+
+Now we can combine these two rules, using the \emph{choice} operator, to create a typemap that will work on pairs of either  \texttt{double}s or \texttt{float}s.
+
+\begin{verbatim}
+p2c = p2cdf | p2cd
+\end{verbatim}
+
+Why would this be useful? Say we are writing an application that uses two different libraries, with two different \texttt{struct} representations for polar coordinates. One has \texttt{double} fields, the other \texttt{float}, like so:
+
+\begin{verbatim}
+struct PolarF {
+  float r;
+  float theta;
+};
+
+struct PolarD {
+  double dist;
+  double angle;
+};
+\end{verbatim}
+
+and we want to be able to convert those types to a single type representing a Cartesian point with \texttt{float} fields, like so:
+
+\begin{verbatim}
+struct Pt {
+  float x;
+  float y;
+};
+\end{verbatim}
+
+We can extract the fields of both polar \texttt{structs} to their respective tuple types (note that we must also inform Twig that the terms \texttt{polard}, \texttt{polarf}, \texttt{pt} correspond to the appropriate \texttt{struct} in C).
+
+\begin{verbatim}
+pexf = [polarf -> (float,float)] <<<
+  $out1 = $in.r;
+  $out2 = $in.theta;
+>>>
+
+pexd = [polard -> (double,double)] <<<
+  $out1 = $in.dist;
+  $out2 = $in.angle;
+>>>
+
+pex = pexf | pexd
+\end{verbatim}
+
+The rule \texttt{pex} will extract the fields, with the appropriate type, from either \texttt{struct} type. We can then sequence this rule with \texttt{p2c}, defined above, and convert either structure to Cartesian coordinates.
+
+To stuff the resulting pair of either \texttt{double}s or \texttt{float}s into the \texttt{Pt} structure, we need just a few more rules. 
+
+\begin{verbatim}
+mkpt = [(float,float) -> pt] <<<
+  $out.x = $in1;
+  $out.y = $in2;
+>>>
+
+d2f = [double -> float] <<<
+  $out = (float)$in;
+>>>
+\end{verbatim}
+
+The following rule expression will convert a pair of \texttt{double}s to a pair of \texttt{float}s if needed, or simply pass through a pair of \texttt{float}s, and then put the result into a \texttt{Pt} struct.
+
+\begin{verbatim}
+({d2f,d2f}|T);mkpt
+\end{verbatim}
+
+The full expression, which will convert either a \texttt{PolarD} or \texttt{PolarF} to \texttt{Pt} is as follows.
+
+\begin{verbatim}
+polarToPt = pex;p2c;({d2f,d2f}|T);mkpt
+\end{verbatim}
+
+We can invoke Twig with this typemap as its program. To generate the C code to perform the transformation, we apply \texttt{polarToPt} to one of the terms \texttt{polarf} or \texttt{polard}. If we choose \texttt{polarf}, the output looks like this:
+
+\begin{verbatim}
+struct Pt polarToPt(struct PolarF gen1) {
+  float gen2,gen3,gen4,gen5;
+  struct Pt gen6;
+  gen2 = gen1.r;
+  gen3 = gen1.theta;
+  gen4 = gen2 * cosf(gen3);
+  gen5 = gen2 * sinf(gen3);
+  gen6.x = gen4;
+  gen6.y = gen5;
+  return gen6;
+}
+\end{verbatim}
