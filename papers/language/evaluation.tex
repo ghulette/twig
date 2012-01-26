@@ -130,13 +130,13 @@ The following rule expression will convert a pair of \texttt{double}s to a pair 
 ({d2f,d2f}|T);mkpt
 \end{verbatim}
 
-The full expression, which will convert either a \texttt{PolarD} or \texttt{PolarF} to \texttt{Pt} is as follows.
+The full expression, which will convert either a \texttt{polard} or \texttt{polarf} to \texttt{pt} is as follows.
 
 \begin{verbatim}
 polarToPt = pex;p2c;({d2f,d2f}|T);mkpt
 \end{verbatim}
 
-We can invoke Twig with this typemap as its program. To generate the C code to perform the transformation, we apply \texttt{polarToPt} to one of the terms \texttt{polarf} or \texttt{polard}. If we choose \texttt{polarf}, the output looks like this:
+We can invoke Twig with this typemap as its program. To generate the C code to perform the transformation, we apply \texttt{polarToPt} to one of the terms \texttt{polarf} or \texttt{polard}. If we choose \texttt{polarf}, Twig will generate the code to convert a \texttt{PolarF} \texttt{struct} to \texttt{Pt} \texttt{struct}, like so:
 
 \begin{verbatim}
 struct Pt polarToPt(struct PolarF gen1) {
@@ -151,3 +151,5 @@ struct Pt polarToPt(struct PolarF gen1) {
   return gen6;
 }
 \end{verbatim}
+
+The advantage of the typemapping approach is that we are able to capture the process of transforming a polar coordinate and separate it from the types we happen to be using. Also, the resulting typemap is polymorphic, in that we may use a number of types as input. The output type could have been dependent on the input type as well, although in this example it was not.
