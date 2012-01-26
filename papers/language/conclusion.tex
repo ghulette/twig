@@ -1,9 +1,17 @@
 %!TEX root = twig-language.tex
 
-\section{Conclusion}
-
-Conclusion.
-
 \subsection{Future work}
 
-Future work.
+One of Twig's limitations is in its handling of \emph{container} types. Arrays are the most common example of a container, but they include any type which may contain elements of other types, such as trees or lists. In order to properly handle container types, Twig needs to be extended with higher-order rules, i.e., rules which take other rules as paramters. We are currently working on a syntax for rules such as this:
+
+\begin{verbatim}
+[array(X) -> array(Y) | X -> Y]
+\end{verbatim}
+
+This should be read as a rule which transforms an array of any type $X$ to an array of another type $Y$, given a rule to transform a single element of type $X$ to type $Y$.
+
+Other improvements to Twig may include extending our implementation to support other target languages, such as Java or Python, which would take advantage of our abstract code generation model.
+
+\section{Conclusion}
+
+
