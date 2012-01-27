@@ -2,31 +2,14 @@
 
 \section{Implementation}
 
-Our implementation of Twig is written in Haskell. Twig expects as input a
-\texttt{.twig} file containing a list of named rule expressions along with a
-\texttt{main} rule expression, as described in Section~\ref{section:names}. It
-also expects an initial value (i.e. a term, representing a C type), which will
-be used as the input to the main rule expression.
+Our implementation of Twig is written in Haskell. Twig expects as input a \texttt{.twig} file containing a list of named rule expressions along with a \texttt{main} rule expression, as described in Section~\ref{section:names}. It also expects an initial value (i.e. a term, representing a C type), which will be used as the input to the main rule expression.
 
-Twig must also be configured with a mapping from terms to C types. Currently,
-this mapping is provided with a simple key/value text file, but we are working
-on a more flexible alternative.
+Twig must also be configured with a mapping from terms to C types. Currently, this mapping is provided with a simple key/value text file, but we are working on a more flexible alternative.
 
-If the input value can be successfully rewritten using the main rule
-expression provided, then Twig will output the rewritten term along with the
-generated block of C code. If desired, this code block may be redirected to a
-separate file and included in a C program using the \texttt{\#include}
-directive.
+If the input value can be successfully rewritten using the main rule expression provided, then Twig will output the rewritten term along with the generated block of C code. If desired, this code block may be redirected to a separate file and included in a C program using the \texttt{\#include} directive.
 
-We are currently examining ways in which this process might be more easily
-incorporated into a typical C programmer's workflow.
+We are currently examining ways in which this process might be more easily incorporated into a typical C programmer's workflow.
 
 \subsection{Code Generation}
 
-Our current implementation of this model supports the generation of C code, and
-adds some extra features to support that language. These features include such
-details as managing type declarations, support for parameterized blocks, and for
-``closing'' blocks, which are generated as variables go out of scope and are
-intended to be used to free resources. We are looking into the possibility of
-incorporating these and other features into the language-neutral model, but for
-the moment they are specific to C.
+Our current implementation of this model supports the generation of C code, and adds some extra features to support that language. These features include such details as managing type declarations, support for parameterized blocks, and for ``closing'' blocks, which are generated as variables go out of scope and are intended to be used to free resources. We are looking into the possibility of incorporating these and other features into the language-neutral model, but for the moment they are specific to C.

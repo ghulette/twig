@@ -12,11 +12,11 @@ In Section~\ref{sec:code-gen:abstract}, we describe the abstract code generation
 \subsection{Abstract Code Generation}
 \label{sec:code-gen:abstract}
 
-In Twig, a unit of code to be generated is called a \emph{block}. Intuitively, a block represents some code in the target language, which accepts inputs and produces outputs. We call the set blocks $M$, and we say that for all $x \in M$ we have the functions 
+In Twig, a unit of code to be generated is called a \emph{block}. Intuitively, a block represents some code in the target language, which accepts inputs and produces outputs. We call the set of blocks $M$, and we say that for all $x \in M$ we have the functions 
 
 \begin{eqnarray*}
-\mathtt{in} : M \to \mathbb{N}^0\\
-\mathtt{out} : M \to \mathbb{N}^0
+\mathtt{in}  : M \to \mathbb{Z}+\\
+\mathtt{out} : M \to \mathbb{Z}+
 \end{eqnarray*}
 
 That is, \texttt{in} and \texttt{out} will map a block to the  number of its inputs and outputs, respectively. Note that either or both may be zero for a given $x$.
