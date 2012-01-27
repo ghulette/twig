@@ -3,7 +3,7 @@
 \section{Twig}
 \label{sec:semantics}
 
-Twig is based on a core semantics called \emph{System S}~\cite{system-s}, originally designed for specifying term rewriting systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, which performs the transformation. We extend the semantics of System S in order to have the evaluation of the transformation generate code as a side effect. In this way, domain specific code can be generated depending on the input types. In this section we describe the semantics of Twig's language.
+Twig is based on a core semantics called \emph{System S}~\cite{system-s}, originally designed for specifying term rewriting systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, which performs the transformation. We extend the semantics of System S in order to have the evaluation of the transformation generate code as a side effect. In this way, domain specific code can be generated depending on the input types. Our semantics are inspired by and quite similar (but not identical) to those in Fig~\cite{fig}, but are extended to accomodate our code generation model. In this section we describe the semantics of Twig's language.
 
 \subsection{Values}
 
@@ -121,18 +121,18 @@ Another important operator is \emph{left-biased choice}. This operator will atte
 \caption{Semantics for left-biased choice}
 \end{figure}
 
-Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators. Identity (\texttt{id}) will always succeed, returning its input and an identity block, failure (\texttt{fail}) will always return \texttt{$\bot$}. Test (\texttt{?}) succeeds only if its single paramter expression succeeds, but it returns the original term. Negation \texttt{$\lnot$} succeeds only if its parameter expression fails, returning the original term.
+Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators. Identity (\texttt{T}) will always succeed, returning its input and an identity block, failure (\texttt{F}) will always return \texttt{$\bot$}. Test (\texttt{?}) succeeds only if its single paramter expression succeeds, and returns the original term. Negation \texttt{$\lnot$} succeeds only if its parameter expression fails, returning the original term.
 
 \begin{figure}[ht]
 \label{fig:basic}
 \[
 \infer
-  {t \arr{\mathtt{id}} (t,I)}
+  {t \arr{\mathtt{T}} (t,I)}
   {}
 \]
 \[
 \infer
-  {t \arr{\mathtt{fail}} \bot}
+  {t \arr{\mathtt{F}} \bot}
   {}
 \]
 \[
