@@ -75,7 +75,7 @@ polarToCart = #fan(2);{polarToX,polarToY}
 
 This rule, \texttt{polarToCart}, will convert a polar coordinate pair of \texttt{doubles} to a Cartesian pair of \texttt{double}s.
 
-Next, we must convert from the C types to Python. We use Python's C interface API~\cite{}, which allows us to work with Python values in C (the same system used by Swig).
+Next, we must convert from the C types to Python. We use Python's C interface API~\cite{python-c-api}, which allows us to work with Python values in C (the same system used by Swig).
 
 \begin{verbatim}
 d2pyf = [double -> pyfloat] <<<
@@ -117,7 +117,7 @@ PyObject *convert(struct PolarF gen1) {
 }
 \end{verbatim}
 
-It is interesting to contrast Twig's implementation of this typemap with the equivalent typemaps in Swig. In that system, you would need two separate typemaps, like so:
+It is interesting to contrast Twig's implementation of this typemap with the equivalent typemaps in Swig. In that system, programmers are required to construct two separate typemaps by hand, like so:
 
 \begin{verbatim}
 %typemap(out) struct PolarD %{
@@ -144,7 +144,7 @@ It is interesting to contrast Twig's implementation of this typemap with the equ
 %}
 \end{verbatim}
 
-Even in this example, there is a considerable amount of duplicated code across the two typemaps. This duplication is unecessary in Twig since simple typemaps, such as those to convert polar to Cartesian coordinates or convert C \texttt{double}s to Python, can be recombined and reused. In addition, the choice operator helps to reduce the overall number of typemaps needed, since one typemap can be used to generate different code depending on the input.
+Even in this simple example, there is a considerable amount of duplicated code across the two typemaps. This duplication is unecessary in Twig since simple typemaps, such as those to convert polar to Cartesian coordinates or convert C \texttt{double}s to Python, can be recombined and reused. In addition, the choice operator helps to reduce the overall number of typemaps needed, since one typemap can be used to generate different code depending on the input.
 
 \subsection{Versus Fig}
 
