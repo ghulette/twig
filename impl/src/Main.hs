@@ -15,7 +15,8 @@ userTypes :: String -> Maybe CType
 userTypes c = case c of
   "polarf" -> Just (Struct "PolarF")
   "polard" -> Just (Struct "PolarD")
-  "pt"     -> Just (Struct "Pt")
+  "pydouble" -> Just (Ptr (Struct "PyObject"))
+  "pytuple(pydouble,pydouble)" -> Just (Ptr (Struct "PyObject"))
   _        -> Nothing
 
 parse :: String -> IO (Env Proc)

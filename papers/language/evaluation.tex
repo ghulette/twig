@@ -18,141 +18,144 @@ Twig has several advantages over typemap facilities such as those found in Swig.
 
 \end{enumerate}
 
-Twig also improves on Fig in a number of ways:
-
-\begin{enumerate}
-
-\item Type variables: allows polymorphic typemaps.
-
-\item Target language: Fig is intimately tied to its target language, Moby; whereas Twig can be extended to generate a variety of mainstream languages, notably C.
-
-\end{enumerate}
-
-We will now walk through the construction of a simple typemap for converting from polar to Cartesian coordinates. First, we define a typemap that takes a pair representing the distance and angle of a point in polar coordinates to the $x$ component of the equivalent point in Cartesian space.
+We will now walk through the construction of a simple typemap in Twig. In this example, our goal is to convert a set of C structures representing polar coordinates to a suitable representation in Python. The structure comes in both a \texttt{float} and \texttt{double} variety, and we need to be able to convert both. As a final twist, the Python code is expecting a Cartesian, not polar, coordinate system, so we must perform this conversion as well. The C structures we will convert are defined in a header file, like so:
 
 \begin{verbatim}
-p2cxf = [(float,float) -> float] <<<
-  $out = $in1 * cosf($in2);
->>>
-\end{verbatim}
-
-We name this rule \texttt{p2cxf}, and associate with it a block of C code which performs the transformation. We can construct a similar rule which converts the same values to the $y$ component in Cartesian space.
-
-\begin{verbatim}
-p2cyf = [(float,float) -> float] <<<
-  $out = $in1 * sinf($in2);
->>>
-\end{verbatim}
-
-Now, with these two rules we can use the \emph{fan out} operator to take a pair of \texttt{float}s, and duplicate it. Using the sequence operator, we can pass the result to the congruence of the two rules. This effectively defines a new rule, which will convert a pair of \texttt{floats} representing polar coorindates to a pair of floats in Cartesian space.
-
-\begin{verbatim}
-p2cf = #fan(2);{p2cxf,p2cyf}
-\end{verbatim}
-
-We name this rule \texttt{p2cf}. We can also define a set of  rules which are essentially the same, except that they transform on \texttt{double} values instead of \texttt{float}s (and which uses the appropriate C function variants).
-
-\begin{verbatim}
-p2cxd = [(double,double) -> double] <<<
-  $out = $in1 * cos($in2);
->>>
-
-p2cyd = [(double,double) -> double] <<<
-  $out = $in1 * sin($in2);
->>>
-
-p2cd = #fan(2);{p2cxd,p2cyd}
-\end{verbatim}
-
-Now we can combine these two rules, using the \emph{choice} operator, to create a typemap that will work on pairs of either  \texttt{double}s or \texttt{float}s.
-
-\begin{verbatim}
-p2c = p2cdf | p2cd
-\end{verbatim}
-
-Why would this be useful? Say we are writing an application that uses two different libraries, with two different \texttt{struct} representations for polar coordinates. One has \texttt{double} fields, the other \texttt{float}, like so:
-
-\begin{verbatim}
+struct PolarD {
+  double r;
+  double theta;
+};
 struct PolarF {
   float r;
   float theta;
 };
-
-struct PolarD {
-  double dist;
-  double angle;
-};
 \end{verbatim}
 
-and we want to be able to convert those types to a single type representing a Cartesian point with \texttt{float} fields, like so:
+The first step is to unpack each polar structure into a Twig tuple. We define two rules to do exactly this:
 
 \begin{verbatim}
-struct Pt {
-  float x;
-  float y;
-};
-\end{verbatim}
-
-We can extract the fields of both polar \texttt{structs} to their respective tuple types (note that we must also inform Twig that the terms \texttt{polard}, \texttt{polarf}, \texttt{pt} correspond to the appropriate \texttt{struct} in C).
-
-\begin{verbatim}
-pexf = [polarf -> (float,float)] <<<
+unpackd = [polard -> (double,double)] <<<
   $out1 = $in.r;
   $out2 = $in.theta;
 >>>
 
-pexd = [polard -> (double,double)] <<<
-  $out1 = $in.dist;
-  $out2 = $in.angle;
->>>
-
-pex = pexf | pexd
-\end{verbatim}
-
-The rule \texttt{pex} will extract the fields, with the appropriate type, from either \texttt{struct} type. We can then sequence this rule with \texttt{p2c}, defined above, and convert either structure to Cartesian coordinates.
-
-To put the resulting pair of either \texttt{double}s or \texttt{float}s into the \texttt{Pt} structure, we need just a few more rules. The rule \texttt{d2f} will just cast a \texttt{double} to a \texttt{float}, while \texttt{mkpt} will construct a \texttt{Pt} \texttt{struct} from a pair of \texttt{float}s.
-
-\begin{verbatim}
-d2f = [double -> float] <<<
-  $out = (float)$in;
->>>
-  
-mkpt = [(float,float) -> pt] <<<
-  $out.x = $in1;
-  $out.y = $in2;
+unpackf = [polarf -> (float,float)] <<<
+  $out1 = $in.r;
+  $out2 = $in.theta;
 >>>
 \end{verbatim}
 
-The following rule expression will convert a pair of \texttt{double}s to a pair of \texttt{float}s if needed, or simply pass through a pair of \texttt{float}s, and then put the result into a \texttt{Pt} struct.
+Next, we define a rule for casting \texttt{float}s to \texttt{double}s, and use a congruence to lift it to a conversion on tuples. We sequence this cast after \texttt{unpackf} so that that rule will produce \texttt{double}s instead of \texttt{float}s. We combine that conversion with \texttt{unpackd} using the choice operator, and name the new rule \texttt{unpack}. This new rule will accept either a \texttt{polarf} or a \texttt{polard}, and produce a 2-tuple of \texttt{double}s.
 
 \begin{verbatim}
-({d2f,d2f}|T);mkpt
+f2d = [float -> double] <<<
+  $out = (double)$in;
+>>>
+
+unpack = (unpackf;{f2d,f2d}) | unpackd
 \end{verbatim}
 
-The full expression, which will convert either a \texttt{polard} or \texttt{polarf} to \texttt{pt} is as follows.
+Next, we need to the define the conversion from polar to Cartesian coordinates.
 
 \begin{verbatim}
-polarToPt = pex;p2c;({d2f,d2f}|T);mkpt
+polarToX = [(double,double) -> double] <<<
+  $out = $in1 * cos($in2);  
+>>>
+
+polarToY = [(double,double) -> double] <<<
+  $out = $in1 * sin($in2);
+>>>
 \end{verbatim}
 
-We can invoke Twig with this typemap as its program. To generate the C code to perform the transformation, we apply \texttt{polarToPt} to one of the terms \texttt{polarf} or \texttt{polard}. If we choose \texttt{polarf}, Twig will generate the code to convert a \texttt{PolarF} \texttt{struct} to \texttt{Pt} \texttt{struct}, like so:
+These two rules take a pair of \texttt{double}s, which represent a polar radius and angle, and convert the pair to the $x$ (respectively, $y$) component of the equivalent Cartesian representation. But, we need both the $x$ and $y$ components, and we only have one polar pair. We use the \emph{fanout} operator to duplicate the pair, and then sequence it with a congruence of the $x$ and $y$ rules, like so:
 
 \begin{verbatim}
-struct Pt polarToPt(struct PolarF gen1) {
-  float gen2,gen3,gen4,gen5;
-  struct Pt gen6;
+polarToCart = #fan(2);{polarToX,polarToY}
+\end{verbatim}
+
+This rule, \texttt{polarToCart}, will convert a polar coordinate pair of \texttt{doubles} to a Cartesian pair of \texttt{double}s.
+
+Next, we must convert from the C types to Python. We use Python's C interface API~\cite{}, which allows us to work with Python values in C (the same system used by Swig).
+
+\begin{verbatim}
+d2pyf = [double -> pyfloat] <<<
+  $out = PyFloat_FromDouble($in);
+>>>
+
+mkpytuple = [(pyfloat,pyfloat) -> pytuple(pyfloat,pyfloat)] <<<
+  $out = PyTuple_Pack(2,$in1,$in2);
+>>>
+
+pack = {d2pyf,d2pyf};mkpytuple
+\end{verbatim}
+
+The first rule, \texttt{d2py} converts a C \texttt{double} to Python's floating-point type, which we call \texttt{pyfloat}.~\footnote{In the API, a \texttt{pyfloat} is actually mapped to a more general \texttt{PyObject *}; one interesting benefit of Twig is that it can potentially track more detailed type information than would be available from API itself.} The next rule, \texttt{mkpytuple} will stuff a pair of \texttt{pyfloats} into a Python tuple object (no longer a Twig tuple!). The \texttt{pack} rule combines these in the usual way to convert a pair of C \texttt{doubles} to a Python tuple.
+
+Finally, by placing these parts in sequence, we achieve our goal: a single rule which will convert either a \texttt{PolarD} or \texttt{PolarF} \texttt{struct} in C into a Cartesian coordinate  in Python. We call the final rule \texttt{convert}.
+
+\begin{verbatim}
+convert = unpack;polarToCart;pack
+\end{verbatim}
+
+We can invoke Twig with this typemap as its program. To generate the C code to perform the transformation, we apply \texttt{convert} to one of the terms \texttt{polarf} or \texttt{polard}. If we choose \texttt{polarf}, Twig will generate the code to convert a \texttt{PolarF} \texttt{struct}, like so:
+
+\begin{verbatim}
+PyObject *convert(struct PolarF gen1) {
+  float gen2,gen3;
+  double gen4,gen5,gen6,gen7;
+  PyObject *gen8,*gen9,*gen10;
   gen2 = gen1.r;
   gen3 = gen1.theta;
-  gen4 = gen2 * cosf(gen3);
-  gen5 = gen2 * sinf(gen3);
-  gen6.x = gen4;
-  gen6.y = gen5;
-  return gen6;
+  gen4 = (double)gen2;
+  gen5 = (double)gen3;
+  gen6 = gen4 * cos(gen5);  
+  gen7 = gen4 * sin(gen5);
+  gen8 = PyFloat_FromDouble(gen6);
+  gen9 = PyFloat_FromDouble(gen7);
+  gen10 = PyTuple_Pack(2,gen8,gen9);
+  return gen10;
 }
 \end{verbatim}
 
-The advantage of the typemapping approach is that we are able to capture the process of transforming a polar coordinate and separate it from the types we happen to be using. Also, the resulting typemap is polymorphic, in that we may use a number of types as input. The output type could have been dependent on the input type as well, although in this example it was not.
+It is interesting to contrast Twig's implementation of this typemap with the equivalent typemaps in Swig. In that system, you would need two separate typemaps, like so:
 
-To accomplish the same task in Swig is not stricly possible, since Swig typemaps are used exclusively across languages. This makes sense in Swig, since typemaps are monolithic.
+\begin{verbatim}
+%typemap(out) struct PolarD %{
+  double r = $1.r;
+  double theta = $1.theta;
+  double x = r * cos(theta);
+  double y = r * sin(theta);
+  PyObject *px = PyFloat_FromDouble(x);
+  PyObject *py = PyFloat_FromDouble(y);
+  $result = PyTuple_Pack(2,px,py);
+%}
 
+%typemap(out) struct PolarF %{
+  float fr = $1.r;
+  float ftheta = $1.theta;
+  double r = (double)fr;
+  double theta = (double)ftheta;
+  double x = r * cos(theta);
+  double y = r * sin(theta);
+  PyObject *px = PyFloat_FromDouble(x);
+  PyObject *py = PyFloat_FromDouble(y);
+  $result = PyTuple_Pack(2,px,py);
+  }
+%}
+\end{verbatim}
+
+Even in this example, there is a considerable amount of duplicated code across the two typemaps. This duplication is unecessary in Twig since simple typemaps, such as those to convert polar to Cartesian coordinates or convert C \texttt{double}s to Python, can be recombined and reused. In addition, the choice operator helps to reduce the overall number of typemaps needed, since one typemap can be used to generate different code depending on the input.
+
+\subsection{Versus Fig}
+
+Twig also improves on Fig in a number of ways:
+
+\begin{enumerate}
+
+\item Target language: Fig is intimately tied to its target language, Moby; whereas Twig can be extended to generate a variety of mainstream languages. Notably, Twig generates C, which is currently the \emph{de facto} language for interoperability.
+
+\item Type variables: Twig primitive rules may be polymorphic by allowing variables in place of types.
+
+\end{enumerate}
+
+We have not elaborated on these benefits in this paper, but we plan to highlight them in our future work.
