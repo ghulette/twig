@@ -1,0 +1,36 @@
+-- Here are the "out" typemaps, expressed in Twig
+
+-- Unpack PolarF struct
+unpackf = [polarf -> (float,float)] <<<
+  $out1 = $in.r;
+  $out2 = $in.theta;
+>>>
+
+-- Unpack PolarD struct
+unpackd = [polard -> (double,double)] <<<
+  $out1 = $in.r;
+  $out2 = $in.theta;
+>>>
+
+-- Cast float to double
+f2d = [float -> double] <<<
+  $out = (double)$in;
+>>>
+
+polarToX = [(double,double) -> double] <<<
+  $out = $in1 * cos($in2);  
+>>>
+
+polarToY = [(double,double) -> double] <<<
+  $out = $in1 * sin($in2);
+>>>
+
+d2py = [double -> pydouble] <<<
+  $out = PyFloat_FromDouble($in);
+>>>
+
+pack = [(pydouble,pydouble) -> pytuple(pydouble,pydouble)] <<<
+  $out = PyTuple_Pack(2,$in1,$in2);
+>>>
+
+((unpackf;{f2d,f2d})|unpackd);#fan(2);{polarToX,polarToY};{d2py,d2py};pack

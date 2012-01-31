@@ -15,3 +15,16 @@ float distf(struct PolarF p1, struct PolarF p2) {
   return sqrtf(f1 + f2 - f3);
 }
 
+struct PolarD origin() {
+  struct PolarD o;
+  o.r = 0.0;
+  o.theta = 0.0;
+  return o;
+}
+
+struct PolarF originf() {
+  struct PolarF o;
+  o.r = 0.0f;
+  o.theta = 0.0f;
+  return o;
+}
