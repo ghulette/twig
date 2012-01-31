@@ -1,0 +1,5 @@
+polar_wrap.c
+polar.py
+_polar.so
+*.o
+*.pyc

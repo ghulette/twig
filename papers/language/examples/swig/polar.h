@@ -1,7 +1,12 @@
-struct Polar {
+struct PolarD {
   double r;
   double theta;
 };
 
-double polarToX(struct Polar);
-double polarToY(struct Polar);
+struct PolarF {
+  float r;
+  float theta;
+};
+
+double dist(struct PolarD p1, struct PolarD p2);
+float distf(struct PolarF p1, struct PolarF p2);
