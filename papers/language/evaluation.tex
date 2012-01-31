@@ -8,7 +8,7 @@ Twig has several advantages over typemap facilities such as those found in Swig.
 
 \item Sequencing: simple typemaps can be composed in sequence to produce more complex transformations.
 
-\item Choice: Using the choice combinator, a single typemap may generate multiple variations of a transformation, depending on the input.
+\item Choice: With choice combinator, a single typemap expression may be used to generate multiple variations of a transformation, depending on the input type.
 
 \item Tuples: Twig allows sets of types to be mapped together, using tuples. This is a common problem -- consider function argument lists, or a pointer paired with a length to form an array.
 
@@ -111,16 +111,16 @@ pex = pexf | pexd
 
 The rule \texttt{pex} will extract the fields, with the appropriate type, from either \texttt{struct} type. We can then sequence this rule with \texttt{p2c}, defined above, and convert either structure to Cartesian coordinates.
 
-To stuff the resulting pair of either \texttt{double}s or \texttt{float}s into the \texttt{Pt} structure, we need just a few more rules. 
+To put the resulting pair of either \texttt{double}s or \texttt{float}s into the \texttt{Pt} structure, we need just a few more rules. The rule \texttt{d2f} will just cast a \texttt{double} to a \texttt{float}, while \texttt{mkpt} will construct a \texttt{Pt} \texttt{struct} from a pair of \texttt{float}s.
 
 \begin{verbatim}
+d2f = [double -> float] <<<
+  $out = (float)$in;
+>>>
+  
 mkpt = [(float,float) -> pt] <<<
   $out.x = $in1;
   $out.y = $in2;
->>>
-
-d2f = [double -> float] <<<
-  $out = (float)$in;
 >>>
 \end{verbatim}
 
@@ -153,3 +153,6 @@ struct Pt polarToPt(struct PolarF gen1) {
 \end{verbatim}
 
 The advantage of the typemapping approach is that we are able to capture the process of transforming a polar coordinate and separate it from the types we happen to be using. Also, the resulting typemap is polymorphic, in that we may use a number of types as input. The output type could have been dependent on the input type as well, although in this example it was not.
+
+To accomplish the same task in Swig is not stricly possible, since Swig typemaps are used exclusively across languages. This makes sense in Swig, since typemaps are monolithic.
+
