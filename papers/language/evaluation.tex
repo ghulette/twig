@@ -117,6 +117,8 @@ PyObject *convert(struct PolarF gen1) {
 }
 \end{verbatim}
 
+\subsection{Twig versus Swig}
+
 It is interesting to contrast Twig's implementation of this typemap with the equivalent typemaps in Swig. In that system, programmers are required to construct two separate typemaps by hand, like so:
 
 \begin{verbatim}
@@ -146,7 +148,7 @@ It is interesting to contrast Twig's implementation of this typemap with the equ
 
 Even in this simple example, there is a considerable amount of duplicated code across the two typemaps. This duplication is unecessary in Twig since simple typemaps, such as those to convert polar to Cartesian coordinates or convert C \texttt{double}s to Python, can be recombined and reused. In addition, the choice operator helps to reduce the overall number of typemaps needed, since one typemap can be used to generate different code depending on the input.
 
-\subsection{Versus Fig}
+\subsection{Twig versus Fig}
 
 Twig also improves on Fig in a number of ways:
 
