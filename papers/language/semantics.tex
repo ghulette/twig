@@ -3,15 +3,44 @@
 \section{Twig}
 \label{sec:semantics}
 
-Twig is based on a core semantics called \emph{System S}~\cite{system-s}, originally designed for specifying term rewriting systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, which performs the transformation. We extend the semantics of System S in order to have the evaluation of the transformation generate code as a side effect. In this way, domain specific code can be generated depending on the input types. Our semantics are inspired by and quite similar (but not identical) to those in Fig~\cite{fig}, but are extended to accomodate our code generation model. In this section we describe the semantics of Twig's language.
+Twig is based on a core semantics called \emph{System S}~\cite{system-s}, originally designed as a core language for term rewriting systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, which performs the transformation. We extend the semantics of System S in order to have the evaluation of the transformation generate code as a side effect. In this way, domain specific code can be generated depending on the input types. Our semantics are inspired by and are quite similar to those in Fig~\cite{fig}, but we have extended the rules to accomodate our code generation model. In this section we describe the semantics of Twig's language.
 
 \subsection{Values}
 
-Values in Twig can be any valid \emph{term}. Terms are tree structured data with labeled internal nodes. Examples of terms include simple values like \texttt{int} and \texttt{float}, as well as compound types like \texttt{ptr(int)}, which represents a pointer to an integer. More complicated terms may involve multiple child terms, and may be nested to any depth. For example, \texttt{struct(int,float,struct(ptr(char)))} may represent a structure with three fields: an \texttt{int}, a \texttt{float}, and a second structure with a single string ( pointer to \texttt{char}) field.
+Values in Twig can be any valid \emph{term}. Terms are tree structured data with labeled internal nodes. Examples of terms include simple values like \texttt{int} and \texttt{float}, as well as compound types like \texttt{ptr(int)}, which represents a pointer to an integer. More complicated terms may involve multiple child terms, and may be nested to any depth. For example, \texttt{struct(int,float,struct(ptr(char)))} may represent a structure with three fields: an \texttt{int}, a \texttt{float}, and a second structure with a single string (pointer to \texttt{char}) field.
 
 The mapping between terms in Twig and types in the target language is considered to be a configuration option, controllable by the user and customizable to the domain. Furthermore, the mapping need not be injective, i.e., multiple values in Twig may map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
 
-Twig has just one special kind of term: tuples. Tuples may have any length, and the elements of the tuple are represented as the sub-terms of a term with a special constructor: \texttt{tuple}. Alternately, Twig's syntax considers the absense of any constructor to denote the \texttt{tuple} constructor. For example, the syntax \texttt{(string,int)} is interpreted as the term \texttt{tuple(string,int)}). This term represents a tuple of length two, whose first element is \texttt{string} and whose second element is \texttt{int}. We will sometimes write $\mathtt{tuple}_n(\ldots)$ to indicate a tuple of length $n$, where the length is not otherwise clear from the context. The \texttt{tuple} constructor syntax is more verbose, so we typically will eschew it in practice; it is convenient, however, for our presentation of the formal semantics below.
+Twig has just one special kind of term: tuples. Tuples may have any length, and the elements of the tuple are represented as the sub-terms of a term with a special constructor: \texttt{tuple}. Twig's concrete syntax also equates the absense of any constructor with the presence of the \texttt{tuple} constructor. For example, the syntax \texttt{(string,int)} is interpreted as the \texttt{tuple(string,int)}). This term represents a tuple of length two, whose first element is \texttt{string} and whose second element is \texttt{int}. The \texttt{tuple} constructor syntax is more verbose, so we typically will eschew it in practice; it is convenient, however, for our presentation of the formal semantics below.
+
+\subsubsection{Tuple ``size'' versus ``width''}
+
+The \emph{size} of a tuple is simply the cardinality of its children. We will sometimes write $\mathtt{tuple}_n(\ldots)$ to indicate a tuple of length $n$, where the length is not otherwise clear from the context. 
+
+One small complication arises because we permit tuples to be nested to arbitrary depth. For example the term
+
+\[
+\mathtt{tuple(tuple(int,float),tuple(double))} 
+\]
+
+is a valid tuple with a nesting depth of two. In some of our semantics, we need to provide a \emph{width} of a tuple, defined as 
+
+\[
+\mbox{width}(t) = \left\{
+    \begin{array}{cl}
+      \sum^{i=1}_{n} \mbox{width}(t_i) & \mbox{if } t = \mathtt{tuple}(t_1,\ldots,t_n)\\
+      1 & \mbox{otherwise}
+    \end{array}
+  \right.
+\]
+
+Intuitively, the width of a tuple corresponds to the size of its ``flattened'' version -- where the elements of nested tuples are pushed up, recursively, to the top level. If we flattened the tuple in the example above, we would get
+
+\[
+\mathtt{tuple(int,float,double)}
+\]
+
+and so its width would be three.
 
 \subsection{Expressions}
 
@@ -43,7 +72,7 @@ Rules can also have \emph{variables} in place of terms or sub-terms. For example
 
 transforms any pointer type to its referent. The variable \texttt{X} is bound to the corresponding value of the matched input on the right, and that value is then substituted for the variable where it appears on the left. Variables may stand in place of terms only, not constructors; e.g., rules such as \texttt{[X(int) -> X]} are invalid.
 
-We must now make clear what we mean when we say that the input term \emph{matches} the input pattern. In effect, the input term is \emph{unified}\cite{baader98rewriting} with the input pattern. In fact, the algorithm used is simpler than ``full'' unification, since there is no equational theory and the input term may not contain variables (i.e., must be ground). If the unification is successful, we say that the term \emph{matched}. The bound variables (if any) are saved in order to construct the output term via substitution.
+We must now make clear what we mean when we say that the input term \emph{matches} the input pattern. In effect, the input term is \emph{unified}\cite{baader98rewriting} with the input pattern. In fact, the algorithm used is simpler than ``full'' unification, since there is no equational theory and the input term may not contain variables (i.e., must be a ground term). If the unification is successful, we say that the term \emph{matched}. The bound variables (if any) are saved in order to construct the output term via substitution.
 
 % Probably should talk about variable binding, e.g. how (X,X) will match a pair of identical terms.
 
@@ -239,11 +268,22 @@ Finally, the \emph{permutation} operator allows arbitrary permutation of a tuple
 \label{fig:permute}
 \[
 \infer
-  {\mathtt{tuple}(t_1,\ldots,t_k) \arr{\#\mathtt{permute}_k(i_1,\ldots,i_n)} (\mathtt{tuple}(t_{i_1},\ldots,t_{i_n}),\Pi_k(i_1,\ldots,i_n))}
+  {\mathtt{tuple}(t_1,\ldots,t_n) \arr{\mathtt{\#permute}_n(x_1,\ldots,x_m)} (\mathtt{tuple}(t_{x_1},\ldots,t_{x_m}),\Pi_{b_m}(y_1,\ldots,y_m))}
   {}
 \]
+
+\begin{center}
+where
+\end{center}
+
+\begin{eqnarray*}
+b_i &=& \sum_{j=1}^{i} \mbox{width}(t_{x_j})\\
+y_i &=& b_i,\ldots,b_i + \mbox{width}(t_{x_i})
+\end{eqnarray*}
+
 \caption{Semantics for permutation operator}
 \end{figure*}
+
 
 \begin{figure}[ht]
 \label{fig:fan}

@@ -120,7 +120,7 @@ eval (BranchSome e) st t =
 eval (Permute 1 ns) _ t = do
   ts <- L.permute [t] (map pred ns) -- L.permute is 0-based
   let t' = tuple ts
-  let tw = flatSize t 
+  let tw = flatSize t
   let plcs = [1..tw]
   let plcGrps = [plcs]
   plcGrps' <- L.permute plcGrps (map pred ns)

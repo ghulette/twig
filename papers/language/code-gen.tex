@@ -3,11 +3,11 @@
 \section{Code generation}
 \label{sec:code-gen}
 
-One of our goals for Twig was that it be able to generate code in many different target languages. To that end, Twig's semantics rely on an abstract, language-independent model for code generation, with a small number of basic operations. To incorporate a new target language, it suffices to implement only these operations. There is no need to modify the core Twig interpreter, which assumes nothing beyond the abstract model.
+One of our goals for Twig was that it be able to generate code in many different target languages. To that end, Twig's semantics rely on an abstract, language-independent model for code generation with a small number of basic operations. To incorporate a new target language, it suffices to implement only these operations. There is no need to modify the core Twig interpreter, which assumes nothing beyond the abstract model.
 
 Our simplified code generation model is used in formulating Twig's core semantics, described in Section~\ref{sec:semantics}. It is also helpful in clarifying the precise operations which Twig supports, without getting bogged down in the (potentially rather complicated) details of outputting code for a particular target programming language.
 
-In Section~\ref{sec:code-gen:abstract}, we describe the abstract code generation model, apart from any specific target programming language, including the formal semantics. Then, in Section~\ref{sec:code-gen:c} we show how we use the model to generate C code.
+In Section~\ref{sec:code-gen:abstract}, we describe the abstract code generation model, apart from any specific target programming language, including the formal semantics. Then, in Section~\ref{sec:code-gen:c} we show how we have used this model in order to generate C code.
 
 \subsection{Abstract Code Generation}
 \label{sec:code-gen:abstract}
