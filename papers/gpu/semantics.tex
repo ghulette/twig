@@ -3,109 +3,60 @@
 \section{Twig's Semantics}
 \label{semantics}
 
-Twig is based on a core semantics called System S\cite{Visser:1998p333},
-augmented with semantics for generating code and specialized to operate on types
-instead of general terms. Twig uses the operators of System S to combine
-primitive \emph{rules} into more complex transformations on types. These
-transformations are then applied to a given type, resulting in a new type and
-generating code as a side effect. In this section we describe the basics of
-Twig's language.
+Twig is based on a core semantics called System S\cite{Visser:1998p333}, augmented with semantics for generating code and specialized to operate on types instead of general terms. Twig uses the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, resulting in a new type and generating code as a side effect. In this section we describe the basics of Twig's language.
 
-Here, we give an abbreviated and mostly informal description of Twig's
-semantics, focusing on how they are used to support GPU accelerator programming.
-The full semantics and features of the language will be provided in a
-forthcoming paper.
+Here, we give an abbreviated and mostly informal description of Twig's semantics, focusing on how they are used to support GPU accelerator programming. The full semantics and features of the language will be provided in a forthcoming paper.
 
 \subsection{Values}
 
-Values in Twig can be any valid \emph{term} representing a type in the target
-language. Terms are tree structured data with labeled internal nodes. Examples
-of terms include simple values like \texttt{int} and \texttt{float}, as well as
-compound types like \texttt{ptr(int)}, which might represent a pointer to an
-integer in C.
+Values in Twig can be any valid \emph{term} representing a type in the target language. Terms are tree structured data with labeled internal nodes. Examples of terms include simple values like \texttt{int} and \texttt{float}, as well as compound types like \texttt{ptr(int)}, which might represent a pointer to an integer in C.
 
-The mapping between terms in Twig and types in the target language is considered
-to be a configuration option controllable by the programmer. Furthermore, the
-mapping need not be injective, i.e. users are free to have multiple values in
-Twig map to the same type in C. For example, you might use distinct Twig values
-\texttt{string} and \texttt{ptr(char)}, but map both to a pointer to
-\texttt{char} (\texttt{char *}) in C.
+The mapping between terms in Twig and types in the target language is considered to be a configuration option controllable by the programmer. Furthermore, the mapping need not be injective, i.e. users are free to have multiple values in Twig map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a pointer to \texttt{char} (\texttt{char *}) in C.
 
-Twig also includes support for terms representing groups of values, i.e.
-\emph{tuples}, and operations on groups. We omit the semantics here for lack of
-space.
+Twig also includes support for terms representing groups of values, i.e. \emph{tuples}, and operations on groups. We omit the semantics here for lack of space.
 
 \subsection{Rules}
 \label{sec:rules}
 
-The most basic building blocks of a Twig program are called \emph{primitive
-rules}. A primitive rule describes a transformation from one term to another.
-For example, in C it is easy to convert an integer value to floating point, and
-we can write this rule in Twig as follows:
+The most basic building blocks of a Twig program are called \emph{primitive rules}. A primitive rule describes a transformation from one term to another. For example, in C it is easy to convert an integer value to floating point, and we can write this rule in Twig as follows:
 
 \begin{verbatim}
 [int -> float]
 \end{verbatim}
 
-The term to the left of the arrow is the input, and the term to the right is the
-output. In this example, the rule says that if and only if the input to the rule
-is the term \texttt{int}, then the output will be the term \texttt{float}. If
-the input is not \texttt{int}, then the output will be the special value $\bot$,
-which can be read as ``undefined'' or simply ``failure.''
+The term to the left of the arrow is the input, and the term to the right is the output. In this example, the rule says that if and only if the input to the rule is the term \texttt{int}, then the output will be the term \texttt{float}. If the input is not \texttt{int}, then the output will be the special value $\bot$, which can be read as ``undefined'' or simply ``failure.''
 
 \vfill\pagebreak
 
-Rules can also have \emph{variables} in place of terms or sub-terms. For example
-the primitive rule
+Rules can also have \emph{variables} in place of terms or sub-terms. For example the primitive rule
 
 \begin{verbatim}
 [ptr(X) -> X]
 \end{verbatim}
 
-rewrites any pointer type to its referent. The variable \texttt{X} is bound to
-the corresponding value of the matched input on the right, and that value is
-then substituted for the variable where it appears on the left. Variables match
-whole sub-terms only; e.g., rules such as \texttt{[X(int) -> X]} are not
-allowed.
+rewrites any pointer type to its referent. The variable \texttt{X} is bound to the corresponding value of the matched input on the right, and that value is then substituted for the variable where it appears on the left. Variables match whole sub-terms only; e.g., rules such as \texttt{[X(int) -> X]} are not allowed.
 
-Primitive rules will typically generate code as a side effect of successful
-application. To generate code with a rule, the programmer puts it immediately
-after the rule definition and surrounds it with braces, like so:
+Primitive rules will typically generate code as a side effect of successful application. To generate code with a rule, the programmer puts it immediately after the rule definition and surrounds it with braces, like so:
 
 \begin{verbatim}
 [int -> float] { $out = (float)$in; }
 \end{verbatim}
 
-As part of the code generation, Twig will generate temporary C variable names
-and substitute them for \texttt{\$in} and \texttt{\$out}. Twig will also ensure
-that the variables are declared with the appropriate type, based on the provided
-mapping between terms and types. If there are multiple inputs or outputs, then
-the relevant placeholders are enumerated; e.g., \texttt{\$in1}, \texttt{\$in2},
-and so on.
+As part of the code generation, Twig will generate temporary C variable names and substitute them for \texttt{\$in} and \texttt{\$out}. Twig will also ensure that the variables are declared with the appropriate type, based on the provided mapping between terms and types. If there are multiple inputs or outputs, then the relevant placeholders are enumerated; e.g., \texttt{\$in1}, \texttt{\$in2}, and so on.
 
-It is important to understand that Twig does not check the generated code in any
-way beyond what was just described -- the generation procedure is mostly
-syntactic. This approach is similar to the code generation strategy used in
-SWIG\cite{swig}.
+It is important to understand that Twig does not check the generated code in any way beyond what was just described -- the generation procedure is mostly syntactic. This approach is similar to the code generation strategy used in SWIG\cite{swig}.
 
 \subsection{Combinators}
 
-Rules can be combined into more complex expressions using Twig's operators. In
-the formal semantics below, let $t$ range over terms, $m$ range over code block
-expressions and $s_i$ range over rule expressions, i.e., a primitive rule or a
-sub-expression built with operators.
+Rules can be combined into more complex expressions using Twig's operators. In the formal semantics below, let $t$ range over terms, $m$ range over code block expressions and $s_i$ range over rule expressions, i.e., a primitive rule or a sub-expression built with operators.
 
-A primitive rule $s$ transforms a term $t$ to another term $t'$ with generated
-code $m$:
+A primitive rule $s$ transforms a term $t$ to another term $t'$ with generated code $m$:
 
 \[
 t \arr{s} (t',m)
 \]
 
-if the application of rule $s$ to value $t$ succeeds. If no code is given for
-the rule, then $m$ is the ``no-op'' element, $e$ (see
-Section~\ref{sec:code-gen}). If the application of $s$ to $t$ fails, e.g., if
-$t$ does not match the pattern in $s$, then we say
+if the application of rule $s$ to value $t$ succeeds. If no code is given for the rule, then $m$ is the ``no-op'' element, $e$ (see Section~\ref{sec:code-gen}). If the application of $s$ to $t$ fails, e.g., if $t$ does not match the pattern in $s$, then we say
 
 \[
 t \arr{s} \bot
@@ -113,11 +64,7 @@ t \arr{s} \bot
 
 Note that code is not generated in this case.
 
-The most frequently used combinator in Twig is the \emph{sequence} operator.
-This operator chains the application of two rules together, providing the output
-of the first to the input of the second, and failing if either rule fails (see
-Figure~\ref{semantics:sequence}). With this operator, simple rules can be
-composed into multi-step transformations.
+The most frequently used combinator in Twig is the \emph{sequence} operator. This operator chains the application of two rules together, providing the output of the first to the input of the second, and failing if either rule fails (see Figure~\ref{semantics:sequence}). With this operator, simple rules can be composed into multi-step transformations.
 
 \begin{figure}[ht]
 \label{semantics:sequence}
@@ -132,12 +79,7 @@ composed into multi-step transformations.
 \caption{Semantics for sequence operator}
 \end{figure}
 
-Another important binary operator is \emph{left-biased choice}. This operator
-will try the first rule expression, and if it succeeds then its output is the
-result (see Figure~\ref{semantics:choice}) of the expression. If the first rule
-fails (i.e. results in $\bot$), then the second rule is tried. This operator
-allows different paths to be taken, and different code to be generated,
-depending on the input type.
+Another important binary operator is \emph{left-biased choice}. This operator will try the first rule expression, and if it succeeds then its output is the result (see Figure~\ref{semantics:choice}) of the expression. If the first rule fails (i.e. results in $\bot$), then the second rule is tried. This operator allows different paths to be taken, and different code to be generated, depending on the input type.
 
 \begin{figure}[ht]
 \label{semantics:choice}
@@ -152,9 +94,7 @@ depending on the input type.
 \caption{Semantics for left-biased choice}
 \end{figure}
 
-Figure~\ref{semantics:basic} gives the formal semantics for Twig's other
-operators. These include constant operators and operators which discard their
-results.
+Figure~\ref{semantics:basic} gives the formal semantics for Twig's other operators. These include constant operators and operators which discard their results.
 
 \begin{figure}[ht]
 \label{semantics:basic}
@@ -176,14 +116,12 @@ results.
 \caption{Semantics for basic operators}
 \end{figure}
 
-Twig also provides some special operators for tuples. As these are not needed
-for the purposes of this paper, we omit further discussion.
+Twig also provides some special operators for tuples. As these are not needed for the purposes of this paper, we omit further discussion.
 
 \subsection{Named Expressions}
 \label{section:names}
 
-For convenience, Twig allows rules and rule expressions to be assigned names,
-like so:
+For convenience, Twig allows rules and rule expressions to be assigned names, like so:
 
 \begin{verbatim}
 intToFloat = [int -> float] { ... }
@@ -191,21 +129,14 @@ intToFloat = [int -> float] { ... }
 
 Here, the ellipsis stands in place of some code to be generated.
 
-This example assigns a primitive rule to the name \texttt{intToFloat}. Names
-must begin with lower-case letters, and can only be used once. The name can be
-used in place of the rule itself within expressions.
+This example assigns a primitive rule to the name \texttt{intToFloat}. Names must begin with lower-case letters, and can only be used once. The name can be used in place of the rule itself within expressions.
 
-A Twig program is a list of such name/expression assignments. There is a special
-expression name, \texttt{main}, which designates the top-level expression for
-the program.
+A Twig program is a list of such name/expression assignments. There is a special expression name, \texttt{main}, which designates the top-level expression for the program.
 
 \subsection{Reductions}
 \label{sec:reductions}
 
-Reductions are a mechanism provided within Twig as a way to automatically
-simplify expressions. Reductions usually exploit some application or domain
-knowledge about the nature of the primitive rules, and as such are usually
-developed alongside a set of rules.
+Reductions are a mechanism provided within Twig as a way to automatically simplify expressions. Reductions usually exploit some application or domain knowledge about the nature of the primitive rules, and as such are usually developed alongside a set of rules.
 
 As an example, consider the following two rules.
 
@@ -225,36 +156,23 @@ and the expression
 intToFloat;floatToInt
 \end{verbatim}
 
-This conversion is redundant and, if we encounter it, we might as well eliminate
-it. This can be accomplished with the following reduction:
+This conversion is redundant and, if we encounter it, we might as well eliminate it. This can be accomplished with the following reduction:
 
 \begin{verbatim}
 reduce intToFloat;floatToInt -> id
 \end{verbatim}
 
-This statement introduces a new reduction rule which instructs Twig to replace
-any subexpression\\\texttt{intToFloat;floatToInt} with the identity rule,
-\texttt{id}. Recall that \texttt{id} is the identity rule; it simply passes the
-value through unchanged.
+This statement introduces a new reduction rule which instructs Twig to replace any subexpression \texttt{intToFloat;floatToInt} with the identity rule, \texttt{id}. Recall that \texttt{id} is the identity rule; it simply passes the value through unchanged.
 
-Twig also comes with some default reductions. These special reductions exploit
-the meaning of Twig's combinators to normalize expressions. One example is
-identity elimination, which will replace subexpressions of the form
-\texttt{id;X} with \texttt{X}, where \texttt{X} is a variable representing any
-subexpression.
+Twig also comes with some default reductions. These special reductions exploit the meaning of Twig's combinators to normalize expressions. One example is identity elimination, which will replace subexpressions of the form \texttt{id;X} with \texttt{X}, where \texttt{X} is a variable representing any subexpression.
 
-Reductions must be developed carefully to avoid infinite loops. This can be
-surprisingly easy to do accidentally, even with simple rules. For example, Twig
-will not terminate if it is given these two reductions
+Reductions must be developed carefully to avoid infinite loops. This can be surprisingly easy to do accidentally, even with simple rules. For example, Twig will not terminate if it is given these two reductions
 
 \begin{verbatim}
 reduce foo;bar => baz
 reduce baz => foo;bar
 \end{verbatim}
 
-and one or both apply within the program. Twig will continually rewrite
-\texttt{foo;bar} to \texttt{baz}, and then back again, ad infinitum.
+and one or both apply within the program. Twig will continually rewrite \texttt{foo;bar} to \texttt{baz}, and then back again, ad infinitum.
 
-Twig's reductions are based on the theory of term rewriting; for a formal
-discussion see\cite{baader98rewriting}. In this case Twig's expressions, not
-its values, are the terms being rewritten.
+Twig's reductions are based on the theory of term rewriting; for a formal discussion see\cite{baader98rewriting}. In this case Twig's expressions, not its values, are the terms being rewritten.
