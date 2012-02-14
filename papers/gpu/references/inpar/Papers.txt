@@ -1,0 +1,4 @@
+Kayvon Fatahalian et al.: Sequoia: programming the memory hierarchy. Supercomputing, 2006
+Timothy Knight et al.: Compilation for explicitly managed memory hierarchies. PPoPP, 2007
+Pete Cooper et al.: Offload - Automating Code Migration to Heterogeneous Multicore System.  HiPEAC, 2010
+Muthu Baskaran et al.: A compiler framework for optimization of affine loop nests for GPGPUs. ICS 2008.

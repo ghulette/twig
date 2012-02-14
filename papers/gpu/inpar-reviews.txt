@@ -2,18 +2,11 @@ Dear Geoffrey Hulette -
 
 We are sorry to inform you that your paper
 
- 169 - A Type-based Approach to Separating Protocol from Application Logic: A Case Study in Hybrid Computer Programming
+169 - A Type-based Approach to Separating Protocol from Application Logic: A Case Study in Hybrid Computer Programming
 
-has not been accepted to InPar 2012.  The reviews are included below\;
-for a small number of papers, you might see another review included
-in another week or so in the review system.
+has not been accepted to InPar 2012. The reviews are included below\; for a small number of papers, you might see another review included in another week or so in the review system.
 
-At our in-person PC meeting, we worked hard to develop a good
-summary of the discussion beyond simply the reviews. This
-summary appears prior to the reviews below. (If the summary is
-not present at this time, please check back in the review system
-in a few days.) We hope it will be good feedback to you as you
-continue your research.
+At our in-person PC meeting, we worked hard to develop a good summary of the discussion beyond simply the reviews. This summary appears prior to the reviews below. (If the summary is not present at this time, please check back in the review system in a few days.) We hope it will be good feedback to you as you continue your research.
 
 Sincerely,
 Lorena Barba and John Owens, InPar 2012
@@ -23,9 +16,7 @@ inpar12-papers@googlegroups.com
 
 Summary of the reviews:
 
-It is an interesting idea to use type to help heterogeneous computing. The work appears to be in its
-preliminary stage. The use of simple examples is insufficient to convincingly show the practical value of
-the technique. Some related work is missing. The presentation can be improved.
+It is an interesting idea to use type to help heterogeneous computing. The work appears to be in its preliminary stage. The use of simple examples is insufficient to convincingly show the practical value of the technique. Some related work is missing. The presentation can be improved.
 
 ------------------------ Submission 169, Review 5 ------------------------
 
