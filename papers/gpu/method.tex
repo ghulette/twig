@@ -15,10 +15,9 @@ Twig does not currently feature any built-in looping constructs. We are working 
 We illustrate the redundant memory copy problem in Figure~\ref{basic-idea}. In that diagram, two GPU kernel transformations, $f$ and $g$, are called in sequence. The ``before'' case shows the na\"ive composition, which introduces redundant data movement. The ``after'' case shows the desired composition, with the redundant intermediate copying operations eliminated.
 
 \begin{figure}[ht]
-\begin{center}
+\centering
 \includegraphics[width=2in]{images/basic-idea}
-\end{center}
-\caption{Redundant data copies}
+\caption{Elimination of redundant data copies. The top diagram (``Before'') shows a program calling two GPU kernels in sequence, unnecessarily copying data to and from the device in between. The bottom diagram (``After'') shows the same program, but with the redundant copies removed.}
 \label{basic-idea}
 \end{figure}
 
