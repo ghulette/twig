@@ -8,16 +8,18 @@ Protocol related logic is often concerned with allocation, movement, and represe
 
 The advantage of pushing location information into the type system is that it forces programmers to explicitly account for operations related to the protocol logic of an application. In plain CUDA or OpenCL codes, protocol-related operations are intermixed with computational logic, and the type system does not help to enforce protocol rules. In CUDA, for example, the type system will not prevent a faulty program from executing a kernel on the GPU before the appropriate data has been copied. We will show that by augmenting type information, we can make many of these protocol-related details explicit and check them at compile time.
 
-As we will see in Section~\ref{semantics}, programs written in Twig's language are significantly constrained with respect to control flow. The tradeoff is that Twig's constraints make it easy to reason about automated transformations on programs. In particular, we will demonstrate how the structure of Twig's language allows it to transform GPU-related programs to eliminate redundant memory copies. Other domain- or application-specific transformations will certainly be possible as well.
+As we will see in Section~\ref{semantics}, programs written in Twig's language are constrained with respect to control flow. This is by design. Twig's simple semantics make its programs easy to reason about, and thus to transform via automated methods. In Section~\ref{sec:example} we will demonstrate one way in which we can exploit this property, by transforming GPU-related programs to eliminate redundant memory copies.
 
-We illustrate the redundant memory copy problem in Figure~\ref{basic-idea}. In the figure, two GPU kernel transformations, $f$ and $g$, are combined in sequence. The top half of the diagram shows the na\"ive composition, which introduces a redundant copy. The bottom half shows the desired composition, with the redundant intermediate copies eliminated.
+Twig's semantics are not without tradeoffs, however. Notably, Twig does not currently feature any built-in looping constructs. We are working to address this limitation -- see Section~\ref{sec:future-work}.
+
+We illustrate the redundant memory copy problem in Figure~\ref{basic-idea}. In the figure, two GPU kernel transformations, $f$ and $g$, are called in sequence. The ``before'' case shows the na\"ive composition, which introduces redundant data movement. The ``after'' case shows the desired composition, with the redundant intermediate copying operations eliminated.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=1.8in]{images/basic-idea}
+\includegraphics[width=2in]{images/basic-idea}
 \end{center}
-\caption{Elimination of redundant data copies}
-\label{basic-idea}
+\caption{Redundant data copies}
+\label{basic-idea-1}
 \end{figure}
 
 Twig operates on data types instead of data. The input to a Twig program is a data type, and the output is a transformed data type along with some generated code that will perform the transformation on data in the target language. For this reason, Twig is restricted to operate only on types that can be represented in the target language, (e.g., for C, things like \texttt{int}, \texttt{float}, or \texttt{structs}). It can, however, augment the information about those types in order to make them more restrictive. For GPU programming, we exploit this capability with the addition of \emph{located types}.
@@ -47,4 +49,4 @@ This simple but effective scheme enables automated reasoning about the movement 
 
 It is important to understand that rules such as those given above describe transformations on \emph{data types}, not on the data themselves. It falls to the code that is generated as a consequence of successful application of these rules to perform the promised conversion on the actual data; this is described in Section~\ref{sec:code-gen}.
 
-While our current use of Twig's augmented type information is straightforward, our current work is focused on leveraging this capability to its fullest. Located types could, for example, be easily extended to support more complex location information. In a computer with multiple GPU devices, each device could be assigned its own location, and each location would correspond with a unique type. Furthermore, Twig may be able to use the type information in a program to infer that data should be moved between locations, and then insert the appropriate rule automatically. This process is called \emph{coercion} generation, and it is a topic of ongoing work.
+Located types could be used in more complex situations, as well. For example, they could be used track data moving between multiple GPU devices, with each device corresponding to a unique located type.
