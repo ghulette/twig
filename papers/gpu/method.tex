@@ -8,18 +8,18 @@ Protocol related logic is often concerned with allocation, movement, and represe
 
 The advantage of pushing location information into the type system is that it forces programmers to explicitly account for operations related to the protocol logic of an application. In plain CUDA or OpenCL codes, protocol-related operations are intermixed with computational logic, and the type system does not help to enforce protocol rules. In CUDA, for example, the type system will not prevent a faulty program from executing a kernel on the GPU before the appropriate data has been copied. We will show that by augmenting type information, we can make many of these protocol-related details explicit and check them at compile time.
 
-As we will see in Section~\ref{semantics}, programs written in Twig's language are constrained with respect to control flow. This is by design. Twig's simple semantics make its programs easy to reason about, and thus to transform via automated methods. In Section~\ref{sec:example} we will demonstrate one way in which we can exploit this property, by transforming GPU-related programs to eliminate redundant memory copies.
+As we will see in Section~\ref{semantics}, programs written in Twig's language are constrained with respect to control flow. This is by design. Twig's simple semantics make its programs easy to reason about, and thus to transform via automated methods. In Section~\ref{sec:example} we will demonstrate one way in which we can exploit this property, by transforming GPU-related programs to eliminate redundant memory copies. 
 
-Twig's semantics are not without tradeoffs, however. Notably, Twig does not currently feature any built-in looping constructs. We are working to address this limitation -- see Section~\ref{sec:future-work}.
+Twig does not currently feature any built-in looping constructs. We are working to address this limitation -- see Section~\ref{sec:future-work}.
 
-We illustrate the redundant memory copy problem in Figure~\ref{basic-idea}. In the figure, two GPU kernel transformations, $f$ and $g$, are called in sequence. The ``before'' case shows the na\"ive composition, which introduces redundant data movement. The ``after'' case shows the desired composition, with the redundant intermediate copying operations eliminated.
+We illustrate the redundant memory copy problem in Figure~\ref{basic-idea}. In that diagram, two GPU kernel transformations, $f$ and $g$, are called in sequence. The ``before'' case shows the na\"ive composition, which introduces redundant data movement. The ``after'' case shows the desired composition, with the redundant intermediate copying operations eliminated.
 
 \begin{figure}[ht]
 \begin{center}
 \includegraphics[width=2in]{images/basic-idea}
 \end{center}
 \caption{Redundant data copies}
-\label{basic-idea-1}
+\label{basic-idea}
 \end{figure}
 
 Twig operates on data types instead of data. The input to a Twig program is a data type, and the output is a transformed data type along with some generated code that will perform the transformation on data in the target language. For this reason, Twig is restricted to operate only on types that can be represented in the target language, (e.g., for C, things like \texttt{int}, \texttt{float}, or \texttt{structs}). It can, however, augment the information about those types in order to make them more restrictive. For GPU programming, we exploit this capability with the addition of \emph{located types}.
