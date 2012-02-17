@@ -3,9 +3,9 @@
 \section{Twig's Semantics}
 \label{semantics}
 
-Twig is based on a core semantics called System S\cite{Visser:1998p333}, augmented with semantics for generating code and specialized to operate on types instead of general terms. Twig uses the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, resulting in a new type and generating code as a side effect. In this section we describe the basics of Twig's language.
+Twig is based on a core semantics called System S~\cite{system-s}, augmented with rules for generating code and specialized to operate on types instead of general terms. Twig uses the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, resulting in a new type and potentially generating code as a side effect. In this section we describe the basics of Twig's language.
 
-Here, we give an abbreviated and mostly informal description of Twig's semantics, focusing on how they are used to support GPU accelerator programming. The full semantics and features of the language will be provided in a forthcoming paper.
+We present an abbreviated and informal description of Twig's semantics, focusing on how they are used to support GPU accelerator programming. The full semantics and features of the language will be described in our future work.
 
 \subsection{Values}
 
@@ -18,15 +18,13 @@ Twig also includes support for terms representing groups of values, i.e. \emph{t
 \subsection{Rules}
 \label{sec:rules}
 
-The most basic building blocks of a Twig program are called \emph{primitive rules}. A primitive rule describes a transformation from one term to another. For example, in C it is easy to convert an integer value to floating point, and we can write this rule in Twig as follows:
+The fundamental components of a Twig program are called \emph{primitive rules}. A primitive rule describes a transformation from one term to another. For example, in C it is easy to convert an integer value to floating point, and we can write this rule in Twig as follows:
 
 \begin{verbatim}
 [int -> float]
 \end{verbatim}
 
-The term to the left of the arrow is the input, and the term to the right is the output. In this example, the rule says that if and only if the input to the rule is the term \texttt{int}, then the output will be the term \texttt{float}. If the input is not \texttt{int}, then the output will be the special value $\bot$, which can be read as ``undefined'' or simply ``failure.''
-
-\vfill\pagebreak
+The term to the left of the arrow is the input, and the term to the right is the output. In this example, the rule says that if and only if the input to the rule is the term \texttt{int}, then the output will be the term \texttt{float}. If the input is not \texttt{int}, then the output will be the special value $\bot$, which can be read as ``undefined'' or ``failure.''
 
 Rules can also have \emph{variables} in place of terms or sub-terms. For example the primitive rule
 
@@ -36,19 +34,21 @@ Rules can also have \emph{variables} in place of terms or sub-terms. For example
 
 rewrites any pointer type to its referent. The variable \texttt{X} is bound to the corresponding value of the matched input on the right, and that value is then substituted for the variable where it appears on the left. Variables match whole sub-terms only; e.g., rules such as \texttt{[X(int) -> X]} are not allowed.
 
-Primitive rules will typically generate code as a side effect of successful application. To generate code with a rule, the programmer puts it immediately after the rule definition and surrounds it with braces, like so:
+Primitive rules will typically generate code as a side effect of successful application. To associate a block of code with a rule, the programmer puts it immediately after the rule definition and surrounds it with braces, like so:
 
 \begin{verbatim}
 [int -> float] { $out = (float)$in; }
 \end{verbatim}
 
-As part of the code generation, Twig will generate temporary C variable names and substitute them for \texttt{\$in} and \texttt{\$out}. Twig will also ensure that the variables are declared with the appropriate type, based on the provided mapping between terms and types. If there are multiple inputs or outputs, then the relevant placeholders are enumerated; e.g., \texttt{\$in1}, \texttt{\$in2}, and so on.
+When the code is generated, Twig will create temporary variables for \texttt{\$in} and \texttt{\$out}. Twig will ensure that the various bookkeeping details, such as variable declarations, are handled as well. If there are multiple inputs or outputs, then the relevant placeholders are enumerated; e.g., \texttt{\$in1}, \texttt{\$in2}, and so on.
 
-It is important to understand that Twig does not check the generated code in any way beyond what was just described -- the generation procedure is mostly syntactic. This approach is similar to the code generation strategy used in SWIG\cite{swig}.
+Note that Twig does not check the generated code for correctness  -- the generation procedure is essentially syntactic. This approach is similar to the strategy used tools such as SWIG~\cite{swig}.
 
-\subsection{Combinators}
+\subsection{Formal semantics}
 
-Rules can be combined into more complex expressions using Twig's operators. In the formal semantics below, let $t$ range over terms, $m$ range over code block expressions and $s_i$ range over rule expressions, i.e., a primitive rule or a sub-expression built with operators.
+In the following formal semantics, let $t$ range over terms, $m$ over code block expressions, and $s$ over rule expressions, i.e., a primitive rule or a sub-expression built with operators.
+
+\subsubsection{Primitive rules}
 
 A primitive rule $s$ transforms a term $t$ to another term $t'$ with generated code $m$:
 
@@ -64,10 +64,11 @@ t \arr{s} \bot
 
 Note that code is not generated in this case.
 
-The most frequently used combinator in Twig is the \emph{sequence} operator. This operator chains the application of two rules together, providing the output of the first to the input of the second, and failing if either rule fails (see Figure~\ref{semantics:sequence}). With this operator, simple rules can be composed into multi-step transformations.
+\subsubsection{Operators}
+
+Rules can be combined into more complex expressions using operators. The most common of these is the \emph{sequence} operator. A sequence chains the application of two rules together, providing the output of the first to the input of the second, and failing if either rule fails (see Figure~\ref{semantics:sequence}). With this operator, simple rules can be composed into multi-step transformations.
 
 \begin{figure}[ht]
-\label{semantics:sequence}
 \[
 \infer{t \arr{s_1;s_2} (t'',m_1+m_2)}{t \arr{s_1} (t',m_1) \quad t' \arr{s_2} (t'',m_2)}
 \qquad 
@@ -77,12 +78,12 @@ The most frequently used combinator in Twig is the \emph{sequence} operator. Thi
 \infer{t \arr{s_1;s_2} \bot}{t \arr{s_1} (t',m) \quad t' \arr{s_2} \bot}
 \]
 \caption{Semantics for sequence operator}
+\label{semantics:sequence}
 \end{figure}
 
-Another important binary operator is \emph{left-biased choice}. This operator will try the first rule expression, and if it succeeds then its output is the result (see Figure~\ref{semantics:choice}) of the expression. If the first rule fails (i.e. results in $\bot$), then the second rule is tried. This operator allows different paths to be taken, and different code to be generated, depending on the input type.
+Another important operator is \emph{left-biased choice}. Choice expressions will try the first rule expression, and if it succeeds then its output is the result (see Figure~\ref{semantics:choice}) of the expression. If the first rule fails (i.e., results in $\bot$), then the second rule is tried. This operator allows different paths to be taken, and different code to be generated, depending on the input type.
 
 \begin{figure}[ht]
-\label{semantics:choice}
 \[
 \infer{t \arr{s_1|s_2} (t',m)}{t \arr{s_1} (t',m)}
 \qquad 
@@ -92,12 +93,12 @@ Another important binary operator is \emph{left-biased choice}. This operator wi
 \infer{t \arr{s_1|s_2} \bot}{t \arr{s_1} \bot \quad t \arr{s_2} \bot}
 \]
 \caption{Semantics for left-biased choice}
+\label{semantics:choice}
 \end{figure}
 
 Figure~\ref{semantics:basic} gives the formal semantics for Twig's other operators. These include constant operators and operators which discard their results.
 
 \begin{figure}[ht]
-\label{semantics:basic}
 \[
 \infer{t \arr{\mathtt{id}} (t,I)}{}
 \qquad
@@ -114,22 +115,19 @@ Figure~\ref{semantics:basic} gives the formal semantics for Twig's other operato
 \infer{t \arr{\lnot s} (t,I)}{t \arr{s} \bot}
 \]
 \caption{Semantics for basic operators}
+\label{semantics:basic}
 \end{figure}
 
 Twig also provides some special operators for tuples. As these are not needed for the purposes of this paper, we omit further discussion.
 
-\subsection{Named Expressions}
+\subsubsection{Named expressions}
 \label{section:names}
 
-For convenience, Twig allows rules and rule expressions to be assigned names, like so:
+For convenience, Twig allows rules and rule expressions to be assigned to names. The name can then be used in place of the rule itself within expressions. For example:
 
 \begin{verbatim}
 intToFloat = [int -> float] { ... }
 \end{verbatim}
-
-Here, the ellipsis stands in place of some code to be generated.
-
-This example assigns a primitive rule to the name \texttt{intToFloat}. Names must begin with lower-case letters, and can only be used once. The name can be used in place of the rule itself within expressions.
 
 A Twig program is a list of such name/expression assignments. There is a special expression name, \texttt{main}, which designates the top-level expression for the program.
 

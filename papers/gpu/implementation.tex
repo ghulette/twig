@@ -8,6 +8,6 @@ Twig must also be configured with a mapping from terms to C types. Currently, th
 
 \subsection{C Code Generation}
 
-Twig is capable of generating any procedural language, but in practice implementations must take the target language into account. Our current implementation of Twig is targeted to generate C code. For convenience, our implementation will handle tasks such as declaring variables, generating unique names, and ensuring that for sequencing blocks the outputs are assigned to the inputs in the appropriate way.
+Twig is capable of generating any procedural language, but in practice implementations must take the target language into account. Our current implementation of Twig is targeted to generate C code.
 
 Optionally, generated code may be wrapped in a C function body, with parameters corresponding to the inputs, and return value corresponding to the output. If the input value can be successfully rewritten using the main rule expression provided, then Twig will output the rewritten term along with the generated block of C code. If desired, this code block may be redirected to a separate file and included in a C program using the \texttt{\#include} directive.
