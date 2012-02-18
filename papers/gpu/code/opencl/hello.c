@@ -86,19 +86,9 @@ cl_kernel compileProgram(const char **src, cl_device_id did, cl_context c) {
   return kernel;
 }
 
-cl_mem createInputFloatBuffer(cl_context c, int size) {
+cl_mem createFloatBuffer(cl_context c, int size) {
   cl_mem buff;
-  buff = clCreateBuffer(c, CL_MEM_READ_ONLY, sizeof(float) * size, NULL, NULL);
-  if(!buff) {
-    printf("Error: Failed to allocate device memory!\n");
-    exit(1);
-  }
-  return buff;
-}
-
-cl_mem createOutputFloatBuffer(cl_context c, int size) {
-  cl_mem buff;
-  buff = clCreateBuffer(c, CL_MEM_WRITE_ONLY, sizeof(float) * size, NULL, NULL);
+  buff = clCreateBuffer(c, CL_MEM_READ_WRITE, sizeof(float) * size, NULL, NULL);
   if(!buff) {
     printf("Error: Failed to allocate device memory!\n");
     exit(1);
@@ -170,8 +160,8 @@ int main(int argc, char** argv) {
   context = createContext(device_id);
   commands = createCommandQueue(device_id, context);
   kernel = compileProgram(&KernelSource, device_id, context);
-  input = createInputFloatBuffer(context, DATA_SIZE);
-  output = createOutputFloatBuffer(context, DATA_SIZE);
+  input = createFloatBuffer(context, DATA_SIZE);
+  output = createFloatBuffer(context, DATA_SIZE);
   copyFloatsToDevice(commands, input, data, DATA_SIZE);
   runKernel(device_id, kernel, commands, input, output, DATA_SIZE);
   clFinish(commands);
