@@ -26,7 +26,7 @@ runKernel{k}=copyToGPU;kernel{k};copyFromGPU
 
 main=runKernel(foo);runKernel(bar)
 
-reduce copyArrayFromGPU;copyArrayToGPU -> id
+reduce copyFromGPU;copyToGPU => id
 \end{verbatim}
 \caption{Twig code example}
 \label{fig:example-code}
@@ -72,7 +72,7 @@ cudaMemcpy(tmp07,tmp06,SIZE,cudaMemcpyHostToDevice);
 We solve this problem by introducing a \emph{reduction}, as described in Section~\ref{sec:reductions}. The line
 
 \begin{verbatim}
-@reduce copyArrayFromGPU;copyArrayToGPU -> id
+reduce copyFromGPU;copyToGPU => id
 \end{verbatim}
 
 specifies a reduction which will eliminate the redundant copy. This line instructs Twig to search for the expression on the left-hand side of the arrow, in which data is copied from the GPU to the system and then immediately back. Wherever the expression is found, it is replaced it with the expression on the right-hand side; in this case, an identity transformation, i.e., a no-op. Now the expanded version of \texttt{main} has the extra copies removed, and reads
