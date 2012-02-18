@@ -12,13 +12,16 @@ As we will see in Section~\ref{semantics}, programs written in Twig's language a
 
 Twig does not currently feature any built-in looping constructs. We are working to address this limitation -- see Section~\ref{sec:future-work}.
 
-We illustrate the redundant memory copy problem in Figure~\ref{basic-idea}. In that diagram, two GPU kernel transformations, $f$ and $g$, are called in sequence. The ``before'' case shows the na\"ive composition, which introduces redundant data movement. The ``after'' case shows the desired composition, with the redundant intermediate copying operations eliminated.
+We illustrate the redundant memory copy problem in Fig.~\ref{basic-idea}. In the diagram, two GPU kernel transformations, $f$ and $g$, are called in sequence. The na\"ive composition is shown in Fig.~\ref{basic-idea}(a). This case has redundant data movement. The arrangement in Fig.~\ref{basic-idea}(b) is the desired composition, with the redundant intermediate copying operations eliminated.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=2in]{images/reduction-before}
-\includegraphics[width=2in]{images/reduction-after}
-\caption{Elimination of redundant data copies. The left diagram (``Before'') shows a program calling two GPU kernels in sequence, unnecessarily copying data to and from the device in between. The right diagram (``After'') shows the same program, but with the redundant copies removed.}
+\begin{tabular}{cc}
+\includegraphics[width=2in]{images/reduction-before}&
+\includegraphics[width=2in]{images/reduction-after}\\
+(a)&(b)\\
+\end{tabular}
+\caption{Elimination of redundant data movement. Part (a) depicts two GPU kernels called in sequence, unnecessarily copying data to and from the device. Part (b) shows the same program with the redundant copies removed.}
 \label{basic-idea}
 \end{figure}
 
