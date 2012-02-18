@@ -1,9 +1,10 @@
-\documentclass{sig-alternate}
+\documentclass{llncs}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{proof}
 \usepackage{url}
 \usepackage{color}
+\usepackage{graphicx}
 
 \newcommand{\todonote}[1]{\textcolor{blue}{{\bf TODO:} {\it #1}}}
 \newcommand{\comment}[1]{\textcolor{red}{{\bf COMMENT:} {\it #1}}}
@@ -12,29 +13,19 @@
 
 \begin{document}
 
-\title{A Type-based Approach to Separating\\Protocol from Application Logic:\\A Case Study in Hybrid Computer Programming}
-
-\numberofauthors{3}
+\title{A Type-based Approach to Separating Protocol from Application Logic}
+\subtitle{A Case Study in Hybrid Computer Programming}
 
 \author{
-% 1st. author
-\alignauthor Geoffrey C. Hulette\\
-  \affaddr{University of Oregon}\\
-  \affaddr{Eugene, OR}\\
-  \email{ghulette@cs.uoregon.edu}
-% 2nd. author
-\alignauthor Matthew J. Sottile\\
-  \affaddr{Galois, Inc.}\\
-  \affaddr{Portland, OR}\\
-  \email{mjsottile@computer.org}
-% 3rd author
-\alignauthor Allen D. Malony\\
-  \affaddr{University of Oregon}\\
-  \affaddr{Eugene, OR}\\
-  \email{malony@cs.uoregon.edu}
+Geoffrey C. Hulette\inst{1} \and 
+Matthew J. Sottile\inst{2} \and 
+Allen D. Malony\inst{1}
 }
 
-\CopyrightYear{2012}
+\institute{
+University of Oregon, Eugene, OR \and
+Galois, Inc., Portland, OR
+}
 
 \maketitle
 
@@ -53,7 +44,7 @@
 
 This work was supported in part by the Department of Energy Office of Science, Advanced Scientific Computing Research.
 
-\bibliographystyle{abbrv}
+\bibliographystyle{splncs}
 \bibliography{twig-gpu}
 
 \end{document}

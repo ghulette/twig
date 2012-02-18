@@ -16,8 +16,9 @@ We illustrate the redundant memory copy problem in Figure~\ref{basic-idea}. In t
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=2in]{images/basic-idea}
-\caption{Elimination of redundant data copies. The top diagram (``Before'') shows a program calling two GPU kernels in sequence, unnecessarily copying data to and from the device in between. The bottom diagram (``After'') shows the same program, but with the redundant copies removed.}
+\includegraphics[width=2in]{images/reduction-before}
+\includegraphics[width=2in]{images/reduction-after}
+\caption{Elimination of redundant data copies. The left diagram (``Before'') shows a program calling two GPU kernels in sequence, unnecessarily copying data to and from the device in between. The right diagram (``After'') shows the same program, but with the redundant copies removed.}
 \label{basic-idea}
 \end{figure}
 

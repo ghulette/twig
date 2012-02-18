@@ -48,7 +48,7 @@ Note that Twig does not check the generated code for correctness  -- the generat
 
 In the following formal semantics, let $t$ range over terms, $m$ over code block expressions, and $s$ over rule expressions, i.e., a primitive rule or a sub-expression built with operators.
 
-\subsubsection{Primitive rules}
+\subsubsection{Primitive rules.}
 
 A primitive rule $s$ transforms a term $t$ to another term $t'$ with generated code $m$:
 
@@ -64,7 +64,7 @@ t \arr{s} \bot
 
 Note that code is not generated in this case.
 
-\subsubsection{Operators}
+\subsubsection{Operators.}
 
 Rules can be combined into more complex expressions using operators. The most common of these is the \emph{sequence} operator. A sequence chains the application of two rules together, providing the output of the first to the input of the second, and failing if either rule fails (see Figure~\ref{semantics:sequence}). With this operator, simple rules can be composed into multi-step transformations.
 
@@ -73,8 +73,7 @@ Rules can be combined into more complex expressions using operators. The most co
 \infer{t \arr{s_1;s_2} (t'',m_1+m_2)}{t \arr{s_1} (t',m_1) \quad t' \arr{s_2} (t'',m_2)}
 \qquad 
 \infer{t \arr{s_1;s_2} \bot}{t \arr{s_1} \bot}
-\]
-\[
+\qquad
 \infer{t \arr{s_1;s_2} \bot}{t \arr{s_1} (t',m) \quad t' \arr{s_2} \bot}
 \]
 \caption{Semantics for sequence operator}
@@ -88,8 +87,7 @@ Another important operator is \emph{left-biased choice}. Choice expressions will
 \infer{t \arr{s_1|s_2} (t',m)}{t \arr{s_1} (t',m)}
 \qquad 
 \infer{t \arr{s_1|s_2} (t',m)}{t \arr{s_1} \bot \quad t \arr{s_2} (t',m)}
-\]
-\[
+\qquad
 \infer{t \arr{s_1|s_2} \bot}{t \arr{s_1} \bot \quad t \arr{s_2} \bot}
 \]
 \caption{Semantics for left-biased choice}
@@ -103,9 +101,7 @@ Figure~\ref{semantics:basic} gives the formal semantics for Twig's other operato
 \infer{t \arr{\mathtt{id}} (t,I)}{}
 \qquad
 \infer{t \arr{\mathtt{fail}} \bot}{}
-\]
-
-\[
+\qquad
 \infer{t \arr{?s} (t,I)}{t \arr{s} (t',m)}
 \qquad 
 \infer{t \arr{?s} \bot}{t \arr{s} \bot}
@@ -120,7 +116,7 @@ Figure~\ref{semantics:basic} gives the formal semantics for Twig's other operato
 
 Twig also provides some special operators for tuples. As these are not needed for the purposes of this paper, we omit further discussion.
 
-\subsubsection{Named expressions}
+\subsubsection{Named expressions.}
 \label{section:names}
 
 For convenience, Twig allows rules and rule expressions to be assigned to names. The name can then be used in place of the rule itself within expressions. For example:
