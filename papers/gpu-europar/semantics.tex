@@ -1,11 +1,13 @@
 %!TEX root = twig-gpu.tex
 
 \section{Twig's Semantics}
-\label{semantics}
+\label{sec:semantics}
 
 Twig is based on a core semantics called System S~\cite{system-s}, augmented with rules for generating code and specialized to operate on types instead of general terms. System S was originally designed as a core language for term rewriting~\cite{baader98rewriting}. Twig uses the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, resulting in a new type and potentially generating code as a side effect. In this section we describe the basics of Twig's language.
 
 We present an abbreviated and informal description of Twig's semantics, focusing on how they are used to support GPU accelerator programming. The full semantics and features of the language will be described in our future work.
+
+You may note that Twig does not currently provide any built-in constructs for expressing general recursive expressions, including loops. We are working to address this limitation -- see Sec.~\ref{sec:future-work}. At the moment, Twig can generate looping code only as long as the loops are contained within a single generated block. Of course, Twig can also be used to generate a block of code for inclusion within a loop body.
 
 \subsection{Values}
 
@@ -56,7 +58,7 @@ A primitive rule $s$ transforms a term $t$ to another term $t'$ with generated c
 t \arr{s} (t',m)
 \]
 
-if the application of rule $s$ to value $t$ succeeds. If no code is given for the rule, then $m$ is the ``no-op'' element, $e$ (see Section~\ref{sec:code-gen}). If the application of $s$ to $t$ fails, e.g., if $t$ does not match the pattern in $s$, then we say
+if the application of rule $s$ to value $t$ succeeds. If no code is given for the rule, then $m$ is the ``no-op'' element, $e$ (see Sec.~\ref{sec:code-gen}). If the application of $s$ to $t$ fails, e.g., if $t$ does not match the pattern in $s$, then we say
 
 \[
 t \arr{s} \bot

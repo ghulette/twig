@@ -3,7 +3,7 @@
 \section{Code generation}
 \label{sec:code-gen}
 
-To generate code, Twig relies on an abstract, language-independent model with a small number of basic operations. This simplified model is useful for formulating Twig's semantics, described in Section~\ref{semantics}. It is also helpful in clarifying the precise operations which Twig supports, without getting bogged down in the (typically quite complicated) details of outputting code for a particular programming language.
+To generate code, Twig relies on an abstract, language-independent model with a small number of basic operations. This simplified model is useful for formulating Twig's semantics, described in Sec.~\ref{sec:semantics}. It is also helpful in clarifying the precise operations which Twig supports, without getting bogged down in the (typically quite complicated) details of outputting code for a particular programming language.
 
 Twig generates code in units called \emph{blocks}. The term ``block'' is somewhat overloaded -- our usage differs somewhat from the norm. In Twig, a block of code represents anything that performs some operation on a set of inputs, and which produces a set of outputs. Blocks may have zero or more inputs and outputs. Blocks can also be combined in two different ways: \emph{sequentially}, or \emph{in parallel}. These operations are described in more detail below.
 

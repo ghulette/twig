@@ -2,7 +2,7 @@
 
 \section{Implementation}
 
-Our implementation of Twig is written in Haskell. Twig expects as input a \texttt{.twig} file containing a list of named rule expressions along with a \texttt{main} rule expression, as described in Section~\ref{section:names}. It also expects an initial value (i.e. a term, representing a C type), which will be used as the input to the main rule expression.
+Our implementation of Twig is written in Haskell. Twig expects as input a \texttt{.twig} file containing a list of named rule expressions along with a \texttt{main} rule expression, as described in Sec.~\ref{section:names}. It also expects an initial value (i.e. a term, representing a C type), which will be used as the input to the main rule expression.
 
 Twig must also be configured with a mapping from terms to C types. Currently, this mapping is provided with a simple key/value text file, but we are working on a more flexible alternative.
 

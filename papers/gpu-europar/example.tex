@@ -69,7 +69,7 @@ tmp07 = malloc(SIZE * sizeof(float));
 cudaMemcpy(tmp07,tmp06,SIZE,cudaMemcpyHostToDevice);
 \end{verbatim}
 
-We solve this problem by introducing a \emph{reduction}, as described in Section~\ref{sec:reductions}. The line
+We solve this problem by introducing a \emph{reduction}, as described in Sec.~\ref{sec:reductions}. The line
 
 \begin{verbatim}
 reduce copyFromGPU;copyToGPU => id
