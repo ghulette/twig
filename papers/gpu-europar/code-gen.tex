@@ -31,6 +31,6 @@ The second operation is \emph{parallel} composition, where two blocks are combin
 
 \subsection{Identity Blocks}
 
-Twig's formal semantics require the definintion of a set of special \emph{identity} blocks. An identity block $I_n$ has $n$ inputs and $n$ outputs ($n > 0$). Its function is, as its name implies, to simply pass each of its inputs through, unchanged, to the corresponding output. In Twig's semantics we use $I_n$ as a kind of ``no-op.'' We also use $I$ in place of $I_n$ when the value of $n$ is implied from the context.
+Twig's formal semantics require the definition of a set of special \emph{identity} blocks. An identity block $I_n$ has $n$ inputs and $n$ outputs ($n > 0$). Its function is, as its name implies, to simply pass each of its inputs through, unchanged, to the corresponding output. In Twig's semantics we use $I_n$ as a kind of ``no-op.'' We also use $I$ in place of $I_n$ when the value of $n$ is implied from the context.
 
 Identity blocks are subject to a few rules, which we describe here informally and only briefly. First, $I_n$ are left- and right-identity elements under sequential composition, i.e., $I + x = x + I = x$ for all blocks $x$. Second, we can define parallel composition of identity blocks is defined by summing their size, i.e., $I_n \times I_m = I_{n + m}$.
