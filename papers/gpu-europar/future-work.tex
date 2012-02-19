@@ -3,6 +3,6 @@
 \section{Future work}
 \label{sec:future-work}
 
-This paper focused on the formalism upon which we have built our type-based system for encoding the protocol logic of hybrid system programming. Much work remains to make this technique transparent to the user. First, we must develop method for annotating existing code in order to enrich the type system to carry located type metadata. Second, we must develop tools for extracting this information and generating the Twig term representation that forms the input to the rewriting and reduction techniques described here. Both cases can be implemented and demonstrated within extensible compiler frameworks such as the ROSE compiler infrastructure from Lawrence Livermore National Laboratory. Work to provide this capability via ROSE is currently underway as part of the DOE COMPOSE-HPC project.
+We are working on expanding the Twig language with a notion of \emph{functors}. Functors cleanly capture most cases in which users might need to generate loop constructs, allocate/free patterns, or other protocols that require a notion of \emph{context}.
 
-% TODO: Add a paragraph about functors.
+We are also investigating a number of ways in which Twig might be more closely integrated with mainstream coding practices. For example, we imagine that it may be possible for Twig code to live in the background, and express protocol logic through declarative annotations in the application code.
