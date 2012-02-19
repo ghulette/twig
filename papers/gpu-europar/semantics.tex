@@ -138,7 +138,7 @@ floatToInt = [float -> int] {
 }
 \end{verbatim}
 
-and the expression
+\noindent and the expression
 
 \begin{verbatim}
 intToFloat;floatToInt
@@ -163,4 +163,4 @@ Twig comes equipped with some standard reductions by default. These reductions r
 % 
 % and one or both apply within the program. Twig will continually rewrite \texttt{foo;bar} to \texttt{baz}, and then back again, ad infinitum.
 
-Twig's reductions are based on the theory of term rewriting; for a formal discussion see\cite{baader98rewriting}. In this case, Twig's expressions constitute the terms. There are some subtleties with reductions, e.g., they must be developed carefully to avoid circular reductions.
+Twig's reductions are based on the theory of term rewriting; for a formal discussion see \cite{baader98rewriting}. In this case, Twig's expressions constitute the terms. There are some subtleties with reductions, e.g., they must be developed carefully to avoid circular reductions.

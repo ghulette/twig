@@ -39,14 +39,15 @@ The \texttt{main} rule is the top level of the program. This example executes tw
 main = runKernel(foo);runKernel(bar)
 \end{verbatim}
 
-to 
+\noindent to 
 
 \begin{verbatim}
 main = copyToGPU;kernel{foo};copyFromGPU;
        copyToGPU;kernel{bar};copyFromGPU
 \end{verbatim}
 
-Note that the whitespace above does not affect the meaning of the program. Evaluating this expression on the type \texttt{array(float)} will generate the following code.
+Evaluating this expression on the type \texttt{array(float)} will
+generate the following code.
 
 \begin{verbatim}
 float *tmp01,*tmp02,*tmp03,*tmp04,*tmp05,*tmp06,*tmp07;
@@ -70,7 +71,7 @@ Notice that this code, while correct, contains a redundant copy! The problem ari
 reduce copyFromGPU;copyToGPU => id
 \end{verbatim}
 
-instructs Twig to search for the expression \texttt{copyFromGPU;copyToGPU} and replace it with \texttt{id}, the identity transformation. After the reduction step, the expanded version of \texttt{main} has the extra copies removed:
+\noindent instructs Twig to search for the expression \texttt{copyFromGPU;copyToGPU} and replace it with \texttt{id}, the identity transformation. After the reduction step, the expanded version of \texttt{main} has the extra copies removed:
 
 \begin{verbatim}
 main = copyToGPU;kernel{foo};id;kernel{bar};copyFromGPU
@@ -90,6 +91,4 @@ tmp05 = malloc(SIZE * sizeof(float));
 cudaMemcpy(tmp05,tmp04,SIZE,cudaMemcpyHostToDevice);
 \end{verbatim}
 
-Note that this code does not contain the extraneous copying.
-
-Although this example is simple, it demonstrates the power of reductions. The reduction rule given here would probably be paired with the \texttt{copyToGPU} and \texttt{copyFromGPU} rules in a module intended for consumption by domain programmers, allowing them to perform GPU operations without worrying about the design of the rules. Sophisticated users, however, could add their own rules or even application-specific reductions, enabling very powerful and customizable code generation based on domain-specific logic.
+This code does not contain the extraneous copying.  Although this example is simple, it demonstrates the power of reductions. The reduction rule given here would probably be paired with the \texttt{copyToGPU} and \texttt{copyFromGPU} rules in a module intended for consumption by domain programmers, allowing them to perform GPU operations without worrying about the design of the rules. Sophisticated users, however, could add their own rules or even application-specific reductions, enabling very powerful and customizable code generation based on domain-specific logic.

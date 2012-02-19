@@ -14,7 +14,7 @@ By augmenting basic data types with location information, we ensure that rules m
 [gpu(array(float)) -> gpu(array(int))]
 \end{verbatim}
 
-converts an ``array of floats'' data type to an ``array of integers'' type if and only if the type describes data located on the GPU. If the type describes data located elsewhere, its type must be ``converted'' (i.e., the data copied to the device) with a rule such as
+\noindent converts an ``array of floats'' data type to an ``array of integers'' type if and only if the type describes data located on the GPU. If the type describes data located elsewhere, its type must be ``converted'' (i.e., the data copied to the device) with a rule such as
 
 \begin{verbatim}
 [array(float) -> gpu(array(float))]

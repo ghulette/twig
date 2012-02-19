@@ -11,7 +11,7 @@ Our current implementation of this model generates C code, although the model is
 
 \subsection{Block Composition}
 
-As mentioned above, Twig provides two fundamental operations on blocks. The first is\emph{sequential} composition, which we represent formally as addition ($+$) on blocks. Sequencing connects two blocks of code by ``wiring'' the outputs of the first block into the inputs of the second (see Fig.~\ref{fig:codegen}(c)). In C, this is done by creating uniquely-named temporary variables which are substituted into the original blocks.
+As mentioned above, Twig provides two fundamental operations on blocks. The first is \emph{sequential} composition, which we represent formally as addition ($+$) on blocks. Sequencing connects two blocks of code by ``wiring'' the outputs of the first block into the inputs of the second (see Fig.~\ref{fig:codegen}(c)). In C, this is done by creating uniquely-named temporary variables which are substituted into the original blocks.
 
 The second operation is \emph{parallel} composition, where two blocks are combined so as to execute independently of one another, but to appear as one single block (see Fig.~\ref{fig:codegen}(d)). We represent this operation as multiplication ($\times$).
 
