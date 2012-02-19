@@ -26,6 +26,7 @@ It is important to understand that rules such as those given above describe tran
 
 Our scheme could be extended to support multiple GPU devices, with each device corresponding to a unique located type. In fact, we think that located types could be useful in a variety of situations; this is a topic of ongoing work.
 
+% TODO: This needs to be moved somewhere else.
 \subsection{Redundant Data Movement}
 
 We illustrate the redundant data movement problem in Fig.~\ref{fig:redundant-movement}. In the diagram, two GPU kernel transformations, $f$ and $g$, are called in sequence. The na\"ive composition is shown in Fig.~\ref{fig:redundant-movement}(a). This case has redundant data movement. The arrangement in Fig.~\ref{fig:redundant-movement}(b) is the desired composition, with the redundant intermediate copying operations eliminated.

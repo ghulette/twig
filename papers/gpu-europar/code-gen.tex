@@ -3,19 +3,17 @@
 \section{Code generation}
 \label{sec:code-gen}
 
-To generate code, Twig relies on an abstract, language-independent model with a small number of basic operations. This simplified model is useful for formulating Twig's semantics, described in Sec.~\ref{sec:semantics}. It is also helpful in clarifying the precise operations which Twig supports, without getting bogged down in the (typically quite complicated) details of outputting code for a particular programming language.
+To generate code, Twig uses an abstract, language-independent system with a small number of basic operations. The relative simplicity of the model is motivated by Twig's semantics, described in Sec.~\ref{sec:semantics}. It is helpful in clarifying the precise operations which Twig supports, without getting bogged down in the (potentially quite complicated) details of outputting code for a particular language.
 
-Twig generates code in units called \emph{blocks}. The term ``block'' is somewhat overloaded -- our usage differs somewhat from the norm. In Twig, a block of code represents anything that performs some operation on a set of inputs, and which produces a set of outputs. Blocks may have zero or more inputs and outputs. Blocks can also be combined in two different ways: \emph{sequentially}, or \emph{in parallel}. These operations are described in more detail below.
+Twig generates code in units called \emph{blocks}. A block of code represents anything that performs some operation on a set of inputs in order to produce a set of outputs. Blocks have zero or more inputs and/or outputs. Blocks can be combined in two different ways: \emph{sequentially}, or \emph{in parallel}. These operations are described below.
 
-Our current implementation of this model supports the generation of C code, and adds some extra features to support that language. These features include such details as managing type declarations, support for parameterized blocks, and for ``closing'' blocks, which are generated as variables go out of scope and are intended to be used to free resources. We are looking into the possibility of incorporating these and other features into the language-neutral model, but for the moment they are specific to C. For example, Figs.~\ref{fig:codegen}(a) and \ref{fig:codegen}(b) depict two basic blocks.
+Our current implementation of this model generates C code, although the model is general enough to generate other languages as well. Figures \ref{fig:codegen}(a) and \ref{fig:codegen}(b) each depict a different basic block that generates C.
 
 \subsection{Block Composition}
 
-As mentioned above, Twig provides two fundamental binary operations on blocks. The first is the \emph{sequential composition} operator, represented by the addition symbol ($+$). Sequencing connects two blocks of code by ``wiring'' the outputs of the first block into the inputs of the second. In C, this is done by creating temporary variables which are substituted into the original blocks. For example, see Fig.~\ref{fig:codegen}(c).
+As mentioned above, Twig provides two fundamental operations on blocks. The first is\emph{sequential} composition, which we represent formally as addition ($+$) on blocks. Sequencing connects two blocks of code by ``wiring'' the outputs of the first block into the inputs of the second (see Fig.~\ref{fig:codegen}(c)). In C, this is done by creating uniquely-named temporary variables which are substituted into the original blocks.
 
-Twig's implementation takes care of declaring and uniquely naming temporary variables to accomplish sequencing.
-
-The second operator is \emph{parallel composition}. Under this operator, two blocks are combined so as to execute independently of one another, but to appear as one single block. We represent this operation with the multiplication operator ($\times$). An example is shown in Fig.~\ref{fig:codegen}(d).
+The second operation is \emph{parallel} composition, where two blocks are combined so as to execute independently of one another, but to appear as one single block (see Fig.~\ref{fig:codegen}(d)). We represent this operation as multiplication ($\times$).
 
 \begin{figure}[ht]
 \centering
@@ -30,10 +28,9 @@ The second operator is \emph{parallel composition}. Under this operator, two blo
 \label{fig:codegen}
 \end{figure}
 
+
 \subsection{Identity Blocks}
 
-Twig's formal semantics require the definintion of a set of special \emph{identity} blocks. For each $n \geq 1$, we define an identity block $I_n$ with $n$ inputs and $n$ outputs. Its function is, as its name implies, to simply pass each of its inputs through, unchanged, to the corresponding output. In Twig's semantics we use $I_n$ as a kind of ``no-op.'' We also use $I$ in place of $I_n$ when the value of $n$ is implied from the context.
+Twig's formal semantics require the definintion of a set of special \emph{identity} blocks. An identity block $I_n$ has $n$ inputs and $n$ outputs ($n > 0$). Its function is, as its name implies, to simply pass each of its inputs through, unchanged, to the corresponding output. In Twig's semantics we use $I_n$ as a kind of ``no-op.'' We also use $I$ in place of $I_n$ when the value of $n$ is implied from the context.
 
 Identity blocks are subject to a few rules, which we describe here informally and only briefly. First, $I_n$ are left- and right-identity elements under sequential composition, i.e., $I + x = x + I = x$ for all blocks $x$. Second, we can define parallel composition of identity blocks is defined by summing their size, i.e., $I_n \times I_m = I_{n + m}$.
-
-Identity blocks are a special case of \emph{permutation} blocks, which are used to define some combinators in Twig which are not described in this paper. Since we do not need them here, we have elided further details.
