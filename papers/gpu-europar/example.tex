@@ -3,28 +3,28 @@
 \section{Example}
 \label{sec:example}
 
-In this section, we present an example program written in Twig. The code in Figure~\ref{fig:example-code} how Twig is used, and how reductions can eliminate redundant memory copies.
+Now we present an example program written in Twig. The code in Fig.~\ref{fig:example-code} demonstrates how Twig is used, and how reductions can eliminate redundant memory copies.
 
 \begin{figure}[ht]
 \begin{verbatim}
-copyToGPU=[array(float) -> gpu(array(float))]{
+copyToGPU=[array(float) -> gpu(array(float))] <|
   cudaMalloc((void **)&$out,SIZE);
   cudaMemcpy($out,$in,SIZE,cudaMemcpyHostToDevice);
-}
+|>
 
-copyFromGPU=[gpu(array(float)) -> array(float)]{
+copyFromGPU=[gpu(array(float)) -> array(float)] <|
   $out = malloc(SIZE * sizeof(float));
   cudaMemcpy($out,$in,SIZE,cudaMemcpyHostToDevice);
-}
+|>
 
-kernel{k}=[gpu(array(float)) -> gpu(array(float))]{
+kernel(k)=[gpu(array(float)) -> gpu(array(float))] <|
   $k <<<N_BLOCKS,BLOCK_SIZE>>>($in, N);
   $out = $in;
-}
+|>
 
-runKernel{k}=copyToGPU;kernel{k};copyFromGPU
+runKernel(k)=copyToGPU;kernel(k);copyFromGPU
 
-main=runKernel(foo);runKernel(bar)
+main=runKernel(<|foo|>);runKernel(<|bar|>)
 
 reduce copyFromGPU;copyToGPU => id
 \end{verbatim}
@@ -32,11 +32,11 @@ reduce copyFromGPU;copyToGPU => id
 \label{fig:example-code}
 \end{figure}
 
-This example is simplified in the interest of brevity and clarity. In particular, we assume that the array size, block size, and other parameters are simple constants. A real application would probably pass these values in via more complex rules. We also omit the cleanup routines for allocated memory, which would be handled by Twig's special closing block syntax.
+This example is quite simple, in the interest of brevity and clarity. We omit setup and teardown logic, and assume that the array size, block size, and other parameters are simple constants. A real application would probably pass these values around using more complex rules.
 
-The first three rules definitions are primitives for moving data to and from the GPU (\texttt{copyToGPU} and \texttt{copyFromGPU}), and for invoking a kernel transformation on the array in GPU memory (\texttt{kernel}). The rules \texttt{kernel} and \texttt{runKernel} are parameterized by a variable \texttt{k}, whose value is inserted directly into the generated code.
+The first three rules definitions are primitives for moving data to and from the GPU (\texttt{copyToGPU} and \texttt{copyFromGPU}), and for invoking a kernel transformation on the array in GPU memory (\texttt{kernel}). The rules \texttt{kernel} and \texttt{runKernel} are parameterized by \texttt{k}, whose value is inserted directly into the generated code.
 
-The \texttt{runKernel} rule will perform a single logical function on the GPU. Note that this rule will be semantically valid in any context where it appears, since it ensures that the data is first moved onto the GPU, the kernel is executed, and then the data is copied back. To the programmer, \texttt{runKernel} appears to simply perform a function on a local array -- a considerably simpler than the abstraction presented by OpenCL or CUDA.
+The \texttt{runKernel} rule will perform a single logical ``function'' on the GPU. Note that this rule will be semantically valid in any context where it appears, since it ensures that the data is first moved onto the GPU, the kernel is executed, and then the data is copied back. To the programmer, \texttt{runKernel} appears to perform a function on a local array -- a considerably simpler than the abstraction presented by OpenCL or CUDA.
 
 The \texttt{main} rule is the top level of the program. This example executes two kernels in sequence with two invocations of \texttt{runKernel}. As noted above, by design each invocation would normally result in a copy to and from the GPU -- a conservative strategy. Since the data is not modified in between GPU calls, on its own this expression would generate a redundant copy in between the calls to \texttt{foo} and \texttt{bar}. To see why, we can trace the execution of the Twig program. First, variable names are substituted with the expressions they denote, so \texttt{main} goes from:
 
@@ -51,7 +51,7 @@ main = copyToGPU;kernel{foo};copyFromGPU;
        copyToGPU;kernel{bar};copyFromGPU
 \end{verbatim}
 
-We have added some white space for clarity -- it does not affect the meaning of the program. Evaluating this expression with a \texttt{float*} as input will generate the following code, which contains the redundant copy operation:
+Note that the whitespace above does not affect the meaning of the program. Evaluating this expression on the type \texttt{array(float)} will generate the following code.
 
 \begin{verbatim}
 float *tmp01,*tmp02,*tmp03,*tmp04,*tmp05,*tmp06,*tmp07;
@@ -69,19 +69,19 @@ tmp07 = malloc(SIZE * sizeof(float));
 cudaMemcpy(tmp07,tmp06,SIZE,cudaMemcpyHostToDevice);
 \end{verbatim}
 
-We solve this problem by introducing a \emph{reduction}, as described in Sec.~\ref{sec:reductions}. The line
+Notice that this code, while correct, contains a redundant copy! The problem arises because we sequenced the two kernel operations, which introduces the sub-expression \texttt{copyFromGPU;copyToGPU}. This sub-expression will copy data from the GPU to main memory, and then immediately back to the device. We solve this problem using a \emph{reduction}, as described in Sec.~\ref{sec:reductions}. The line
 
 \begin{verbatim}
 reduce copyFromGPU;copyToGPU => id
 \end{verbatim}
 
-specifies a reduction which will eliminate the redundant copy. This line instructs Twig to search for the expression on the left-hand side of the arrow, in which data is copied from the GPU to the system and then immediately back. Wherever the expression is found, it is replaced it with the expression on the right-hand side; in this case, an identity transformation, i.e., a no-op. Now the expanded version of \texttt{main} has the extra copies removed, and reads
+instructs Twig to search for the expression \texttt{copyFromGPU;copyToGPU} and replace it with \texttt{id}, the identity transformation. After the reduction step, the expanded version of \texttt{main} has the extra copies removed:
 
 \begin{verbatim}
-main = copyToGPU;kernel{foo};kernel{bar};copyFromGPU
+main = copyToGPU;kernel{foo};id;kernel{bar};copyFromGPU
 \end{verbatim}
 
-and the code that is generated will be
+In fact, Twig's built-in reduction rules would remove the spurious \texttt{id} as well, although this has no bearing on the meaning. Now Twig will generate this code:
 
 \begin{verbatim}
 float *tmp01,*tmp02,*tmp03,*tmp04,*tmp05;
@@ -94,5 +94,7 @@ tmp04 = tmp03;
 tmp05 = malloc(SIZE * sizeof(float));
 cudaMemcpy(tmp05,tmp04,SIZE,cudaMemcpyHostToDevice);
 \end{verbatim}
+
+which does not contain the extraneous data movement.
 
 Although this example is simple, it demonstrates the power of reductions. The reduction rule given here would probably be paired with the \texttt{copyToGPU} and \texttt{copyFromGPU} rules in a module intended for consumption by domain programmers, allowing them to perform GPU operations without worrying about the design of the rules. Sophisticated users, however, could add their own rules or even application-specific reductions, enabling very powerful and customizable code generation based on domain-specific logic.
