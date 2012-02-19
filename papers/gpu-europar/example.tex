@@ -11,21 +11,16 @@ copyToGPU=[array(float) -> gpu(array(float))] <|
   cudaMalloc((void **)&$out,SIZE);
   cudaMemcpy($out,$in,SIZE,cudaMemcpyHostToDevice);
 |>
-
 copyFromGPU=[gpu(array(float)) -> array(float)] <|
   $out = malloc(SIZE * sizeof(float));
   cudaMemcpy($out,$in,SIZE,cudaMemcpyHostToDevice);
 |>
-
 kernel(k)=[gpu(array(float)) -> gpu(array(float))] <|
   $k <<<N_BLOCKS,BLOCK_SIZE>>>($in, N);
   $out = $in;
 |>
-
 runKernel(k)=copyToGPU;kernel(k);copyFromGPU
-
 main=runKernel(<|foo|>);runKernel(<|bar|>)
-
 reduce copyFromGPU;copyToGPU => id
 \end{verbatim}
 \caption{Twig code example}
@@ -95,6 +90,6 @@ tmp05 = malloc(SIZE * sizeof(float));
 cudaMemcpy(tmp05,tmp04,SIZE,cudaMemcpyHostToDevice);
 \end{verbatim}
 
-which does not contain the extraneous data movement.
+Note that this code does not contain the extraneous copying.
 
 Although this example is simple, it demonstrates the power of reductions. The reduction rule given here would probably be paired with the \texttt{copyToGPU} and \texttt{copyFromGPU} rules in a module intended for consumption by domain programmers, allowing them to perform GPU operations without worrying about the design of the rules. Sophisticated users, however, could add their own rules or even application-specific reductions, enabling very powerful and customizable code generation based on domain-specific logic.
