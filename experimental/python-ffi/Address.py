@@ -2,6 +2,17 @@ class Address():
   def __init__(self,name,age):
     self.name = name
     self.age = age
+  
+  def __str__(self):
+    return '[' + ', '.join([self.name,str(self.age)]) + "]"
+
+def string_to_json(s):
+  # This should actually do some encoding
+  return s 
+
+def int_to_json(x):
+  # This should actually do some encoding
+  return str(x)
 
 class AddressBook():
   def __init__(self):
@@ -13,3 +24,6 @@ class AddressBook():
   
   def lookup(self,name):
     return self.book[name]
+
+addr = Address("Geoff", 34)
+print addr

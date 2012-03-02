@@ -101,8 +101,9 @@ int main(int argc, char *argv[]) {
 
   text = request(url);
   printf("JSON: %s\n",text);
-  if(!text)
+  if(!text) {
     return 1;
+  }
 
   root = json_loads(text, 0, &error);
   free(text);

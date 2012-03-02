@@ -1,0 +1,23 @@
+int_to_json = [py_int -> json_int] <<<
+  $out = int_to_json($in)
+>>>
+
+string_to_json = [py_string -> json_string] <<<
+  $out = string_to_json($in)
+>>>
+
+tuple_to_json = [(json(X),json(Y)) -> json(X,Y)] <<<
+  $out = '[' + ','.join($in1,$in2) + ']'
+>>>
+
+to_json = int_to_json | string_to_json | tuple_to_json
+
+name = [address -> py_string] <<<
+  $out = $in.name
+>>>
+
+age = [address -> py_int] <<<
+  $out = $in.name
+>>>
+
+main = {name,age};{to_json,to_json};to_json

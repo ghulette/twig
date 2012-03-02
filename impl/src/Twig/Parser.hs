@@ -118,11 +118,13 @@ branch :: TwigParser (RuleExpr -> RuleExpr)
 branch = do
   reservedOp "#"
   branchOp
-  where branchOp =  (reserved "all"  >> return BranchAll)
-                <|> (reserved "some" >> return BranchSome)
-                <|> (reserved "one"  >> return BranchOne)
-                <|> (natural >>= \i  -> return (Path i))
-                <?> "branch operator"
+
+branchOp :: TwigParser (RuleExpr -> RuleExpr)
+branchOp =  (reserved "all"  >> return BranchAll)
+        <|> (reserved "some" >> return BranchSome)
+        <|> (reserved "one"  >> return BranchOne)
+        <|> (natural >>= \i  -> return (Path i))
+        <?> "branch operator"
 
 permute :: TwigParser RuleExpr
 permute = do
@@ -131,6 +133,12 @@ permute = do
   parens $ do
     ns <- natural `sepBy` comma
     return (Permute w ns)
+
+fan :: TwigParser RuleExpr
+fan = do
+  reservedOp "@"
+  n <- natural
+  return (Permute 1 (replicate n 1))
 
 congruence :: TwigParser RuleExpr
 congruence = do
@@ -150,6 +158,7 @@ ruleExpr = Ex.buildExpressionParser table factor
               <|> var
               <|> primRule
               <|> fix
+              <|> fan
               <|> success 
               <|> failure
               <|> congruence
