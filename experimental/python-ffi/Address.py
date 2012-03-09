@@ -8,11 +8,14 @@ class Address():
 
 def string_to_json(s):
   # This should actually do some encoding
-  return s 
+  return s
 
 def int_to_json(x):
   # This should actually do some encoding
   return str(x)
+
+def tuple_to_json(x,y):
+  return '[' + ','.join(x,y) + ']'
 
 class AddressBook():
   def __init__(self):

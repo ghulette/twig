@@ -1,8 +1,10 @@
-int_to_json = [py_int -> json_int] <<<
+@Language(Python)
+
+py_int_to_json = [py(int) -> json(int)] <<<
   $out = int_to_json($in)
 >>>
 
-string_to_json = [py_string -> json_string] <<<
+py_string_to_json = [py(string) -> json(string)] <<<
   $out = string_to_json($in)
 >>>
 
@@ -10,14 +12,40 @@ tuple_to_json = [(json(X),json(Y)) -> json(X,Y)] <<<
   $out = '[' + ','.join($in1,$in2) + ']'
 >>>
 
-to_json = int_to_json | string_to_json | tuple_to_json
+to_json = int_to_json
+        | string_to_json
+        | tuple_to_json
 
-name = [address -> py_string] <<<
+name = [address -> py(string)] <<<
   $out = $in.name
 >>>
 
-age = [address -> py_int] <<<
-  $out = $in.name
+age = [address -> py(int)] <<<
+  $out = $in.age
 >>>
 
-main = {name,age};{to_json,to_json};to_json
+py_address_to_json = {name,age};{to_json,to_json};to_json
+
+
+@Language(C)
+
+-- Note that the Jansson type for JSON is "json_t *"
+
+json_to_tuple = [json(X,Y) -> (json(X),json(Y))] <<<
+  $out1 = json_array_get($in,0);
+  $out2 = json_array_get($in,1);
+>>>
+
+json_to_int = [json(int) -> int] <<<
+  $out = json_int_value($in);
+>>>
+
+json_to_string = [json(string) -> string] <<<
+  // probably should malloc out and copy
+  $out = json_string_value($in);
+>>>
+
+from_json = json_to_int | json_to_string | json_to_tuple
+
+json_to_address = from_json;{from_json,from_json}
+
