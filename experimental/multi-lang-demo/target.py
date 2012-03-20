@@ -7,3 +7,4 @@ def gen1_py(in):
   x3 = string_to_json(x1)
   x4 = int_to_json(x2)
   x5 = tuple_to_json(x3,x4)
+  return x5

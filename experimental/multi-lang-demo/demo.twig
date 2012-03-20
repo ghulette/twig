@@ -1,14 +1,14 @@
 @Language(Python)
 
-py_int_to_json = [py(int) -> json(int)] <<<
+py_int_to_json = [py(int) -> py(json(int))] <<<
   $out = int_to_json($in)
 >>>
 
-py_string_to_json = [py(string) -> json(string)] <<<
+py_string_to_json = [py(string) -> py(json(string))] <<<
   $out = string_to_json($in)
 >>>
 
-tuple_to_json = [(json(X),json(Y)) -> json(X,Y)] <<<
+tuple_to_json = [(py(json(X)),py(json(Y))) -> py(json(X,Y))] <<<
   $out = '[' + ','.join($in1,$in2) + ']'
 >>>
 
@@ -27,7 +27,12 @@ py_address_to_json = {name,age};{to_json,to_json};to_json
 
 @Language(C)
 
--- Note that the Jansson type for JSON is "json_t *"
+transmit = [py(json(X,Y)) -> json(X,Y)] <<<
+  json_error_t tmp1; // <-- need to use tmps for this
+  char *s = PyString_AsString($in);
+  $out = json_loads(s, JSON_DECODE_ANY, &tmp1);
+>>>
+
 
 json_to_tuple = [json(X,Y) -> (json(X),json(Y))] <<<
   $out1 = json_array_get($in,0);
@@ -39,7 +44,6 @@ json_to_int = [json(int) -> int] <<<
 >>>
 
 json_to_string = [json(string) -> string] <<<
-  // probably should malloc out and copy
   $out = json_string_value($in);
 >>>
 

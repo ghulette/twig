@@ -8,7 +8,7 @@ PyObject *call_python(char *module, char *f, PyObject *in) {
   module = PyImport_ImportModule(module);
   dict = PyModule_GetDict(module);
   func = PyDict_GetItemString(dict,f);
-  out = PyEval_CallObject(func,in);
+  out  = PyEval_CallObject(func,in);
   return out;
 }
 
@@ -18,8 +18,8 @@ void gen(PyObject *in) {
 
   // This is the problem?
   // [py(json(int,string)) -> json(int,string)]
-  char *x2 = PyString_AsString(x1); 
-  json_error_t tmp1;
+  json_error_t tmp1; // <-- need to use tmps for this or blocks
+  char *x2 = PyString_AsString(x1);
   json_t *x3 = json_loads(x2, JSON_DECODE_ANY, &tmp1);
   
   // [json(int,string) -> (json(int),json(string))]
