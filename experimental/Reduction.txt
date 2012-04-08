@@ -1,0 +1,8 @@
+Normalization. The goal is to come up with maximal sequences. 
+
+1. Anonymous rules broken out and named.
+2. Other expression names substituted (including in reduction spec). Or maybe not?
+In the following steps, f, g, h, etc are atomic rules, while E is an expression
+3. (f|g);h => (f;h) | (g;h)
+4. f;(g|h) => (f;g) | (f;h)
+5. {f,g};{h,k} => {f;h,g;k}

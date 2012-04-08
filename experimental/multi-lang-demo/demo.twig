@@ -27,12 +27,12 @@ py_address_to_json = {name,age};{to_json,to_json};to_json
 
 @Language(C)
 
+-- Herein lies the issue...
 transmit = [py(json(X,Y)) -> json(X,Y)] <<<
   json_error_t tmp1; // <-- need to use tmps for this
   char *s = PyString_AsString($in);
   $out = json_loads(s, JSON_DECODE_ANY, &tmp1);
 >>>
-
 
 json_to_tuple = [json(X,Y) -> (json(X),json(Y))] <<<
   $out1 = json_array_get($in,0);
@@ -50,3 +50,16 @@ json_to_string = [json(string) -> string] <<<
 from_json = json_to_int | json_to_string | json_to_tuple
 
 json_to_address = from_json;{from_json,from_json}
+
+-- Main program
+
+py_address_to_json;transmit;json_to_address
+
+@Reduce 
+-- py_address_to_json = 
+-- {name,age};
+-- {(int_to_json | string_to_json | tuple_to_json),(int_to_json | string_to_json | tuple_to_json)};
+-- (int_to_json | string_to_json | tuple_to_json);
+-- transmit;
+-- (json_to_int | json_to_string | json_to_tuple);
+-- {(json_to_int | json_to_string | json_to_tuple),(json_to_int | json_to_string | json_to_tuple)}
