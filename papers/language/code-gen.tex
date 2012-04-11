@@ -12,84 +12,81 @@ In Section~\ref{sec:code-gen:abstract}, we describe the abstract code generation
 \subsection{Abstract Code Generation}
 \label{sec:code-gen:abstract}
 
-In Twig, a unit of code to be generated is called a \emph{block}. Intuitively, a block represents some code in the target language, which accepts inputs and produces outputs. We call the set of blocks $M$, and we say that for all $x \in M$ we have the functions 
-
-\begin{eqnarray*}
-\mathtt{in}  : M \to \mathbb{Z}+\\
-\mathtt{out} : M \to \mathbb{Z}+
-\end{eqnarray*}
-
-That is, \texttt{in} and \texttt{out} will map a block to the  number of its inputs and outputs, respectively. Note that either or both may be zero for a given $x$.
+In Twig, a unit of code to be generated is called a \emph{block}. Intuitively, a block represents some code in the target language, which accepts inputs and produces outputs. We denote the complete set of all blocks $M$, and provide functions 
+$\mbox{in} : M \to \mathbb{N}$ and $\mbox{out} : M \to \mathbb{N}$ which map a block to the number of its inputs and to its outputs, respectively. Note that either or both may be zero for a given $x$.
 
 \subsubsection{Sequential Composition}
 
-The first of Twig's elementary block operations is called  \emph{sequential composition}, which we represent as addition ($+$). Intuitively, sequencing represents connecting two blocks  ``vertically,'' by feeding the outputs of the first block to the inputs of the second. Formally, we define the subset $x+y$ by
+The first of Twig's elementary block binary operations is called  \emph{sequential composition}, which we represent as ``addition'' on the elements of $M$, i.e. 
 
 \[
-\infer
-  {x+y \in M}
-  {x \in M \quad y \in M \quad \mathtt{out}(x) = \mathtt{in}(y)}
++ : M \times M \to M
 \]
 
-\begin{eqnarray*}
-\mathtt{in} (x+y) &\equiv& \mathtt{in}(x)\\
-\mathtt{out}(x+y) &\equiv& \mathtt{out}(y)
-\end{eqnarray*}
+Intuitively, sequencing represents connecting two blocks ``vertically,'' by feeding the outputs of the first block to the inputs of the second. The element $x+y \in M$ is defined if and only if $\mbox{out}(x) = \mbox{in}(y)$. The outputs of the first element must be equal in number to the inputs of the second element because they are ``fused'' in the sequence operation. Also matching the intuitive interpretation, we define 
 
-Note that the condition that the number of outputs on the left side be equal to the number of inputs on the right implies that $M$ is not closed under sequential composition. The result of sequencing blocks where the inputs and outputs are mismatched is undefined. We take care in the design of the rest of Twig's semantics to avoid this case.
+\[
+\mbox{in}(x+y) = \mbox{in}(x)
+\]
+
+since the inputs of the first block will become the inputs of the combined block. Similarly, we define
+
+\[
+\mbox{out}(x+y) = \mbox{out}(y)
+\]
+
+for the outputs.
 
 \subsubsection{Parallel Composition}
 
-The second elementary operator is called \emph{parallel composition}. We represent this operation with the multiplication operator ($\times$). Intuitively, parallel composition fuses two blocks ``horizontally,'' where each block executes independently of one another, but they appear as a single block with combined inputs and outputs. Formally, we define $\times$ as
+The second elementary operator is called \emph{parallel composition}. We represent this operation as ``multiplication'' on the elements of $M$, i.e.,
 
 \[
-\infer
-  {x \times y \in M}
-  {x \in M \quad y \in M}
+\times : M \times M \to M
 \]
 
-and we define
+Intuitively, parallel composition fuses two blocks ``horizontally,'' where each block executes independently of one another, but they appear as a single block with combined inputs and outputs. The inputs of $x\times y$ are defined
 
-\begin{eqnarray*}
-\mathtt{in} (x \times y) &\equiv& \mathtt{in}(x)  + \mathtt{in}(y)\\ 
-\mathtt{out}(x \times y) &\equiv& \mathtt{out}(x) + \mathtt{out}(y) \end{eqnarray*}
+\[
+\mbox{in} (x \times y) = \mbox{in}(x)+\mbox{in}(y)
+\]
 
-Note that $M$ is closed under parallel composition.
+and the outputs are defined
 
-\subsubsection{Special Blocks}
+\[
+\mbox{out}(x \times y) = \mbox{out}(x) + \mbox{out}(y)
+\]
+
+\subsubsection{Permutation and Identity Blocks}
 \label{sec:code-gen:special}
 
-In the abstract model, we single out a set of special elements in $M$ called \emph{permutation} elements. These elements are intended to represent the primitive operation of taking $m$ inputs and rearranging them into $n$ outputs, possibly in a different order, and possibly duplicating or dropping elements. The intended interpretation is that the actual values are unchanged by the operation. Formally, we name the block representing the permutation of $m$ inputs to $n$ outputs $\Pi_m(i_1,\ldots,i_n)$, where $i_1,\ldots,i_n \in \lbrace i | 1 \leq i \leq m \rbrace$.
+In the abstract model, we define out a set of special blocks in $M$ called \emph{permutation} blocks. These blocks represent the primitive operation of taking $m$ inputs and ``wiring'' them to $n$ outputs in an arbitrary order. The intended interpretation is that the actual values are unchanged by the operation. Permutations may also ``drop'' an element by not wiring its input to any output, and ``duplicate'' elements by wiring an input to more than one output. The exact meaning of dropping or duplicating values depends on the implementation.
 
-An interesting subset of the permutation elements are \emph{identity} permutations. The simplest of these is $\Pi_1(1)$, which acts as an identity transformation with one input and one output. That is, the block $\Pi_1(1)$ takes its single input and passes it unchanged to its single output. We refer to this element as $I_1$. In fact, there are an unlimited number of identity transformations, which take $n$ inputs to $n$ outputs, unchanged and without reordering. These are referred to as $I_n$, where $1 \leq n$, and $I_n = \Pi_n(1,2,\ldots,n)$. Clearly, we can infer that
+Formally, we name the block representing the permutation of $m$ inputs to $n$ outputs $\Pi_m(i_1,\ldots,i_n)$, where $i_1,\ldots,i_n \in \lbrace i | 1 \leq i \leq m \rbrace$.
 
-\[
-\mathtt{in}(I_n) = \mathtt{out}(I_n) = n
-\]
+\emph{Identity} blocks are a subset of the permutation blocks. The simplest of these is $\Pi_1(1)$, which acts as an identity transformation with one input and one output. That is, the block $\Pi_1(1)$ takes its single input and passes it unchanged to its single output. We refer to this element as $I_1$. In fact, there are an unlimited number of identity transformations, which take $n$ inputs to $n$ outputs, unchanged and without reordering. These are referred to as $I_n$, where $1 \leq n$, and $I_n = \Pi_n(1,2,\ldots,n)$. By definition, $\mbox{in}(I_n) = \mbox{out}(I_n) = n$.
 
-Since the elements $I_n$ are intended to represent identity operations, we assign them a special meaning in the composition semantics. Namely, we define
+Since the elements $I_n$ are intended to represent identity operations, we assign them a special meaning in the composition semantics. Namely, for all $x \in M$ we define
 
 \[
 \infer
   {x + I_n \to x}
-  {\mathtt{out}(x) = n}
+  {\mbox{out}(x) = n}
 \qquad
 \infer
   {I_n + x \to x}
-  {\mathtt{in}(x) = n}
+  {\mbox{in}(x) = n}
 \]
 
 That is, $I_n$ acts as both a left- and right-identity when it is combined in sequence with a block $x$ (with the appropriate number of inputs or outputs). We sometimes use $I_n$ as a kind of ``no-op.''
 
-It is worth noting one further identity, namely that
+It is worth noting one further identity, namely that $I_n$ is equivalent to the $n$-way parallel composition of $I_1$, that is
 
 \[
-I_n \equiv (I_1)^n
+I_n = \underbrace{I_1 \times \ldots \times I_1}_\text{n}
 \]
 
-That is, $I_n$ is equivalent to the $n$-way parallel composition of $I_1$.
-
-When $n$ is implied from the context, we will sometimes write $I$ for $I_n$. For example, we use $x+I$ as a shorthand to refer to $x+I_n$ where $n$ is understood to be $\mathtt{out}(x)$.
+When $n$ is implied from the context, we will sometimes write $I$ for $I_n$. For example, we use $x+I$ as a shorthand to refer to $x+I_n$ where it is understood that $n = \mathtt{out}(x)$.
 
 Another important special block is the \emph{fanout} block, which takes a single input and copies it to $n$ outputs. We denote this block $F_n$. This turns out to be just another special case of the permutation block, so we can define 
 
