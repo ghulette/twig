@@ -7,15 +7,23 @@ Twig is based on a core semantics called \emph{System S}~\cite{system-s}, origin
 
 \subsection{Values}
 
-Values in Twig can be any valid \emph{term}. Terms are tree structured data with labeled internal nodes. Examples of terms include simple values like \texttt{int} and \texttt{float}, as well as compound types like \texttt{ptr(int)}, which represents a pointer to an integer. More complicated terms may involve multiple child terms, and may be nested to any depth. For example, \texttt{struct(int,float,struct(ptr(char)))} may represent a structure with three fields: an \texttt{int}, a \texttt{float}, and a second structure with a single string (pointer to \texttt{char}) field.
+Values in Twig are tree structured data with labeled internal nodes, called \emph{ground terms}. Formally, we say that a ground term $t$ is
 
-The mapping between terms in Twig and types in the target language is considered to be a configuration option, controllable by the user and customizable to the domain. Furthermore, the mapping need not be injective, i.e., multiple values in Twig may map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
+\[
+t \;\mbox{:=}\; c \;|\; f(t_1,\ldots,t_n)
+\]
 
-Twig has just one special kind of term: tuples. Tuples may have any length, and the elements of the tuple are represented as the sub-terms of a term with a special constructor: \texttt{tuple}. Twig's concrete syntax also equates the absense of any constructor with the presence of the \texttt{tuple} constructor. For example, the syntax \texttt{(string,int)} is interpreted as the \texttt{tuple(string,int)}). This term represents a tuple of length two, whose first element is \texttt{string} and whose second element is \texttt{int}. The \texttt{tuple} constructor syntax is more verbose, so we typically will eschew it in practice; it is convenient, however, for our presentation of the formal semantics below.
+where $c$ is a \emph{constant}, and $f$ is a \emph{constructor} used to build terms from $n$ other terms. Constants and constructors can be any string of characters (except the special string ``tuple'' for reasons described below). The meaning of constants and constructors is left mostly abstract -- they are defined by their use in the program's \emph{rules}, described below. We call the set of all terms $T$.
+
+For typemapping, terms are typically used to represent types in some other language. For example, we use constant terms, such \texttt{int} and \texttt{float} to represent primitive types in C. More complicated terms can be used to represent types with structure, e.g., \texttt{ptr(int)} can represent a C pointer to an integer. More complicated terms may involve multiple child terms, and may be nested to any depth. For example, \texttt{struct(int,float,struct(ptr(char)))} may represent a structure with three fields: an \texttt{int}, a \texttt{float}, and a second structure with a single string (pointer to \texttt{char}) field.
+
+The mapping between terms in Twig and types in the target language is considered to be a configuration option, controllable by the user and customizable to the domain. Furthermore, the mapping need not be injective, i.e., multiple terms in Twig may map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
+
+Twig has just one special kind of structured term: tuples. Tuples may have any length, and the elements of the tuple are represented as the sub-terms of a term with a special constructor: \texttt{tuple}. Twig's syntax also equates the absense of any constructor with the presence of the \texttt{tuple} constructor. For example, the syntax \texttt{(string,int)} is interpreted as the \texttt{tuple(string,int)}). This term represents a tuple of length two, whose first element is \texttt{string} and whose second element is \texttt{int}. The \texttt{tuple} constructor syntax is more verbose, so we typically will eschew it in practice; it is convenient, however, for our presentation of the formal semantics below.
 
 \subsubsection{Tuple ``size'' versus ``width''}
 
-The \emph{size} of a tuple is simply the cardinality of its children. We will sometimes write $\mathtt{tuple}_n(\ldots)$ to indicate a tuple of length $n$, where the length is not otherwise clear from the context. 
+The \emph{size} of a tuple is simply the cardinality of its children. We will sometimes write $\mathtt{tuple}_n(\ldots)$ to indicate a tuple of length $n$, where the length is not otherwise clear from the context.
 
 One small complication arises because we permit tuples to be nested to arbitrary depth. For example the term
 
@@ -27,11 +35,12 @@ is a valid tuple with a nesting depth of two. In some of our semantics, we need 
 
 \[
 \mbox{width}(t) = \left\{
-    \begin{array}{cl}
-      \sum^{i=1}_{n} \mbox{width}(t_i) & \mbox{if } t = \mathtt{tuple}(t_1,\ldots,t_n)\\
-      1 & \mbox{otherwise}
-    \end{array}
-  \right.
+  \begin{array}{cl}
+    \sum^{i=1}_{n} \mbox{width}(t_i) 
+      & \mbox{if } t = \mathtt{tuple}(t_1,\ldots,t_n)\vspace{2mm}\\
+    1 & \mbox{otherwise}
+  \end{array}
+\right.
 \]
 
 Intuitively, the width of a tuple corresponds to the size of its ``flattened'' version -- where the elements of nested tuples are pushed up, recursively, to the top level. If we flattened the tuple in the example above, we would get
@@ -44,13 +53,15 @@ and so its width would be three.
 
 \subsection{Expressions}
 
-Programs in Twig take the form of \emph{rule expressions}. A rule expression $s$ acts upon a term $t$ in some given set of valid terms $T$. The result of applying $s$ to $t$ is always either ``failure,'' which we denote $\bot$, or else a pair $(t',m)$, where $t'$ is another term and $m$ is a \emph{block} in $M$, as described in Section~\ref{sec:code-gen}. Formally, we say that $s$ is a function
+Programs in Twig take the form of \emph{expressions}. An expression $s$ is a function from terms $T$ to elements of the set $(T \times M) \cup \{\bot\}$, i.e., either a pair $(t',m)$ where $t' \in T$ and $m$ is a \emph{block} in the set $M$ (described in Section~\ref{sec:code-gen}) or else the special, distinguished value $\bot$. Formally, 
 
 \[
-s : T \to (T \times M) \cup \bot
+s : T \to ((T \times M) \cup \{\bot\})
 \]
 
-In the rest of this section we explore the ways in which we can construct rule expressions.
+In this context, we use $\bot$ to denote ``failure.'' In particular, we make use of $\bot$ as a special value in the semantics for Twig's operators, as described in Section~\ref{sec:semantics:ops}.
+
+In the remainder of this section we explore the ways in which we can construct expressions.
 
 \subsection{Primitive Rules}
 
@@ -91,6 +102,7 @@ Block construction depends on the target language; in this case, we have provide
 It is important to understand that Twig does not check the block code in any way (although the block implementation could), and that the code generation procedure is strictly syntactic. This scheme is similar to that used by SWIG~\cite{swig}.
 
 \subsection{Operators}
+\label{sec:semantics:ops}
 
 Rules expressions can be combined using Twig's operators. In the formal semantics, we let $t$ range over terms, $m$ range over blocks and $s_i$ range over rule expressions (i.e., a primitive rule, or another expression built with operators).
 
