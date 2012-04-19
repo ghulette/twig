@@ -19,7 +19,7 @@ For typemapping, terms are typically used to represent types in some other langu
 
 The mapping between terms in Twig and types in the target language is considered to be a configuration option, controllable by the user and customizable to the domain. Furthermore, the mapping need not be injective, i.e., multiple terms in Twig may map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
 
-Twig has just one special kind of structured term: tuples. Tuples may have any length, and the elements of the tuple are represented as the sub-terms of a term with a special constructor: \texttt{tuple}. Twig's syntax also equates the absense of any constructor with the presence of the \texttt{tuple} constructor. For example, the syntax \texttt{(string,int)} is interpreted as the \texttt{tuple(string,int)}). This term represents a tuple of length two, whose first element is \texttt{string} and whose second element is \texttt{int}. The \texttt{tuple} constructor syntax is more verbose, so we typically will eschew it in practice; it is convenient, however, for our presentation of the formal semantics below.
+Twig has just one special kind of structured term: tuples. Tuples may have any length, and the elements of the tuple are represented as the sub-terms of a term with a special constructor: \texttt{tuple}. Twig's syntax also equates the absense of any constructor with the presence of the \texttt{tuple} constructor. For example, the syntax \texttt{(string,int)} is interpreted as the \texttt{tuple(string,int)}. This term represents a tuple of length two, whose first element is \texttt{string} and whose second element is \texttt{int}. The \texttt{tuple} constructor syntax is more verbose, so we typically will eschew it in practice; it is convenient, however, for our presentation of the formal semantics below.
 
 \subsubsection{Tuple ``size'' versus ``width''}
 
@@ -53,7 +53,7 @@ and so its width would be three.
 
 \subsection{Expressions}
 
-Programs in Twig take the form of \emph{expressions}. An expression $s$ is a function from terms $T$ to elements of the set $(T \times M) \cup \{\bot\}$, i.e., either a pair $(t',m)$ where $t' \in T$ and $m$ is a \emph{block} in the set $M$ (described in Section~\ref{sec:code-gen}) or else the special, distinguished value $\bot$. Formally, 
+Programs in Twig are \emph{expressions}, which can be either \emph{primitive rules} (desribed in  Section~\ref{sec:semantics:prims}) or else built from other expressions using Twig's operators (Section~\ref{sec:semantics:ops}). An expression $s$ is a function from terms $T$ to elements of the set $(T \times M) \cup \{\bot\}$, i.e., either a pair $(t',m)$ where $t' \in T$ and $m$ is a \emph{block} in the set $M$ (described in Section~\ref{sec:code-gen}) or else the special, distinguished value $\bot$. Formally,
 
 \[
 s : T \to ((T \times M) \cup \{\bot\})
@@ -64,16 +64,22 @@ In this context, we use $\bot$ to denote ``failure.'' In particular, we make use
 In the remainder of this section we explore the ways in which we can construct expressions.
 
 \subsection{Primitive Rules}
+\label{sec:semantics:prims}
 
-The simplest Twig expression is called a \emph{primitive rule}.  Primitive rules describe a single transformation step. Since Twig's terms represent types, a primitive rule in Twig describes how to transform an instance of one type into an instance of another.
+The simplest Twig expression is called a \emph{primitive rule}.
+Primitive rules describe a single transformation step. Since
+Twig's terms represent types in a target language, a primitive
+rule in Twig describes how to transform an instance of one type
+into an instance of another in that language.
 
-For example, in C it is easy to convert an integer value to floating point, and we can write this rule in Twig as follows:
+For example, in C it is easy to convert an integer value to
+floating point. Twig's syntax for writing this rule is as follows:
 
 \begin{verbatim}
 [int -> float]
 \end{verbatim}
 
-The term to the left of the arrow is the \emph{input pattern}, and the term to the right is the \emph{output pattern}. In this example, the rule says that if the input to the expression \emph{matches} \texttt{int}, then the output of the expression will be the value \texttt{float} (along with a code block, discussed below). If the input term does not match \texttt{int} then the output will be $\bot$.
+The term to the left of the arrow is the \emph{input pattern}, and the term to the right is the \emph{output pattern}. In this example, the rule says that if the input to the expression \emph{matches} the term \texttt{int}, then the output of the expression will be the term \texttt{float} (along with a code block, discussed below). If the input term does not match \texttt{int} then the output will be $\bot$.
 
 Rules can also have \emph{variables} in place of terms or sub-terms. For example the rule
 
@@ -81,15 +87,21 @@ Rules can also have \emph{variables} in place of terms or sub-terms. For example
 [ptr(X) -> X]
 \end{verbatim}
 
-transforms any pointer type to its referent. The variable \texttt{X} is bound to the corresponding value of the matched input on the right, and that value is then substituted for the variable where it appears on the left. Variables may stand in place of terms only, not constructors; e.g., rules such as \texttt{[X(int) -> X]} are invalid.
+describes a transformation of any C pointer type to its referent. The variable \texttt{X} is bound to the corresponding value of the matched input on the right, and that value is then substituted for the variable where it appears on the left. Variables may stand in place of terms only, not constructors; e.g., rules such as \texttt{[X(int)~->~X]} are invalid.
 
-We must now make clear what we mean when we say that the input term \emph{matches} the input pattern. In effect, the input term is \emph{unified}\cite{baader98rewriting} with the input pattern. In fact, the algorithm used is simpler than ``full'' unification, since there is no equational theory and the input term may not contain variables (i.e., must be a ground term). If the unification is successful, we say that the term \emph{matched}. The bound variables (if any) are saved in order to construct the output term via substitution.
+When an input term is \emph{matched}, we mean that it is unified~\cite{baader98rewriting} with the input pattern. In the formal semantics in Section~\ref{sec:semantics:ops}, if a term $t$ matches the input pattern of a rule $s$, the proposition $\mbox{match}(t,s)$ is true. Otherwise, it is false. We omit further formalization of matching here for lack of space; see \cite{baader98rewriting,system-s} for details.
+
+In fact, Twig's matching algorithm is simpler than full unification, since there is no equational theory and the input term may not contain variables (i.e., must be a ground term). If unification is successful, we say that the term \emph{matched}. The bound variables (if any) are saved in order to construct the output term via substitution.
+
+A primitive rule transforms $t$ to $t'$ with an associated block $m$ if and only if the application of rule to value $t$ succeeds. In this case we write $t \arr{s} (t',m)$. Otherwise, if the application of $s$ to $t$ fails, e.g., if $t$ does not match the input pattern in $s$, then we write $t \arr{s} \bot$.
+
+Note that in this case, the block is not produced.
 
 % Probably should talk about variable binding, e.g. how (X,X) will match a pair of identical terms.
 
 \subsubsection{Blocks}
 
-Primitive rules are associated with have a block. The block is constructed based on some target language-dependent text, which appears immediately after the rule definition and is surrounded by triple-angle brances, like so:
+Primitive rules are associated with have a block. In Twig's syntax, blocks are surrounded by triple-angle braces and appear immediately after a primitive rule, like so:
 
 \begin{verbatim}
 [int -> float] <<<
@@ -97,30 +109,16 @@ Primitive rules are associated with have a block. The block is constructed based
 >>>
 \end{verbatim}
 
-Block construction depends on the target language; in this case, we have provided a block of escaped C code (as described in Section~\ref{sec:code-gen:c}). The target language must be specified as a parameter to the Twig runtime (in our current implementation, as a command line option). This means that the text between the \verb|<<<| and \verb|>>>| is interpreted based on the chosen block implementation. A target langauge specific procedure is passed the text, along with the input and output term(s). It can then construct the block however it sees fit. In our C block implementation, for example, variable names are generated and the terms are used to determine the appropriate types for declaring those variables in a prelude section of the code. Other target languages might choose very different block construction mechanisms.
+The contents of the block depends on the target language; in this case, we have provided a block of escaped C code (as described in Section~\ref{sec:code-gen:c}). The target language must be specified as a parameter to the Twig runtime (in our current implementation, as a command line option). This means that the text between the \verb|<<<| and \verb|>>>| is interpreted based on the chosen block implementation. A target language specific procedure is passed the text, along with the input and output term(s). It can then construct the block however it sees fit. In our C block implementation, for example, variable names are generated and the terms are used to determine the appropriate types for declaring those variables in a prelude section of the code. Other target languages might choose very different block construction mechanisms.
 
-It is important to understand that Twig does not check the block code in any way (although the block implementation could), and that the code generation procedure is strictly syntactic. This scheme is similar to that used by SWIG~\cite{swig}.
+It is important to understand that Twig's semantics do not require that block contents be checked in any way (although an implementation could do this), and that the code generation procedure is strictly syntactic. This scheme is similar to that used by SWIG~\cite{swig}.
 
 \subsection{Operators}
 \label{sec:semantics:ops}
 
-Rules expressions can be combined using Twig's operators. In the formal semantics, we let $t$ range over terms, $m$ range over blocks and $s_i$ range over rule expressions (i.e., a primitive rule, or another expression built with operators).
+Rules expressions can be combined using Twig's operators. In the formal semantics, we let $t$ range over terms, $m$ range over blocks and $s$ range over expressions (i.e., a primitive rule, or another expression built with operators).
 
-A primitive rule $s$ transforms $t$ to $t'$ with an associated  block $m$:
-
-\[
-t \arr{s} (t',m)
-\]
-
-if the application of rule $s$ to value $t$ succeeds. If no code is given for the rule, then $m$ is the ``no-op'' element, $e$. If the application of $s$ to $t$ fails, e.g., if $t$ does not match the pattern in $s$, then we say
-
-\[
-t \arr{s} \bot
-\]
-
-Note that no block is emitted in this case.
-
-The first and arguably most useful of Twig's combinators is the \emph{sequence} operator, which chains the application of two rules together, sending the output of the first to the input of the second, and failing if either rule fails (see Figure~\ref{fig:seq}). With this operator, individual rules can be composed into multi-step transformations. Note how, upon success, the blocks are themselves composed in sequence.
+The first and arguably most useful of Twig's combinators is the \emph{sequence} operator, written as an infix semi-colon (\texttt{;}). Sequencing chains the application of two rules together, sending the output of the first to the input of the second, and failing if either rule fails (see Figure~\ref{fig:seq}). With this operator, individual rules can be composed into multi-step transformations. Note how, upon success, the blocks are themselves composed in sequence.
 
 \begin{figure}[ht]
 \[
@@ -141,7 +139,7 @@ The first and arguably most useful of Twig's combinators is the \emph{sequence} 
 \label{fig:seq}
 \end{figure}
 
-Another important operator is \emph{left-biased choice}. This operator will attempt to apply the first rule expression to the input, and if it succeeds then its output is the result (see Figure~\ref{fig:choice}). If it fails (i.e., results in $\bot$), then it attempts to apply the second rule instead. This operator allows different paths to be taken through the rules, and different code to be generated, depending on the input type being passed.
+Another important operator is \emph{left-biased choice}, written as a vertical bar (\texttt{|}). This operator will attempt to apply the first rule expression to the input, and if it succeeds then its output is the result (see Figure~\ref{fig:choice}). If it fails (i.e., results in $\bot$), then it attempts to apply the second rule instead. This operator allows different paths to be taken through the rules, and different code to be generated, depending on the input type being passed.
 
 \begin{figure}[ht]
 \[
@@ -162,19 +160,23 @@ Another important operator is \emph{left-biased choice}. This operator will atte
 \label{fig:choice}
 \end{figure}
 
-Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators. Identity (\texttt{T}) will always succeed, returning its input and an identity block, failure (\texttt{F}) will always return \texttt{$\bot$}. Test (\texttt{?}) succeeds only if its single paramter expression succeeds, and returns the original term. Negation \texttt{$\lnot$} succeeds only if its parameter expression fails, returning the original term.
+Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators. Identity (\texttt{T}) will always succeed, returning its input and an identity block, failure (\texttt{F}) will always return \texttt{$\bot$}. Test (\texttt{?}) takes a single expression as a parameter and succeeds only if its argument succeeds, returning the original term. Negation \texttt{$\lnot$} also takes a single expression argument, and succeeds only if its argument fails, returning the original term.
 
 \begin{figure}[ht]
 \[
 \infer
   {t \arr{\mathtt{T}} (t,I)}
   {}
-\]
-\[
+\qquad
 \infer
   {t \arr{\mathtt{F}} \bot}
   {}
 \]
+\caption{Semantics for Success (\texttt{T}) and Failure (\texttt{F})}
+\label{fig:basic1}
+\end{figure}
+
+\begin{figure}[ht]
 \[
 \infer
   {t \arr{?s} (t,I)}
@@ -193,32 +195,32 @@ Figure~\ref{fig:basic} gives the formal semantics for Twig's other operators. Id
   {t \arr{\lnot s} (t,I)}
   {t \arr{s} \bot}
 \]
-\caption{Semantics for basic operators}
-\label{fig:basic}
+\caption{Semantics for Test (\texttt{?}) and Negation ($\lnot$)}
+\label{fig:basic2}
 \end{figure}
 
-Twig also provides some special operators for tuples. The semantics in Figure~\ref{fig:all-tuples} apply to all of the following tuple operators, unless otherwise indicated. These semantics state that a tuple operator will fail if the input term is not a tuple, or if the rule tries to reference a tuple element that is out of bounds.
+Twig also provides some special operators for tuples. For each of the tuple operators, there are some additional semantics that we have elided for lack of space. The omitted semantics simply state that any tuple operator will fail (i.e., return $\bot$) if the input term is not a tuple, or if the expression tries to reference a tuple element that is out of bounds.
 
-\begin{figure}[ht]
-\[
-\infer
-  {f(\ldots) \arr{s} \bot}
-  {f \neq \mathtt{tuple}}
-\qquad
-\infer
-  {\mathtt{tuple}(t_1,\ldots,t_n) \arr{s(i)} \bot}
-  {i > n}
-\]
-\caption{Common semantics for tuple operators}
-\label{fig:all-tuples}
-\end{figure}
+% \begin{figure}[ht]
+% \[
+% \infer
+%   {f(\ldots) \arr{s} \bot}
+%   {f \neq \mathtt{tuple}}
+% \qquad
+% \infer
+%   {\mathtt{tuple}(t_1,\ldots,t_n) \arr{s(i)} \bot}
+%   {i > n}
+% \]
+% \caption{Common semantics for tuple operators}
+% \label{fig:all-tuples}
+% \end{figure}
 
 One important tuple operator is \emph{congruence}, which applies a tuple of expressions to the elements of a tuple term, pairwise, and returns a tuple of results, or else failure in case any rule application fails. Upon success, the returned block is the parallel composition of the individual result blocks. The semantics for congruence are shown in Figure~\ref{fig:congruence}.
 
 \begin{figure}[ht]
 \[
 \infer
-  {\mathtt{tuple}(t_1,\ldots,t_n)\arr{(s_1,\ldots,s_n)} (\mathtt{tuple}(t_1',\ldots,t_n'),m_1 \times \ldots \times m_n) }
+  {\mathtt{tuple}(t_1,\ldots,t_n)\arr{(s_1,\ldots,s_n)} (\mathtt{tuple}(t_1',\ldots,t_n'),m_1 \times \ldots \times m_n)}
   {t_1 \arr{s_1} (t_1',m_1) \quad \ldots \quad t_n \arr{s_n} (t_n',m_n)}
 \]
 \[
@@ -314,17 +316,20 @@ y &=& 1,\ldots,\mbox{width}(t)
 
 \begin{figure}[ht]
 \[
-\mathtt{\#fan}(n) \equiv \mathtt{\#permute}_1(1,\overset{n}{\ldots},1)
+\mathtt{\#fan}(n) \equiv \mathtt{\#permute}_1(\underbrace{1,\ldots,1}_\text{n})
 \]
 \caption{Semantics for fan operator}
 \label{fig:fan}
 \end{figure}
 
 
+Twig also includes a fixed-point operator, allowing it to express rules for handling recursively defined data types. We have omitted the semantics for lack of space.
+
+
 \subsection{Expression names}
 \label{section:names}
 
-As a convenience, Twig allows rules and rule expressions to be named, like so:
+Twig allows expressions to be named, like so:
 
 \begin{verbatim}
 intToFloat = [int -> float] <<<

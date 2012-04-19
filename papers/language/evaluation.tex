@@ -45,7 +45,7 @@ unpackf = [polarf -> (float,float)] <<<
 >>>
 \end{verbatim}
 
-Next, we define a rule for casting \texttt{float}s to \texttt{double}s, and use a congruence to lift it to a conversion on tuples. We sequence this cast after \texttt{unpackf} so that that rule will produce \texttt{double}s instead of \texttt{float}s. We combine that conversion with \texttt{unpackd} using the choice operator, and name the new rule \texttt{unpack}. This new rule will accept either a \texttt{polarf} or a \texttt{polard}, and produce a 2-tuple of \texttt{double}s.
+Next, we define a rule for casting \texttt{float}s to \texttt{double}s, and use the congruence operator to lift it to a conversion on tuples. We sequence this cast after \texttt{unpackf} so that that rule will produce \texttt{double}s instead of \texttt{float}s. We combine that conversion with \texttt{unpackd} using the choice operator, and name the new rule \texttt{unpack}. This new rule will accept either a \texttt{polarf} or a \texttt{polard}, and produce a 2-tuple of \texttt{double}s.
 
 \begin{verbatim}
 f2d = [float -> double] <<<
