@@ -2,7 +2,7 @@
 
 \section{Evaluation}
 
-Twig has several advantages over typemap facilities such as those found in Swig.
+Twig has several advantages over typemap facilities such as those found in SWIG.
 
 \begin{enumerate}
 
@@ -10,7 +10,7 @@ Twig has several advantages over typemap facilities such as those found in Swig.
 
 \item Choice: With choice combinator, a single typemap expression may be used to generate multiple variations of a transformation, depending on the input type.
 
-\item Tuples: Twig allows sets of types to be mapped together, using tuples. This is a common problem -- consider function argument lists, or a pointer paired with a length to form an array. Unlike Swig, Twig can 
+\item Tuples: Twig allows sets of types to be mapped together, using tuples. This is a common problem -- consider function argument lists, or a pointer paired with a length to form an array. Unlike SWIG, Twig can 
 
 \item Type variables: allows polymorphic typemaps, e.g., \texttt{[ptr(A) -> A]}.
   
@@ -75,7 +75,7 @@ polarToCart = #fan(2);{polarToX,polarToY}
 
 This rule, \texttt{polarToCart}, will convert a polar coordinate pair of \texttt{doubles} to a Cartesian pair of \texttt{double}s.
 
-Next, we must convert from the C types to Python. We use Python's C interface API~\cite{python-c-api}, which allows us to work with Python values in C (the same system used by Swig).
+Next, we must convert from the C types to Python. We use Python's C interface API~\cite{python-c-api}, which allows us to work with Python values in C (the same system used by SWIG).
 
 \begin{verbatim}
 d2pyf = [double -> pyfloat] <<<
@@ -117,9 +117,9 @@ PyObject *convert(struct PolarF gen1) {
 }
 \end{verbatim}
 
-\subsection{Twig versus Swig}
+\subsection{Twig versus SWIG}
 
-It is interesting to contrast Twig's implementation of this typemap with the equivalent typemaps in Swig. In that system, programmers are required to construct two separate typemaps by hand, like so:
+It is interesting to contrast Twig's implementation of this typemap with the equivalent typemaps in SWIG. In that system, programmers are required to construct two separate typemaps by hand, like so:
 
 \begin{verbatim}
 %typemap(out) struct PolarD %{

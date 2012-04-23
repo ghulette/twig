@@ -2,7 +2,7 @@
 
 \section{Related Work}
 
-There are many tools which incorporate some notion of typemaps which are in widespread use today. The idea originated in Swig~\cite{swig}, a system for generating foreign function interfaces from C header files and some user-specified directives. Typemaps in Swig are robust, and do support user customization. However, the semantics of Swig's typemaps are ad-hoc and not especially flexible. Also, they are specialized to generate C code.
+There are many tools which incorporate some notion of typemaps which are in widespread use today. The idea originated in SWIG~\cite{swig}, a system for generating foreign function interfaces from C header files and some user-specified directives. Typemaps in Swig are robust, and do support user customization. However, the semantics of Swig's typemaps are ad-hoc and not especially flexible. Also, they are specialized to generate C code.
 
 FIG~\cite{fig} introduced the notion of application-specific typemaps, and is quite similar to our own work in both its spirit and the actual semantics of its typemaps. Unlike Twig, however, FIG generates code for Moby~\cite{moby-classes}. Moby is, in some ways, a convenient target language -- its declarative structure and semantics are amenable to generation via System S~\cite{fisher00interop}. Indeed, FIG takes advantage of this fact by providing Moby-specific rules within FIG. Moby is not nearly as ubiquitous as C, however, and therefore not a very practical target language for many people.
 
