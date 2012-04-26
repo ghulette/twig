@@ -3,7 +3,19 @@
 \section{Twig}
 \label{sec:semantics}
 
-Twig is based on a core semantics called \emph{System S}~\cite{system-s}, originally designed as a core language for term rewriting systems~\cite{baader98rewriting}. In Twig, we use the operators of System S to combine primitive \emph{rules} into more complex transformations on types. These transformations are then applied to a given type, which performs the transformation. We extend the semantics of System S in order to have the evaluation of the transformation generate code as a side effect. In this way, domain specific code can be generated depending on the input types. Our semantics are inspired by and are quite similar to those in Fig~\cite{fig}, but we have extended the rules to accommodate our code generation model. In this section we describe the semantics of Twig's language.
+Twig is based on a core semantics called \emph{System
+S}~\cite{system-s}, originally designed as a core language for
+term rewriting systems~\cite{baader98rewriting}. In Twig, we use
+the operators of System S to combine primitive \emph{rules} into
+more complex transformations on types. These transformations are
+then applied to a given type, which performs the transformation.
+We extend the semantics of System S in order to have the
+evaluation of the transformation generate code as a side effect.
+In this way, domain specific code can be generated depending on
+the input types. Our semantics are inspired by and are quite
+similar to those in Fig~\cite{fig}, but we have extended the rules
+to accommodate our code generation model. In this section we
+describe the semantics of Twig's language.
 
 \subsection{Values}
 
