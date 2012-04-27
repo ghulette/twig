@@ -1,0 +1,34 @@
+%!TEX root = twig-language.tex
+
+\subsection{Expressions}
+\label{sec:expressions}
+
+Twig \emph{expressions} can be either \emph{primitive rules}
+(Section~\ref{sec:semantics:prims}) or else built from other
+expressions using operators (Section~\ref{sec:semantics:ops}). An
+expression $s$ maps terms $T$ to elements of the set $(T \times M)
+\cup \{\bot\}$, i.e., either a pair $(t',m)$ where $t' \in T$ and
+$m$ is a \emph{block} of generated code in the set $M$ (see
+Section~\ref{sec:code-gen}), or else the special, distinguished
+value $\bot$. Formally, $s$ is a function:
+
+\[
+s : T \to ((T \times M) \cup \{\bot\})
+\]
+
+Following Fig's notation, we use $\bot$ to denote ``failure.'' In
+particular, $\bot$ is used in the semantics for the operators
+described in Section~\ref{sec:semantics:ops}.
+
+As with System S and Fig, Twig allows expressions to be named. An
+expression's name may be used in place of itself within other
+expressions. The syntax is
+
+\[
+v \mtt{ = } e
+\]
+
+where $v$ is a valid expression name and $e$ is an expression, as
+described below. A Twig program is a list of such name/expression
+assignments. There is a special expression name, \texttt{main},
+which designates the top-level expression for the program.

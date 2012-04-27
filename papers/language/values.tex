@@ -1,0 +1,88 @@
+%!TEX root = twig-language.tex
+
+\subsection{Values}
+
+Values in Twig are tree structured data with labeled internal
+nodes, called \emph{ground terms}. We define ground terms $t$:
+
+\[
+t \;\mbox{:=}\; c \;|\; f(t_1,\ldots,t_n)
+\]
+
+where $c$ is a \emph{constant}, and $f$ is a \emph{constructor}
+that builds terms from other terms. Constants and constructors can
+be any string of characters (except the special constructor
+\texttt{tuple}, see below). The meaning of particular terms is
+left abstract -- they are defined by their use in the program's
+\emph{rules}, described below. We denote the set of all terms $T$.
+
+In Twig, terms represent types in a target language. For example,
+we use constant terms, such \texttt{int} and \texttt{float} to
+represent primitive types in C. Terms with constructors can
+represent types with some structure, e.g., the term
+\texttt{ptr(int)} can represent a C pointer to an integer. More
+complicated terms may involve multiple children, and may be nested
+to any depth. For example, the term
+
+\[
+\mathtt{struct(int,float,struct(ptr(char)))}
+\]
+
+can represent a structure with three fields: an \texttt{int}, a
+\texttt{float}, and a second structure with a single string
+(pointer to \texttt{char}) field.
+
+The mapping between terms and types in the target language is a
+configuration option, customizable for a particular domain. The
+mapping need not be injective, that is, multiple terms in Twig may
+represent a single type in the target language. For example, you
+might have the distinct terms \texttt{string} and
+\texttt{ptr(char)} both map to a \texttt{char} pointer in C.
+
+
+\subsubsection{Tuples}
+
+Twig recognizes a special kind of term: tuples. The tuple elements
+are represented as the sub-terms of a term with a special
+constructor: \texttt{tuple}. Tuples may have any length. Twig's
+syntax equates the absence of any constructor with the presence of
+the \texttt{tuple} constructor. For example, the syntax
+\texttt{(string,int)} is interpreted as the
+\texttt{tuple(string,int)}. This term represents a tuple of length
+two, whose first element is \texttt{string} and whose second
+element is \texttt{int}.
+
+The \emph{size} of a tuple is simply the cardinality of its
+children. We will sometimes write $\mathtt{tuple}_n(\ldots)$ to
+indicate a tuple of length $n$, where the length is not otherwise
+clear from the context.
+
+One small complication arises because we permit tuples to be nested to arbitrary depth. For example the term
+
+\[
+\mathtt{tuple(tuple(int,float),tuple(double))} 
+\]
+
+is a nested tuple. In our semantics, we occasionally require the
+\emph{width} of a tuple, defined as
+
+\[
+\mbox{width}(t) = \left\{
+  \begin{array}{cl}
+    \sum^{i=1}_{n} \mbox{width}(t_i) 
+      & \mbox{if } t = \mathtt{tuple}(t_1,\ldots,t_n)\vspace{2mm}\\
+    1 & \mbox{otherwise}
+  \end{array}
+\right.
+\]
+
+Intuitively, the width of a tuple corresponds to its size after
+being ``flattened,'' where the elements of nested tuples are
+pushed up, recursively, to the top level. If we flattened the
+tuple in the example above, we would get
+
+\[
+\mathtt{tuple(int,float,double)}
+\]
+
+and its width would be three.

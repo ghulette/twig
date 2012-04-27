@@ -1,0 +1,213 @@
+%!TEX root = twig-language.tex
+
+\subsection{Operators}
+\label{sec:semantics:ops}
+
+Rules expressions can be combined using Twig's operators. In the formal semantics, we let $t$ range over terms, $m$ range over blocks and $s$ range over expressions (i.e., a primitive rule, or another expression built with operators).
+
+The first and arguably most useful of Twig's combinators is the \emph{sequence} operator, written as an infix semi-colon (\texttt{;}). Sequencing chains the application of two rules together, sending the output of the first to the input of the second, and failing if either rule fails (see Figure~\ref{fig:seq}). With this operator, individual rules can be composed into multi-step transformations. Note how, upon success, the blocks are themselves composed in sequence.
+
+\begin{figure}[ht]
+\[
+\infer
+  {t \arr{s_1;s_2} (t'',m_1+m_2)}
+  {t \arr{s_1} (t',m_1) \quad t' \arr{s_2} (t'',m_2)}
+\]
+\[
+\infer
+  {t \arr{s_1;s_2} \bot}
+  {t \arr{s_1} \bot}
+\qquad
+\infer
+  {t \arr{s_1;s_2} \bot}
+  {t \arr{s_1} (t',m) \quad t' \arr{s_2} \bot}
+\]
+\caption{Semantics for sequence operator}
+\label{fig:seq}
+\end{figure}
+
+Another important operator is \emph{left-biased choice}, written as a vertical bar (\texttt{|}). This operator will attempt to apply the first rule expression to the input, and if it succeeds then its output is the result (see Figure~\ref{fig:choice}). If it fails (i.e., results in $\bot$), then it attempts to apply the second rule instead. This operator allows different paths to be taken through the rules, and different code to be generated, depending on the input type being passed.
+
+\begin{figure}[ht]
+\[
+\infer
+  {t \arr{s_1|s_2} (t',m_1)}
+  {t \arr{s_1} (t',m_1)}
+\qquad
+\infer
+  {t \arr{s_1|s_2} (t',m_2)}
+  {t \arr{s_1} \bot \quad t \arr{s_2} (t',m_2)}
+\]
+\[
+\infer
+  {t \arr{s_1|s_2} \bot}
+  {t \arr{s_1} \bot \quad t \arr{s_2} \bot}
+\]
+\caption{Semantics for left-biased choice}
+\label{fig:choice}
+\end{figure}
+
+Figure~\ref{fig:basic1} and Figure~\ref{fig:basic2} gives the formal semantics for Twig's other operators. Identity (\texttt{T}) will always succeed, returning its input and an identity block, failure (\texttt{F}) will always return \texttt{$\bot$}. Test (\texttt{?}) takes a single expression as a parameter and succeeds only if its argument succeeds, returning the original term. Negation \texttt{$\lnot$} also takes a single expression argument, and succeeds only if its argument fails, returning the original term.
+
+\begin{figure}[ht]
+\[
+\infer
+  {t \arr{\mathtt{T}} (t,I)}
+  {}
+\qquad
+\infer
+  {t \arr{\mathtt{F}} \bot}
+  {}
+\]
+\caption{Semantics for Success (\texttt{T}) and Failure (\texttt{F})}
+\label{fig:basic1}
+\end{figure}
+
+\begin{figure}[ht]
+\[
+\infer
+  {t \arr{?s} (t,I)}
+  {t \arr{s} (t',m)}
+\qquad 
+\infer
+  {t \arr{?s} \bot}
+  {t \arr{s} \bot}
+\]
+\[
+\infer
+  {t \arr{\lnot s} \bot}
+  {t \arr{s} (t',m)}
+\qquad 
+\infer
+  {t \arr{\lnot s} (t,I)}
+  {t \arr{s} \bot}
+\]
+\caption{Semantics for Test (\texttt{?}) and Negation ($\lnot$)}
+\label{fig:basic2}
+\end{figure}
+
+Twig also provides some special operators for tuples. For each of the tuple operators, there are some additional semantics that we have elided for lack of space. The omitted semantics simply state that any tuple operator will fail (i.e., return $\bot$) if the input term is not a tuple, or if the expression tries to reference a tuple element that is out of bounds.
+
+% \begin{figure}[ht]
+% \[
+% \infer
+%   {f(\ldots) \arr{s} \bot}
+%   {f \neq \mathtt{tuple}}
+% \qquad
+% \infer
+%   {\mathtt{tuple}(t_1,\ldots,t_n) \arr{s(i)} \bot}
+%   {i > n}
+% \]
+% \caption{Common semantics for tuple operators}
+% \label{fig:all-tuples}
+% \end{figure}
+
+One important tuple operator is \emph{congruence}, which applies a tuple of expressions to the elements of a tuple term, pairwise, and returns a tuple of results, or else failure in case any rule application fails. Upon success, the returned block is the parallel composition of the individual result blocks. The semantics for congruence are shown in Figure~\ref{fig:congruence}.
+
+\begin{figure}[ht]
+\[
+\infer
+  {\mathtt{tuple}(t_1,\ldots,t_n)\arr{(s_1,\ldots,s_n)} (\mathtt{tuple}(t_1',\ldots,t_n'),m_1 \times \ldots \times m_n)}
+  {t_1 \arr{s_1} (t_1',m_1) \quad \ldots \quad t_n \arr{s_n} (t_n',m_n)}
+\]
+\[
+\infer
+  {\mathtt{tuple}(\ldots,t_i,\ldots)\arr{(\ldots,s_i,\ldots)}\bot}
+  {t_i \arr{s_i} \bot}
+\]
+\caption{Semantics for congruence operator}
+\label{fig:congruence}
+\end{figure}
+
+The family of \emph{branch} operators on tuples applies a single rule to one, all, or some of the tuple's elements, depending on the variation. In Figure~\ref{fig:branch} we present the semantics for the case where the rule applies to a single element: the first element, from left to right, for which the rule application does not fail. The other elements of the tuple are passed through wherein the branch operation fails if any single rule fails. Note the branch operator's use of a fanout block, defined in Section~\ref{sec:code-gen:special}. We elide the semantics of the other branch operators for lack of space.
+
+\begin{figure*}[ht]
+\[
+\infer
+  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\mathtt{\#one}(s)} (\mathtt{tuple}(\ldots,t_i',\ldots),(I \times \ldots \times m_i \times \ldots \times I))}
+  {t_i \arr{s} (t_i',m_i)}
+\]
+\[
+\infer
+  {\mathtt{tuple}(t_1,\ldots,t_n) \arr{\mathtt{\#one}(s)} \bot}
+  {t_1 \arr{s} \bot \quad \ldots \quad t_n \arr{s} \bot}
+\]
+\caption{Semantics for branch-one operator}
+\label{fig:branch}
+\end{figure*}
+
+Next, we have the \emph{projection} operator which extracts a single indexed element from a tuple, and its close relative, the \emph{path} operator, which applies a rule to a single indexed tuple element, leaving the other elements untouched. The semantics are given in Figure~\ref{fig:projection} and Figure~\ref{fig:path}.
+
+\begin{figure}[ht]
+\[
+\infer
+  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i} (t_i,\Pi(i))}
+  {}
+\]
+\caption{Semantics for projection operator}
+\label{fig:projection}
+\end{figure}
+
+\begin{figure}[ht]
+\[
+\infer
+  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} (\mathtt{tuple}(\ldots,t_i',\ldots), I \times \ldots \times m_i \times \ldots \times I)}
+  {t_i \arr{s} (t_i',m_i)}
+\]
+\[
+\infer
+  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} \bot}
+  {t_i \arr{s} \bot}
+\]
+\caption{Semantics for path operator}
+\label{fig:path}
+\end{figure}
+
+Finally, the \emph{permutation} operator allows arbitrary permutation of a tuple's elements, including duplicating or dropping elements. The semantics are given in Figure~\ref{fig:permute}. We provide a slightly specialized semantics when the permutation takes just one input -- in this case, we equate a 1-tuples and terms, which allows the permutation operator to duplicate single terms. This case is given in Figure~\ref{fig:permute-one}.
+
+Building on this special case, we also provide a ``fan out'' operator. We define this operator in terms of the one input permutation operator, shown in Figure~\ref{fig:fan}.
+
+\begin{figure*}[htb]
+\[
+\infer
+  {\mathtt{tuple}(t_1,\ldots,t_n) \arr{\mathtt{\#permute}_n(x_1,\ldots,x_m)} (\mathtt{tuple}(t_{x_1},\ldots,t_{x_m}),\Pi_w(y_{x_1},\ldots,y_{x_m}))}
+  {}
+\]
+\begin{eqnarray*}
+w   &=& \sum_{j=1}^n \mbox{width}(t_i)\\
+b_i &=& \left\{
+  \begin{array}{cl}
+    0 & \mbox{if } i = 1\\
+    \sum_{j=1}^{i-1} \mbox{width}(t_i) & \mbox{if } i > 1
+  \end{array}
+\right.\\
+y_i &=& b_i+1,\ldots,b_i + \mbox{width}(t_i)
+\end{eqnarray*}
+\caption{Semantics for permutation operator}
+\label{fig:permute}
+\end{figure*}
+
+
+\begin{figure}[htb]
+\[
+\infer
+  {t \arr{\mathtt{\#permute}_1(1,\overset{n}{\ldots},1)} (\mathtt{tuple}(t,\overset{n}{\ldots},t),\Pi_1(y,\overset{n}{\ldots},y))}
+  {}
+\]
+\begin{eqnarray*}
+y &=& 1,\ldots,\mbox{width}(t)
+\end{eqnarray*}
+\caption{Semantics for permute 1 operator}
+\label{fig:permute-one}
+\end{figure}
+
+
+\begin{figure}[ht]
+\[
+\mathtt{\#fan}(n) \equiv \mathtt{\#permute}_1(\underbrace{1,\ldots,1}_\text{n})
+\]
+\caption{Semantics for fan operator}
+\label{fig:fan}
+\end{figure}
+
+Twig also includes a fixed-point operator, allowing it to express rules for handling recursively defined data types. We have omitted the semantics for lack of space.
