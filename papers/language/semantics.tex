@@ -3,39 +3,75 @@
 \section{Twig}
 \label{sec:semantics}
 
-Twig is based on a core semantics called \emph{System
-S}~\cite{system-s}, originally designed as a core language for
-term rewriting systems~\cite{baader98rewriting}. In Twig, we use
-the operators of System S to combine primitive \emph{rules} into
-more complex transformations on types. These transformations are
-then applied to a given type, which performs the transformation.
-We extend the semantics of System S in order to have the
-evaluation of the transformation generate code as a side effect.
-In this way, domain specific code can be generated depending on
-the input types. Our semantics are inspired by and are quite
-similar to those in Fig~\cite{fig}, but we have extended the rules
-to accommodate our code generation model. In this section we
-describe the semantics of Twig's language.
+Twig is based on \emph{System S}~\cite{system-s}, originally
+designed as a core language for term rewriting
+systems~\cite{baader98rewriting}. We use the operators of System S
+to combine primitive \emph{rules} into complex expressions. An
+expression is applied to an input term, which represents some type
+in the target language. The expression may transform the given
+type, generating code as a side effect, or the transformation may
+fail. In this way, different code can be generated depending on
+the input term. Twig's semantics are inspired by Fig~\cite{fig},
+but extended to incorporate our code generation model.
 
 \subsection{Values}
 
-Values in Twig are tree structured data with labeled internal nodes, called \emph{ground terms}. Formally, we say that a ground term $t$ is
+Values in Twig are tree structured data with labeled internal
+nodes, called \emph{ground terms}. We define ground terms $t$:
 
 \[
 t \;\mbox{:=}\; c \;|\; f(t_1,\ldots,t_n)
 \]
 
-where $c$ is a \emph{constant}, and $f$ is a \emph{constructor} used to build terms from $n$ other terms. Constants and constructors can be any string of characters (except the special string ``tuple'' for reasons described below). The meaning of constants and constructors is left mostly abstract -- they are defined by their use in the program's \emph{rules}, described below. We call the set of all terms $T$.
+where $c$ is a \emph{constant}, and $f$ is a \emph{constructor}
+that builds terms from other terms. Constants and constructors can
+be any string of characters (except the special constructor
+\texttt{tuple}, see below). The meaning of particular terms is
+left abstract -- they are defined by their use in the program's
+\emph{rules}, described below. We denote the set of all terms $T$.
 
-For typemapping, terms are typically used to represent types in some other language. For example, we use constant terms, such \texttt{int} and \texttt{float} to represent primitive types in C. More complicated terms can be used to represent types with structure, e.g., \texttt{ptr(int)} can represent a C pointer to an integer. More complicated terms may involve multiple child terms, and may be nested to any depth. For example, \texttt{struct(int,float,struct(ptr(char)))} may represent a structure with three fields: an \texttt{int}, a \texttt{float}, and a second structure with a single string (pointer to \texttt{char}) field.
+In Twig, terms represent types in a target language. For example,
+we use constant terms, such \texttt{int} and \texttt{float} to
+represent primitive types in C. Terms with constructors can
+represent types with some structure, e.g., the term
+\texttt{ptr(int)} can represent a C pointer to an integer. More
+complicated terms may involve multiple children, and may be nested
+to any depth. For example, the term
 
-The mapping between terms in Twig and types in the target language is considered to be a configuration option, controllable by the user and customizable to the domain. Furthermore, the mapping need not be injective, i.e., multiple terms in Twig may map to the same type in C. For example, you might use distinct Twig values \texttt{string} and \texttt{ptr(char)}, but map both to a \texttt{char} pointer in C.
+\[
+\mathtt{struct(int,float,struct(ptr(char)))}
+\]
 
-Twig has just one special kind of structured term: tuples. Tuples may have any length, and the elements of the tuple are represented as the sub-terms of a term with a special constructor: \texttt{tuple}. Twig's syntax also equates the absense of any constructor with the presence of the \texttt{tuple} constructor. For example, the syntax \texttt{(string,int)} is interpreted as the \texttt{tuple(string,int)}. This term represents a tuple of length two, whose first element is \texttt{string} and whose second element is \texttt{int}. The \texttt{tuple} constructor syntax is more verbose, so we typically will eschew it in practice; it is convenient, however, for our presentation of the formal semantics below.
+can represent a structure with three fields: an \texttt{int}, a
+\texttt{float}, and a second structure with a single string
+(pointer to \texttt{char}) field.
 
-\subsubsection{Tuple ``size'' versus ``width''}
+The mapping between terms and types in the target language is a
+configuration option, customizable for a particular domain. The
+mapping need not be injective, that is, multiple terms in Twig may
+represent a single type in the target language. For example, you
+might have the distinct terms \texttt{string} and
+\texttt{ptr(char)} both map to a \texttt{char} pointer in C.
 
-The \emph{size} of a tuple is simply the cardinality of its children. We will sometimes write $\mathtt{tuple}_n(\ldots)$ to indicate a tuple of length $n$, where the length is not otherwise clear from the context.
+\subsubsection{Tuples}
+
+Twig recognizes a special kind of term: tuples. Tuples may have
+any length, and the elements of the tuple are represented as the
+sub-terms of a term with a special constructor: \texttt{tuple}.
+Twig's syntax also equates the absence of any constructor with the
+presence of the \texttt{tuple} constructor. For example, the
+syntax \texttt{(string,int)} is interpreted as the
+\texttt{tuple(string,int)}. This term represents a tuple of length
+two, whose first element is \texttt{string} and whose second
+element is \texttt{int}. The \texttt{tuple} constructor syntax is
+more verbose, so we typically will eschew it in practice; it is
+convenient, however, for our presentation of the formal semantics
+below.
+
+The \emph{size} of a tuple is simply the cardinality of its
+children. We will sometimes write $\mathtt{tuple}_n(\ldots)$ to
+indicate a tuple of length $n$, where the length is not otherwise
+clear from the context.
 
 One small complication arises because we permit tuples to be nested to arbitrary depth. For example the term
 
