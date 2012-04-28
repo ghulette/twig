@@ -16,33 +16,56 @@ The syntax for primitive rules is
 \]
 
 where $p_1$ is the \emph{input pattern}, $p_2$ the \emph{output
-pattern}, and $m$ is a block of code (see
-Section~\ref{sec:code-gen}). Input and output patterns are terms,
-but which can also contain \emph{variables}.
+pattern}, and $m$ is a block of code (code blocks are explained in
+Section~\ref{sec:code-gen}). Input and output patterns are terms
+which can also contain \emph{variables}.
 
-Informally, a primitive rule transforms $t$ to $t'$ with an
-associated block $m$ if and only if the application of rule to
-value $t$ succeeds. In this case we write $t \arr{s} (t',m)$.
-Otherwise, if the application of $s$ to $t$ fails, e.g., if $t$
-does not match the input pattern in $s$, then we write $t \arr{s}
-\bot$. In this case, the block is not produced.
+Informally, the primitive rule above transforms $t$ to $t'$ with
+an associated block of code $m$ if and only if
 
-For example, in C it is easy to convert an integer value to
-floating point. Twig's syntax for writing this rule is as follows:
+\begin{enumerate}
+
+\item $t$ successfully \emph{matches} the input pattern $p_1$,
+binding terms to variables in an \emph{environment} $\epsilon$ and
+
+\item $t'$ is successfully \emph{built}, by substituting the bound
+values in $\epsilon$ into the variables of $p_2$;
+
+\end{enumerate}
+
+and otherwise transforms it to $\bot$.
+
+When a term is \emph{matched}, we mean that Twig attempts to
+unify~\cite{baader98rewriting} it with the input pattern. In fact,
+Twig's matching algorithm is simpler than full unification, since
+there is no equational theory and the input term may not contain
+variables (i.e., must be a ground term). If unification is
+successful, variables are bound to their corresponding terms in an
+environment. The environment is then used to construct the output
+term by substitution over the output pattern. We omit further
+formalization here for lack of space; see
+\cite{baader98rewriting,system-s} for details.
+
+% In this case we write $t \arr{s} (t',m)$. Otherwise, if the
+% application of $s$ to $t$ fails, e.g., if $t$ does not match the
+% input pattern in $s$, then we write $t \arr{s} \bot$. In this
+% case, the block is not produced.
+
+Consider the following example of a primitive rule. In C it is
+easy to convert an integer value to floating point. Twig's syntax
+for writing this rule is as follows:
 
 \begin{verbatim}
 [int -> float] <<< $out = (float)$in; >>>
 \end{verbatim}
 
-In this example, if the input term to the expression
-\emph{matches} the term \texttt{int}, then the output of the
-expression will be the term \texttt{float} along with a code block
-(the text between \texttt{<<<} and \texttt{>>>}, see below). If
-the input term does not match \texttt{int} then the output will be
-$\bot$.
+In this example, if the input term matches the input pattern
+\texttt{int}, then the output will be the term \texttt{float}
+along with the code block. If the input term does not match
+\texttt{int} then the output will be $\bot$.
 
-Input and output patterns can have \emph{variables} in place of
-terms or sub-terms. For example the rule
+As mentioned, input and output patterns can have \emph{variables}
+in place of terms or sub-terms. For example the rule
 
 \begin{verbatim}
 [ptr(X) -> X] <<< $out = &$in; >>>
@@ -55,29 +78,11 @@ variable where it appears on the left. Variables may stand in
 place of a single term only, not constructors; e.g., patterns such
 as \texttt{[X(int)~->~X]} are not allowed.
 
-When an input term is \emph{matched}, we mean that it is
-unified~\cite{baader98rewriting} with the input pattern. In fact,
-Twig's matching algorithm is simpler than full unification, since
-there is no equational theory and the input term may not contain
-variables (i.e., must be a ground term). If unification is
-successful, we say that the term \emph{matched}. The bound
-variables (if any) are saved in order to construct the output term
-via substitution. We omit further formalization of matching here
-for lack of space; see \cite{baader98rewriting,system-s} for
-details.
+% Probably should talk about variable binding, e.g. how (X,X) will
+% match a pair of identical terms.
 
-% Probably should talk about variable binding, e.g. how (X,X) will match a pair of identical terms.
+% \subsubsection{Blocks}
 
-\subsubsection{Blocks}
+% The contents of blocks depends on the target language; in this case, we have provided a block of escaped C code (as described in Section~\ref{sec:code-gen:c}). The target language must be specified as a parameter to the Twig runtime (in our current implementation, as a command line option). This means that the text between the \verb|<<<| and \verb|>>>| is interpreted based on the chosen block implementation. A target language specific procedure is passed the text, along with the input and output term(s). It can then construct the block however it sees fit. In our C block implementation, for example, variable names are generated and the terms are used to determine the appropriate types for declaring those variables in a prelude section of the code. Other target languages might choose very different block construction mechanisms.
 
-Primitive rules are associated with have a block. In Twig's syntax, blocks are surrounded by triple-angle braces and appear immediately after a primitive rule, like so:
-
-\begin{verbatim}
-[int -> float] <<<
-  $out = (float)$in;
->>>
-\end{verbatim}
-
-The contents of the block depends on the target language; in this case, we have provided a block of escaped C code (as described in Section~\ref{sec:code-gen:c}). The target language must be specified as a parameter to the Twig runtime (in our current implementation, as a command line option). This means that the text between the \verb|<<<| and \verb|>>>| is interpreted based on the chosen block implementation. A target language specific procedure is passed the text, along with the input and output term(s). It can then construct the block however it sees fit. In our C block implementation, for example, variable names are generated and the terms are used to determine the appropriate types for declaring those variables in a prelude section of the code. Other target languages might choose very different block construction mechanisms.
-
-It is important to understand that Twig's semantics do not require that block contents be checked in any way (although an implementation could do this), and that the code generation procedure is strictly syntactic. This scheme is similar to that used by SWIG~\cite{swig}.
+% Twig's semantics do not require that block contents be checked in any way (although an implementation could do this). The code generation procedure is strictly syntactic. This scheme is similar to that used by SWIG~\cite{swig}.
