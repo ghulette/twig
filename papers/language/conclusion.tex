@@ -2,18 +2,33 @@
 
 \section{Future work}
 
-One of Twig's limitations is in its handling of \emph{container} types. Arrays are the most common example of a container, but they include any type which may contain elements of other types, such as trees or lists. In order to properly handle container types, Twig needs to be extended with higher-order rules, i.e., rules which take other rules as parameters. We are currently working on a syntax and semantics for rules such as this:
+Twig is limited in its handling of \emph{container} types, such as
+arrays, lists, or trees. In order to properly handle this kind of
+data, Twig needs to be extended with higher-order primitive rules,
+i.e., rules which take expressions as parameters. We are currently
+working on a syntax and formal semantics for rules such as:
 
 \begin{verbatim}
-[array(X) -> array(Y) | X -> Y]
+[array(X) -> array(Y) | X -> Y] <<< ... >>>
 \end{verbatim}
 
-This should be read as a rule which transforms an array of any type $X$ to an array of another type $Y$, given a rule to transform a single element of type $X$ to type $Y$.
+This should be read as a rule which transforms an array of any
+type $X$ to an array of another type $Y$, given a rule to
+transform a single element of type $X$ to type $Y$.
 
-Other improvements to Twig may include extending our implementation to support other target languages, such as Java or Python, which would take advantage of our abstract code generation model.
+Other improvements to Twig may include extending \texttt{twigc} to
+support other target languages, such as Java or Python. This would
+take advantage of our abstract code generation model.
 
 \section{Conclusion}
 
-We have presented Twig, a typemapping language that may serve as a more flexible alternative to typemapping facilities commonly found in tools such as SWIG. Typemaps in Twig may be composed in a number of useful ways, and include useful features like tuples, polymorphic rules, and runtime choice based on the input type.
+We have presented Twig, a language for typemaps that may serve as
+a more flexible alternative to the languages found in tools such
+as SWIG. We have demonstrated how Twig typemaps are created and
+composed, and shown how our language incorporates useful features
+such as tuples, polymorphic rules with variables, and runtime
+choice based on the input type.
 
-Twig also incorporates a flexible model for code generation. While our current implementation is focused on generating C, other procedural languages, such as Java or Python, may easily to generated instead.
+Twig includes a flexible model for code generation. While our
+current implementation is focused on generating C, other
+languages, such as Java or Python, could be generated instead.

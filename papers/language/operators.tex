@@ -109,7 +109,12 @@ term.
 \label{fig:basic2}
 \end{figure}
 
-Twig also provides some special operators for tuples. For each of the tuple operators, there are some additional semantics that we have elided for lack of space. The omitted semantics simply state that any tuple operator will fail (i.e., return $\bot$) if the input term is not a tuple, or if the expression tries to reference a tuple element that is out of bounds.
+Twig also provides some operators especially for tuples. For each
+of the following operators, there are some additional semantics
+related to tuples that we have elided for lack of space.
+Informally, the omitted semantics state that a tuple operator will
+fail (i.e., return $\bot$) if the input is not a tuple, or if the
+expression references an element that is outside the tuple bounds.
 
 % \begin{figure}[ht]
 % \[
@@ -125,7 +130,13 @@ Twig also provides some special operators for tuples. For each of the tuple oper
 % \label{fig:all-tuples}
 % \end{figure}
 
-One important tuple operator is \emph{congruence}, which applies a tuple of expressions to the elements of a tuple term, pairwise, and returns a tuple of results, or else failure in case any rule application fails. Upon success, the returned block is the parallel composition of the individual result blocks. The semantics for congruence are shown in Figure~\ref{fig:congruence}.
+The \emph{congruence} operator applies a tuple of expressions to
+the elements of a tuple term, pairwise, and returns a tuple of
+results. It fails in case any of the individual rule applications
+fail. Upon success, the result block is the parallel composition
+(see Section~\ref{sec:code-gen:par}) of the individual result
+blocks. The semantics for congruence are shown in
+Figure~\ref{fig:congruence}.
 
 \begin{figure}[ht]
 \[
@@ -142,7 +153,16 @@ One important tuple operator is \emph{congruence}, which applies a tuple of expr
 \label{fig:congruence}
 \end{figure}
 
-The family of \emph{branch} operators on tuples applies a single rule to one, all, or some of the tuple's elements, depending on the variation. In Figure~\ref{fig:branch} we present the semantics for the case where the rule applies to a single element: the first element, from left to right, for which the rule application does not fail. The other elements of the tuple are passed through wherein the branch operation fails if any single rule fails. Note the branch operator's use of a fanout block, defined in Section~\ref{sec:code-gen:special}. We elide the semantics of the other branch operators for lack of space.
+The family of \emph{branch} operators apply a single rule to one,
+all, or some of the tuple's elements, depending on the variant.
+Figure~\ref{fig:branch} shows the semantics for the \texttt{\#one}
+branch operator, which applies an expression $s$ to a single
+element: the first element, from left to right, for which $s$ does
+not fail. The other elements of the tuple are unchanged. The
+branch operation fails if $s$ fails for all the elements. The
+branch operator constructs the result block using a fanout block,
+(see Section~\ref{sec:code-gen:special}). We elide details for the
+other branch operators for lack of space.
 
 \begin{figure*}[ht]
 \[
@@ -159,7 +179,11 @@ The family of \emph{branch} operators on tuples applies a single rule to one, al
 \label{fig:branch}
 \end{figure*}
 
-Next, we have the \emph{projection} operator which extracts a single indexed element from a tuple, and its close relative, the \emph{path} operator, which applies a rule to a single indexed tuple element, leaving the other elements untouched. The semantics are given in Figure~\ref{fig:projection} and Figure~\ref{fig:path}.
+The \emph{projection} operator extracts a single indexed element
+from a tuple (see Figure~\ref{fig:projection}). Similarly, the
+\emph{path} operator applies a rule to a single indexed tuple
+element, leaving the other elements unchanged (see
+Figure~\ref{fig:path}).
 
 \begin{figure}[ht]
 \[
@@ -186,9 +210,19 @@ Next, we have the \emph{projection} operator which extracts a single indexed ele
 \label{fig:path}
 \end{figure}
 
-Finally, the \emph{permutation} operator allows arbitrary permutation of a tuple's elements, including duplicating or dropping elements. The semantics are given in Figure~\ref{fig:permute}. We provide a slightly specialized semantics when the permutation takes just one input -- in this case, we equate a 1-tuples and terms, which allows the permutation operator to duplicate single terms. This case is given in Figure~\ref{fig:permute-one}.
+Finally, the \emph{permutation} operator allows arbitrary
+permutation of a tuple's elements, including duplicating or
+dropping elements. The semantics are given in
+Figure~\ref{fig:permute}. We treat $\mbox{permute}_1$, where the
+permutation expects a single input, specially -- in this case, we
+treat non-tuple input terms as tuples of length one. This allows
+the permutation operator to be used to replicate single terms. The
+semantics for this special case are given in
+Figure~\ref{fig:permute-one}.
 
-Building on this special case, we also provide a ``fan out'' operator. We define this operator in terms of the one input permutation operator, shown in Figure~\ref{fig:fan}.
+As a convenience, we also provide a ``fan out'' operator which is
+defined as a $\mbox{permute}_1$ followed by a congruence. The
+definition is given in Figure~\ref{fig:fan}.
 
 \begin{figure*}[htb]
 \[

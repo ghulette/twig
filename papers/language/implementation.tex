@@ -3,8 +3,8 @@
 \section{Implementation}
 
 We wrote our implementation of Twig, called \texttt{twigc}, in
-Haskell. The \texttt{twigc} expects two input files. The first
-file contains a list of named expressions, including a
+Haskell. The \texttt{twigc} tool expects two input files. The
+first file must contain a list of named expressions, including a
 \texttt{main} expression, as described in
 Section~\ref{sec:expressions}. The second file contains a ground
 term (representing a C type), used as input to the main
@@ -19,9 +19,6 @@ rule expression provided, then Twig will output the rewritten term
 along with the generated block of C code. This code block may be
 redirected to a separate file and included in a C program using
 the \texttt{\#include} directive.
-
-We are examining ways in which this process might be more easily
-incorporated into a typical C programmer's workflow.
 
 \subsection{Code Generation}
 
