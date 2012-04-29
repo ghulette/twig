@@ -3,9 +3,19 @@
 \subsection{Operators}
 \label{sec:semantics:ops}
 
-Rules expressions can be combined using Twig's operators. In the formal semantics, we let $t$ range over terms, $m$ range over blocks and $s$ range over expressions (i.e., a primitive rule, or another expression built with operators).
+Expressions can be combined using Twig's operators. In the
+following semantics, let $t$ range over terms, $m$ range over
+blocks, and $s$ range over expressions, i.e., either a primitive
+rule, or else another expression built with operators.
 
-The first and arguably most useful of Twig's combinators is the \emph{sequence} operator, written as an infix semi-colon (\texttt{;}). Sequencing chains the application of two rules together, sending the output of the first to the input of the second, and failing if either rule fails (see Figure~\ref{fig:seq}). With this operator, individual rules can be composed into multi-step transformations. Note how, upon success, the blocks are themselves composed in sequence.
+The \emph{sequence} operator, written as an infix semi-colon
+(\texttt{;}), chains the application of two rules together by
+sending the output of the first to the input of the second. The
+combined expression fails if either sub-expression fails (see
+Figure~\ref{fig:seq}). With this operator, simple rules can be
+composed into multi-step transformations. Upon success, the result
+blocks are combined sequentially using the block sequence
+operation (see Section~\ref{sec:code-gen:seq}).
 
 \begin{figure}[ht]
 \[
@@ -26,7 +36,12 @@ The first and arguably most useful of Twig's combinators is the \emph{sequence} 
 \label{fig:seq}
 \end{figure}
 
-Another important operator is \emph{left-biased choice}, written as a vertical bar (\texttt{|}). This operator will attempt to apply the first rule expression to the input, and if it succeeds then its output is the result (see Figure~\ref{fig:choice}). If it fails (i.e., results in $\bot$), then it attempts to apply the second rule instead. This operator allows different paths to be taken through the rules, and different code to be generated, depending on the input type being passed.
+\emph{Left-biased choice}, written as a vertical bar (\texttt{|}),
+will attempt to apply the first rule expression to the input, and
+if it succeeds then its output is the result (see
+Figure~\ref{fig:choice}). If it fails, it attempts to apply
+the second rule instead. This operator allows different code to be
+generated depending on the input type.
 
 \begin{figure}[ht]
 \[
@@ -47,7 +62,15 @@ Another important operator is \emph{left-biased choice}, written as a vertical b
 \label{fig:choice}
 \end{figure}
 
-Figure~\ref{fig:basic1} and Figure~\ref{fig:basic2} gives the formal semantics for Twig's other operators. Identity (\texttt{T}) will always succeed, returning its input and an identity block, failure (\texttt{F}) will always return \texttt{$\bot$}. Test (\texttt{?}) takes a single expression as a parameter and succeeds only if its argument succeeds, returning the original term. Negation \texttt{$\lnot$} also takes a single expression argument, and succeeds only if its argument fails, returning the original term.
+Figure~\ref{fig:basic1} and Figure~\ref{fig:basic2} give the
+semantics for Twig's other basic operators. Identity (\texttt{T})
+will always succeed, returning its input and an identity block,
+failure (\texttt{F}) will always return \texttt{$\bot$}. Test
+(\texttt{?}) takes a single expression as a parameter and succeeds
+only if its argument succeeds, returning the original term.
+Negation \texttt{$\lnot$} also takes a single expression argument,
+and succeeds only if its argument fails, returning the original
+term.
 
 \begin{figure}[ht]
 \[
