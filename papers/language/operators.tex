@@ -138,7 +138,7 @@ fail. Upon success, the result block is the parallel composition
 blocks. The semantics for congruence are shown in
 Figure~\ref{fig:congruence}.
 
-\begin{figure}[ht]
+\begin{figure*}[ht]
 \[
 \infer
   {\mathtt{tuple}(t_1,\ldots,t_n)\arr{(s_1,\ldots,s_n)} (\mathtt{tuple}(t_1',\ldots,t_n'),m_1 \times \ldots \times m_n)}
@@ -151,7 +151,7 @@ Figure~\ref{fig:congruence}.
 \]
 \caption{Semantics for congruence operator}
 \label{fig:congruence}
-\end{figure}
+\end{figure*}
 
 The family of \emph{branch} operators apply a single rule to one,
 all, or some of the tuple's elements, depending on the variant.
@@ -195,7 +195,7 @@ Figure~\ref{fig:path}).
 \label{fig:projection}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure*}[htb]
 \[
 \infer
   {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\#i(s)} (\mathtt{tuple}(\ldots,t_i',\ldots), I \times \ldots \times m_i \times \ldots \times I)}
@@ -208,7 +208,7 @@ Figure~\ref{fig:path}).
 \]
 \caption{Semantics for path operator}
 \label{fig:path}
-\end{figure}
+\end{figure*}
 
 Finally, the \emph{permutation} operator allows arbitrary
 permutation of a tuple's elements, including duplicating or

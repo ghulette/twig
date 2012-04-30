@@ -2,23 +2,39 @@
 
 \section{Evaluation}
 
-Twig has several advantages over typemap facilities such as those found in SWIG.
+Twig has several advantages over typemap facilities such as those
+found in SWIG.
 
 \begin{enumerate}
 
-\item Sequencing: simple typemaps can be composed in sequence to produce more complex transformations.
+\item Sequencing: simple typemaps can be composed in sequence to
+produce more complex transformations.
 
-\item Choice: With choice combinator, a single typemap expression may be used to generate multiple variations of a transformation, depending on the input type.
+\item Choice: With the choice combinator, a single typemap
+expression may be used to generate multiple variations of a
+transformation, depending on the input type.
 
-\item Tuples: Twig allows sets of types to be mapped together, using tuples. This is a common problem -- consider function argument lists, or a pointer paired with a length to form an array. Unlike SWIG, Twig can 
+\item Tuples: Twig allows sets of types to be mapped together
+using tuples. This is a common problem -- consider function
+argument lists, or a pointer paired with a length to form an
+array.
 
-\item Type variables: allows polymorphic typemaps, e.g., \texttt{[ptr(A) -> A]}.
-  
-\item Target langauge flexibility: Twig can be extended to generate target languages other than C.
+\item Type variables: Twig allows for rules that abstract over
+types, e.g., \texttt{[ptr(A) -> A]}.
+
+\item Target language flexibility: Twig can be extended to
+generate target languages other than C.
 
 \end{enumerate}
 
-We will now walk through the construction of a simple typemap in Twig. In this example, our goal is to convert a set of C structures representing polar coordinates to a suitable representation in Python. The structure comes in both a \texttt{float} and \texttt{double} variety, and we need to be able to convert both. As a final twist, the Python code is expecting a Cartesian, not polar, coordinate system, so we must perform this conversion as well. The C structures we will convert are defined in a header file, like so:
+We now walk through the construction of a simple typemap in Twig.
+In this example, our goal is to convert a set of C structures
+representing polar coordinates to a suitable representation in
+Python. The C structure comes in both a \texttt{float} and
+\texttt{double} variety. The Python code expects a Cartesian
+coordinate system, not polar, so we must perform this conversion
+as well. The C structures we will convert are defined in a header
+file, like so:
 
 \begin{verbatim}
 struct PolarD {
@@ -31,7 +47,8 @@ struct PolarF {
 };
 \end{verbatim}
 
-The first step is to unpack each polar structure into a Twig tuple. We define two rules to do exactly this:
+The first step is to unpack each polar structure into a Twig
+tuple. We define two rules to do exactly this:
 
 \begin{verbatim}
 unpackd = [polard -> (double,double)] <<<
@@ -45,7 +62,15 @@ unpackf = [polarf -> (float,float)] <<<
 >>>
 \end{verbatim}
 
-Next, we define a rule for casting \texttt{float}s to \texttt{double}s, and use the congruence operator to lift it to a conversion on tuples. We sequence this cast after \texttt{unpackf} so that that rule will produce \texttt{double}s instead of \texttt{float}s. We combine that conversion with \texttt{unpackd} using the choice operator, and name the new rule \texttt{unpack}. This new rule will accept either a \texttt{polarf} or a \texttt{polard}, and produce a 2-tuple of \texttt{double}s.
+Next, we define a rule for casting \texttt{float}s to
+\texttt{double}s, and use the congruence operator to lift it to a
+conversion on tuples. This cast is sequenced after
+\texttt{unpackf} so that that rule will produce \texttt{double}s
+instead of \texttt{float}s. We combine that conversion with
+\texttt{unpackd} using the choice operator, and name the new rule
+\texttt{unpack}. This new rule will accept either a
+\texttt{polarf} or a \texttt{polard}, and produce a 2-tuple of
+\texttt{double}s.
 
 \begin{verbatim}
 f2d = [float -> double] <<<
@@ -55,7 +80,8 @@ f2d = [float -> double] <<<
 unpack = (unpackf;{f2d,f2d}) | unpackd
 \end{verbatim}
 
-Next, we need to the define the conversion from polar to Cartesian coordinates.
+Next, we define the conversion from polar to Cartesian
+coordinates.
 
 \begin{verbatim}
 polarToX = [(double,double) -> double] <<<
@@ -67,29 +93,49 @@ polarToY = [(double,double) -> double] <<<
 >>>
 \end{verbatim}
 
-These two rules take a pair of \texttt{double}s, which represent a polar radius and angle, and convert the pair to the $x$ (respectively, $y$) component of the equivalent Cartesian representation. But, we need both the $x$ and $y$ components, and we only have one polar pair. We use the \emph{fanout} operator to duplicate the pair, and then sequence it with a congruence of the $x$ and $y$ rules, like so:
+These two rules take a pair of \texttt{double}s, which represent a
+polar radius and angle, and convert the pair to the $x$
+(respectively, $y$) component of the equivalent Cartesian
+representation. But, we need both the $x$ and $y$ components, and
+we only have one polar pair. We use the \emph{fanout} operator to
+duplicate the pair, and then sequence it with a congruence of the
+$x$ and $y$ rules, like so:
 
 \begin{verbatim}
 polarToCart = #fan(2);{polarToX,polarToY}
 \end{verbatim}
 
-This rule, \texttt{polarToCart}, will convert a polar coordinate pair of \texttt{doubles} to a Cartesian pair of \texttt{double}s.
+The rule \texttt{polarToCart} will convert a polar coordinate pair
+of \texttt{doubles} to a Cartesian pair of \texttt{double}s.
 
-Next, we must convert from the C types to Python. We use Python's C interface API~\cite{python-c-api}, which allows us to work with Python values in C (the same system used by SWIG).
+Next, we define rules to convert from C types to Python. We use
+Python's C interface API~\cite{python-c-api}, which allows us to
+work with Python values in C.
 
 \begin{verbatim}
 d2pyf = [double -> pyfloat] <<<
   $out = PyFloat_FromDouble($in);
 >>>
 
-mkpytuple = [(pyfloat,pyfloat) -> pytuple(pyfloat,pyfloat)] <<<
+mkpytuple = [(pyfloat,pyfloat) -> 
+             pytuple(pyfloat,pyfloat)] 
+<<<
   $out = PyTuple_Pack(2,$in1,$in2);
 >>>
 
 pack = {d2pyf,d2pyf};mkpytuple
 \end{verbatim}
 
-The first rule, \texttt{d2py} converts a C \texttt{double} to Python's floating-point type, which we call \texttt{pyfloat}.~\footnote{In the API, a \texttt{pyfloat} is actually mapped to a more general \texttt{PyObject *}; one interesting benefit of Twig is that it can potentially track more detailed type information than would be available from API itself.} The next rule, \texttt{mkpytuple} will stuff a pair of \texttt{pyfloats} into a Python tuple object (no longer a Twig tuple!). The \texttt{pack} rule combines these in the usual way to convert a pair of C \texttt{doubles} to a Python tuple.
+The first rule, \texttt{d2py} converts a C \texttt{double} to
+Python's floating-point type, which we call
+\texttt{pyfloat}.~\footnote{In the API, a \texttt{pyfloat} is
+actually mapped to a more general \texttt{PyObject *}; one
+interesting benefit of Twig is that it can potentially track more
+detailed type information than would be available from API
+itself.} The next rule, \texttt{mkpytuple} will combine a pair of
+\texttt{pyfloats} into a single Python tuple object (\emph{not} a
+Twig tuple). The \texttt{pack} rule combines these in the usual
+way to convert a pair of C \texttt{doubles} to a Python tuple.
 
 Finally, by placing these parts in sequence, we achieve our goal: a single rule which will convert either a \texttt{PolarD} or \texttt{PolarF} \texttt{struct} in C into a Cartesian coordinate  in Python. We call the final rule \texttt{convert}.
 
@@ -146,7 +192,14 @@ It is interesting to contrast Twig's implementation of this typemap with the equ
 %}
 \end{verbatim}
 
-Even in this simple example, there is a considerable amount of duplicated code across the two typemaps. This duplication is unecessary in Twig since simple typemaps, such as those to convert polar to Cartesian coordinates or convert C \texttt{double}s to Python, can be recombined and reused. In addition, the choice operator helps to reduce the overall number of typemaps needed, since one typemap can be used to generate different code depending on the input.
+Even in this simple example, there is a considerable amount of
+duplicated code across the two typemaps. This duplication is
+unnecessary in Twig since simple typemaps, such as those to
+convert polar to Cartesian coordinates or convert C
+\texttt{double}s to Python, can be recombined and reused. In
+addition, the choice operator helps to reduce the overall number
+of typemaps needed, since one typemap can be used to generate
+different code depending on the input.
 
 \subsection{Twig versus Fig}
 
@@ -154,10 +207,13 @@ Twig also improves on Fig in a number of ways:
 
 \begin{enumerate}
 
-\item Target language: Fig is intimately tied to its target language, Moby; whereas Twig can be extended to generate a variety of mainstream languages. Notably, Twig generates C, which is currently the \emph{de facto} language for interoperability.
+\item Target language: Fig is intimately tied to its target
+language, Moby; whereas Twig can be extended to generate a variety
+of mainstream languages. Notably, Twig is able to generate C,
+which is currently the \emph{de facto} language for
+interoperability.
 
-\item Type variables: Twig primitive rules may be polymorphic by allowing variables in place of types.
+\item Type variables: Twig primitive rules may be polymorphic by
+allowing variables in place of types.
 
 \end{enumerate}
-
-We have not elaborated on these benefits in this paper, but we plan to highlight them in our future work.
