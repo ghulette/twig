@@ -153,16 +153,27 @@ Figure~\ref{fig:congruence}.
 \label{fig:congruence}
 \end{figure*}
 
-The family of \emph{branch} operators apply a single rule to one,
-all, or some of the tuple's elements, depending on the variant.
-Figure~\ref{fig:branch} shows the semantics for the \texttt{\#one}
-branch operator, which applies an expression $s$ to a single
-element: the first element, from left to right, for which $s$ does
-not fail. The other elements of the tuple are unchanged. The
-branch operation fails if $s$ fails for all the elements. The
-branch operator constructs the result block using a fanout block,
-(see Section~\ref{sec:code-gen:special}). We elide details for the
-other branch operators for lack of space.
+The family of unary \emph{branch} operators apply a single
+expression to one, all, or some of a tuple's elements, depending
+on the variant.
+
+The branch operator \texttt{\#one} attempts to apply its parameter
+$s$ to a single element: the first element, from left to right,
+for which $s$ does not fail. The other elements of the tuple are
+unchanged. The expression fails if $s$ fails for each element. The
+formal semantics for \texttt{\#one} are given in
+Figure~\ref{fig:branch-one}.
+
+The branch operator \texttt{\#all} applies its parameter $s$ to
+each element of a tuple. The expression fails if $s$ fails for any
+element. The formal semantics for \texttt{\#all} are given in
+Figure~\ref{fig:branch-all}.
+
+The branch operator \texttt{\#some} applies its parameter $s$ to
+at least one element of a tuple, and fails in case $s$ fails for
+all the elements. It will apply $s$ to any element for which it
+succeeds, and leave the remaining elements unchanged. We elide the
+formal semantics for lack of space.
 
 \begin{figure*}[ht]
 \[
@@ -175,8 +186,29 @@ other branch operators for lack of space.
   {\mathtt{tuple}(t_1,\ldots,t_n) \arr{\mathtt{\#one}(s)} \bot}
   {t_1 \arr{s} \bot \quad \ldots \quad t_n \arr{s} \bot}
 \]
-\caption{Semantics for branch-one operator}
-\label{fig:branch}
+\caption{Semantics for branch \texttt{\#one} operator}
+\label{fig:branch-one}
+\end{figure*}
+
+
+\begin{figure*}[ht]
+\[
+\infer{
+  \mathtt{tuple}(\ldots,t_i,\ldots)
+  \arr{\mathtt{\#all}(s)}
+  (\mathtt{tuple}(\ldots,t_i',\ldots),
+  (m_1 \times \ldots \times m_n))
+}{
+  t_1 \arr{s} (t_1',m_1) \quad \cdots \quad t_n \arr{s} (t_n',m_n)
+}
+\]
+\[
+\infer
+  {\mathtt{tuple}(\ldots,t_i,\ldots) \arr{\mathtt{\#all}(s)} \bot}
+  {t_i \arr{s} \bot}
+\]
+\caption{Semantics for branch \texttt{\#all} operator}
+\label{fig:branch-all}
 \end{figure*}
 
 The \emph{projection} operator extracts a single indexed element
