@@ -1,0 +1,18 @@
+--- This module shows how we use Maude to implement reductions. In
+--- this example, we encode distribution of sequence over choice
+--- from the left. To run, try something like this:
+
+--- Maude> load Expr.
+--- Maude> red r('f) ; r('g) | r('h) .
+--- reduce in TWIG-EXPR : r('f) ; r('g) | r('h) .
+--- result Expr: (r('f) ; r('g)) | r('f) ; r('h)
+
+fmod TWIG-EXPR is
+  protecting QID .
+  sort Expr .
+  op r : Qid -> Expr [ctor] .
+  op _;_ : Expr Expr -> Expr [ctor assoc] .
+  op _|_ : Expr Expr -> Expr [ctor assoc] .
+  vars F G H : Expr .
+  eq F;(G|H) = (F;G)|(F;H) .
+endfm
