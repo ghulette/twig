@@ -14,5 +14,5 @@ fmod TWIG-EXPR is
   op _;_ : Expr Expr -> Expr [ctor assoc] .
   op _|_ : Expr Expr -> Expr [ctor assoc] .
   vars F G H : Expr .
-  eq F;(G|H) = (F;G)|(F;H) .
+  eq F ; (G | H) = (F ; G) | (F ; H) .
 endfm
