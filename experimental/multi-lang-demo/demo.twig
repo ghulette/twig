@@ -8,11 +8,11 @@ py_string_to_json = [py(string) -> py(json(string))] <<<
   $out = string_to_json($in)
 >>>
 
-py_tuple_to_json = [(py(json(X)),py(json(Y))) -> py(json(X,Y))] <<<
+py_tuple_to_json = [(py(json(X)),py(json(Y))) -> py(json(pair(X,Y)))] <<<
   $out = '[' + ','.join($in1,$in2) + ']'
 >>>
 
-to_json = py_int_to_json | py_string_to_json | py_tuple_to_json
+py_to_json = py_int_to_json | py_string_to_json | py_tuple_to_json
 
 name = [address -> py(string)] <<<
   $out = $in.name
@@ -22,19 +22,19 @@ age = [address -> py(int)] <<<
   $out = $in.age
 >>>
 
-py_address_to_json = @2;{name,age};{to_json,to_json};to_json
+py_address_to_json = @2;{name,age};{py_to_json,py_to_json};py_to_json
 
 
 --@Language(C)
 
 -- Herein lies the issue...
-transmit = [py(json(X,Y)) -> json(X,Y)] <<<
-  json_error_t tmp1; // need to use tmps for this
+py_json_to_c = [py(json(X)) -> json(X)] <<<
+  json_error_t tmp1;
   char *s = PyString_AsString($in);
   $out = json_loads(s, JSON_DECODE_ANY, &tmp1);
 >>>
 
-json_to_tuple = [json(X,Y) -> (json(X),json(Y))] <<<
+json_to_tuple = [json(pair(X,Y)) -> (json(X),json(Y))] <<<
   $out1 = json_array_get($in,0);
   $out2 = json_array_get($in,1);
 >>>
@@ -53,13 +53,10 @@ json_to_address = from_json;{from_json,from_json}
 
 -- Main program
 
-main = py_address_to_json;transmit;json_to_address
+main = py_address_to_json;py_json_to_c;json_to_address
 
--- @reduce 
--- {name,age};
--- {(int_to_json | string_to_json | tuple_to_json),(int_to_json | string_to_json | tuple_to_json)};
--- (int_to_json | string_to_json | tuple_to_json);
+-- @reduce py_to_json;py_json_to_c;from_json => transmit
+-- @reduce {py_to_json,py_to_json};py_json_to_c;{from_json,from_json} => transmit
+-- @2;{name,age};{py_to_json,py_to_json};py_to_json;
 -- transmit;
--- (json_to_int | json_to_string | json_to_tuple);
--- {(json_to_int | json_to_string | json_to_tuple),(json_to_int | json_to_string | json_to_tuple)}
--- 
+-- from_json;{from_json,from_json}
