@@ -17,6 +17,16 @@ userTypes c = case c of
   "polard" -> Just (Struct "PolarD")
   "pydouble" -> Just (Ptr (Struct "PyObject"))
   "pytuple(pydouble,pydouble)" -> Just (Ptr (Struct "PyObject"))
+  "address" -> Just (Ptr (Struct "Address"))
+  "py(string)" -> Just (Ptr (Struct "PyObject"))
+  "py(int)" -> Just (Ptr (Struct "PyObject"))
+  "py(json(int))" -> Just (Ptr (Struct "PyObject"))
+  "py(json(string))" -> Just (Ptr (Struct "PyObject"))
+  "py(json(string,int))" -> Just (Ptr (Struct "PyObject"))
+  "json(string,int)" -> Just (Ptr (Struct "json_t"))
+  "json(string)" -> Just (Ptr (Struct "json_t"))
+  "json(int)" -> Just (Ptr (Struct "json_t"))
+  "string" -> Just (Ptr Char)
   _        -> Nothing
 
 parse :: String -> IO (Env Proc)
