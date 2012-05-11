@@ -102,10 +102,10 @@ eval (Seq e1 e2) st t =
         Nothing -> Nothing
 eval (LeftChoice e1 e2) st t =
   case eval e1 st t of
-    Just (t',m) -> Just (t',m)
+    Just (m,t') -> Just (m,t')
     Nothing -> 
       case eval e2 st t of
-        Just (t',m) -> Just (t',m)
+        Just (m,t') -> Just (m,t')
         Nothing -> Nothing
 eval (Path 0 e) st t = 
   eval e st t -- #0(s) just applies s to root
