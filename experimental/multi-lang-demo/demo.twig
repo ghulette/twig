@@ -1,4 +1,16 @@
---@Language(Python)
+--@language(Python)
+
+-- Take apart an Address object
+
+name = [address -> py(string)] <<<
+  $out = $in.name
+>>>
+
+age = [address -> py(int)] <<<
+  $out = $in.age
+>>>
+
+-- Convert Python to JSON
 
 py_int_to_json = [py(int) -> py(json(int))] <<<
   $out = int_to_json($in)
@@ -12,27 +24,25 @@ py_tuple_to_json = [(py(json(X)),py(json(Y))) -> py(json(pair(X,Y)))] <<<
   $out = '[' + ','.join($in1,$in2) + ']'
 >>>
 
-py_to_json = py_int_to_json | py_string_to_json | py_tuple_to_json
+py_to_json_step = py_int_to_json | py_string_to_json | py_tuple_to_json
 
-name = [address -> py(string)] <<<
-  $out = $in.name
->>>
+py_to_json = fix(X, (#all(X) | T) ; py_to_json_step)
 
-age = [address -> py(int)] <<<
-  $out = $in.age
->>>
-
-py_address_to_json = @2;{name,age};{py_to_json,py_to_json};py_to_json
+py_address_to_json = @2;{name,age};py_to_json
 
 
---@Language(C)
+--@language(C)
 
--- Herein lies the issue...
+-- Convert Python JSON to C JSON
+
 py_json_to_c = [py(json(X)) -> json(X)] <<<
   json_error_t tmp1;
-  char *s = PyString_AsString($in);
-  $out = json_loads(s, JSON_DECODE_ANY, &tmp1);
+  char *tmp2 = PyString_AsString($in);
+  $out = json_loads(tmp2, JSON_DECODE_ANY, &tmp1);
 >>>
+
+
+-- Convert JSON to C
 
 json_to_tuple = [json(pair(X,Y)) -> (json(X),json(Y))] <<<
   $out1 = json_array_get($in,0);
@@ -47,16 +57,29 @@ json_to_string = [json(string) -> string] <<<
   $out = json_string_value($in);
 >>>
 
-from_json = json_to_int | json_to_string | json_to_tuple
+from_json_step = json_to_int | json_to_string | json_to_tuple
 
-json_to_address = from_json;{from_json,from_json}
+from_json = fix(X, from_json_step ; (#all(X) | T))
+
+
+-- Convert Python to C directly
+
+py_string_to_c = [py(string) -> string] <<<
+  $out = PyString_AsString($in);
+>>>
+
+py_int_to_c = [py(int) -> int] <<<
+  $out = (int)PyInt_AsLong($in);
+>>>
+
+py_to_c_step = py_string_to_c | py_int_to_c
+
+py_to_c = fix(X, (py_to_c_step | #all(py_to_c_step)) ; (#all(X) | T))
+
 
 -- Main program
 
-main = py_address_to_json;py_json_to_c;json_to_address
+main = py_address_to_json;py_json_to_c;from_json
 
--- @reduce py_to_json;py_json_to_c;from_json => transmit
--- @reduce {py_to_json,py_to_json};py_json_to_c;{from_json,from_json} => transmit
--- @2;{name,age};{py_to_json,py_to_json};py_to_json;
--- transmit;
--- from_json;{from_json,from_json}
+--@reduce py_to_json;json_to_c;from_json => py_to_c
+main2 = @2;{name,age};py_to_c
