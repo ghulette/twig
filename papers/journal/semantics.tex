@@ -1,0 +1,26 @@
+%!TEX root = twig.tex
+
+\chapter{The Twig Language}
+\label{ch:semantics}
+
+\section{Formal Semantics}
+\label{sec:sem:formal}
+
+Twig is based on \emph{System S}~\cite{system-s}, which was
+originally designed as a core language for term rewriting
+systems~\cite{baader98rewriting}. A review of term rewriting and
+System S is given in Section~\ref{sec:background:trs}. In Twig,
+use the operators of System S to combine primitive \emph{rules}
+into complex expressions. An expression is applied to an input
+term, which represents some type in the target language. The
+expression may transform the given type, generating code as a side
+effect, or the transformation may fail. In this way, different
+code can be generated depending on the input term. Twig's
+semantics are inspired by Fig~\cite{fig}, but extended to
+incorporate our code generation model. In the following sections
+we describe this process more formally.
+
+\input{terms}
+\input{expressions}
+\input{primitive-rules}
+\input{operators}

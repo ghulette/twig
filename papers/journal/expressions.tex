@@ -1,0 +1,49 @@
+%!TEX root = twig.tex
+
+\subsection{Expressions}
+\label{sec:expressions}
+
+Twig \emph{expressions} can be either \emph{primitive rules}
+(Section~\ref{sec:semantics:prims}) or else built from other
+expressions using operators (Section~\ref{sec:semantics:ops}). We
+denote the set of all expressions $S$. An expression $s \in S$
+maps ground terms $T$ to elements of the set $(T \times M) \cup
+\{\bot\}$, i.e., either a pair $(t',m)$ where $t' \in T$ and $m
+\in M$ is a \emph{block} of generated code in the set $M$ (see
+Chapter~\ref{ch:code-gen}), or else the special, distinguished
+value $\bot$. Formally, $s \in S$ is a function:
+
+\[
+s : T \to ((T \times M) \cup \{\bot\})
+\]
+
+Following Fig's notation, we use $\bot$ to denote ``failure.'' In
+particular, $\bot$ is used in the semantics for the operators
+described in Section~\ref{sec:semantics:ops}.
+
+As with System S and Fig, Twig allows expressions to be named. An
+expression's name may be used in place of itself within other
+expressions. The syntax is
+
+\[
+v \mtt{ = } s
+\]
+
+where $v$ is an expression identifier and $s \in S$ is an
+expression of the form described below. A Twig program is a list
+of such name/expression assignments. To prevent circular
+references, expressions may only reference names that have been
+previous defined (i.e., appearing before the expression in the
+program text). For the same reason, expressions may not reference
+their own name. For example:
+
+\begin{verbatim}
+foo = foo ; bar
+\end{verbatim}
+
+is not allowed, because the definition of \texttt{foo} references
+\texttt{foo} itself. Programs requiring recursive expressions
+should use the \texttt{\#fix} fixed-point operator instead.
+
+There is a special expression name, \texttt{main}, which
+designates the top-level expression for the program.

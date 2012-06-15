@@ -1,0 +1,183 @@
+%!TEX root = twig.tex
+
+\chapter{The Design of Twig's Interpreter}
+\label{ch:impl}
+
+\section{The \texttt{twigc} application}
+\label{sec:impl:twigc}
+
+Our implementation of Twig is called \texttt{twigc}. This command
+line application expects as input a \texttt{.twig} file containing
+a list of named rule expressions along with a \texttt{main} rule
+expression, as described in Section~\ref{sec:expressions}. It also
+expects an initial value (i.e., a term, representing a type in the
+target language), which will be used as the input to the main rule
+expression. As discussed below, our implementation supports both C
+and Python as target languages.
+
+To render C, Twig must be configured with a mapping from terms to
+C types. Currently, this mapping is provided with a simple
+key/value text file. Note that this mapping is not necessary for
+Python, since types do not need to be declared in that language.
+
+If the input value can be successfully rewritten using the main
+rule expression provided, then Twig will output the rewritten term
+along with the generated block of code. If desired, this code
+block may be redirected to a separate file. In C, for example, the
+file may then be included in a program using an \texttt{\#include}
+directive.
+
+\section{Embedded Design}
+\label{sec:impl:design}
+
+The \texttt{twigc} tool is written in Haskell. We have found
+Haskell very well suited to this kind of interpreter development.
+This is due primarily to Haskell's ability to embed
+domain-specific languages within itself~\cite{embedded-dsl}.
+
+In Haskell, we can easily describe the structure of Twig's
+expressions as a datatype. Here is a simplified version of our
+expression datatype in Haskell:
+
+\begin{verbatim}
+data RuleExpr = Rule Pattern Pattern String
+              | Seq RuleExpr RuleExpr
+              | LeftChoice RuleExpr RuleExpr
+\end{verbatim}
+
+Our ``interpreter'' is then a function that takes a
+\texttt{RuleExpr}, and yields another function having the type
+
+\[
+\mathtt{Term -> Maybe(Term,Block)}
+\]
+
+This is the type of a function takes a term (represented by the
+datatype \texttt{Term}) and returns a value of type \texttt{Maybe
+(Term,Block)}. This type represents a choice (the \texttt{Maybe}
+constructor) between either a pair of a term and a block, or else
+the single distinguished value \texttt{Nothing}, representing
+$\bot$ or failure in our semantics. Implementing the interpreter
+is straightforward. For example, here is the (somewhat simplified)
+code for Twig's sequence operator:
+
+\begin{verbatim}
+eval (Seq e1 e2) t =
+  case eval e1 t of
+    Nothing -> Nothing
+    Just (t',m1) -> 
+      case eval e2 t' of
+        Just (t'',m2) -> Just (t'',m1 `seqn` m2)
+        Nothing -> Nothing
+\end{verbatim}
+
+And here is left-biased choice:
+
+\begin{verbatim}
+eval (LeftChoice e1 e2) t =
+  case eval e1 t of
+    Just (t',m) -> Just (t',m)
+    Nothing -> 
+      case eval e2 t of
+        Just (t',m) -> Just (t',m)
+        Nothing -> Nothing
+\end{verbatim}
+
+We find this code quite elegant.
+
+\section{Code Generation}
+\label{sec:impl:code-gen}
+
+Our implementation supports generation of two different target
+languages: C and Python. We have described the C generation scheme
+and our implementation in Section~\ref{sec:code-gen:c}. Our Python
+implementation is quite similar. In fact, generating Python is a
+bit simpler, because we do not have to worry about declaring
+generated variables before they are used.
+
+We have added an experimental feature where the programmer can
+select between C and Python in the same Twig program file using a
+special directive. We note this feature because we make use of it
+in the example in Section~\ref{sec:eval:multi-lang}. 
+
+Consider the Twig file:
+
+\begin{verbatim}
+@language{Python}
+
+r1 = [py(int) -> py(float)] <<<
+  $out = float($in)
+>>>
+
+@language{C}
+
+r2 = [py(float) -> double] <<<
+  $out = PyFloat_AsDouble($in);
+>>>
+
+main = r1;r2
+\end{verbatim}
+
+Note the directives \texttt{@language{Python}} and
+\texttt{@language{C}}. These directives inform Twig that the code
+blocks in the primitive rules following the directive are written
+in the language indicated. If we evaluate this program on the
+input term \texttt{py(int)}, the output term will be a
+\texttt{double}, and Twig will generate two code files, one for C,
+and another for Python. The generated Python file wraps the Python
+output in a function, like this:
+
+\begin{verbatim}
+# Filename: output.python
+def gen1_py(in):
+  gen1 = float(in)
+  return gen1
+\end{verbatim}
+
+And the C file automatically calls the Python function using the
+Python/C API~\cite{python-c-api}:
+
+\begin{verbatim}
+void gen(PyObject *in) {
+  PyObject *gen1;
+  double gen2;
+  gen1 = call_python("output","gen1_py",in);
+  gen2 = PyFloat_AsDouble(gen1);
+}
+\end{verbatim}
+
+The C program invokes the generated Python function via the
+\texttt{call\_python} function. The function accepts a single
+Python value as an input argument, along with some parameters
+indicating which Python function to invoke, and returns a single
+Python value. The code for our \texttt{call\_python} function is
+as follows:
+
+\begin{verbatim}
+PyObject *call_python(char *module, char *f, PyObject *in) {
+  PyObject *module,*dict,*func,*out;
+  module = PyImport_ImportModule(module);
+  dict   = PyModule_GetDict(module);
+  func   = PyDict_GetItemString(dict,f);
+  out    = PyEval_CallObject(func,in);
+  return out;
+}
+\end{verbatim}
+
+This approach is promising, but at the moment is relatively ad
+hoc. We are able to automatically combine the two languages in
+this way only for simple data types, and in particular tuple terms
+cannot be passed from Python to C. Ideally, we would provide a way
+for user's to customize the \texttt{call\_python} function, so
+that multi-language facilities other than the Python/C API could
+be used.
+
+\section{Expression Reductions}
+\label{sec:impl:reductions}
+
+We have described our implementation of Twig's facility for
+user-defined expression reductions in Section~\ref{sec:red:impl}.
+Here, we note only that expression reductions are implemented in a
+way that is orthogonal to the rest of the interpreter -- they can
+be turned on or off as needed.
+

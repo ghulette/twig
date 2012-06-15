@@ -1,0 +1,445 @@
+%!TEX root = twig.tex
+
+\subsection{Foreign function interfaces}
+\label{sec:ffi}
+
+A foreign function interface (FFI) allows a program written in one
+language to invoke routines and/or access data in another
+language. The term FFI is somewhat misleading; in addition to
+function calls, FFIs may allow method invocations for
+object-oriented languages, or hooks for a low-level language to
+work with high-level data.
+
+FFIs allow interoperation between exactly two languages. This
+restriction differentiates them from approaches that allow more
+than two languages, such as language-neutral intermediate
+representations (Section~\ref{idls}) or interface definition
+languages (Section~\ref{neutral_ir}). FFIs are directional, and we
+say that the \emph{source} language initiates calls to the
+\emph{target} language. Many FFIs, however, also support callbacks
+from the target language to the source language.
+
+FFIs are a common feature in mainstream programming languages
+because they provide two important capabilities. First, FFIs allow
+high-level languages to use low-level functions and capabilities
+not definable in the high-level language itself. For example, a
+high-level language may not be able to call the operating system
+directly, or may require low-level access to hardware features for
+performance-critical routines. Second, FFIs are used to wrap and
+expose existing libraries of routines so that they need not be
+rewritten in the high-level language.
+
+FFIs must reconcile the runtime environments and application binary interfaces of two different languages. This may present a variety of challenges, depending on the features of those languages. We will now consider some examples of FFI systems and the issues they face.
+
+%%%
+%%% EXAMPLES
+%%%
+
+\subsubsection{Examples}
+
+\paragraph{Fortran Bind(C)}
+
+Fortran 2003 introduced an FFI that allows bidirectional
+interoperability between Fortran and C~\cite{reid07fortran,
+reid00fortran}. Since Fortran and C are similar, the FFI is
+straightforward. BindC introduces a set of \emph{interoperable
+types} in Fortran that represent C's primitive types (e.g.,
+\texttt{int}, \texttt{float}, and so on). Values of these types
+may be passed back and forth between C and Fortran with no
+conversion needed. Derived types, such as structures, arrays, and
+pointers are interoperable if their component types are
+interoperable. To expose a C function to Fortran, the C function
+is defined as usual and linked into the Fortran program. The
+Fortran program must declare a correspondingly named function
+marked with the \texttt{BIND(C)} keyword. The function's signature
+(i.e., its argument and return types) must consist only of
+interoperable types, and it is the programmer's responsibility to
+ensure that the declared signature in Fortran matches the C
+definition.
+
+\texttt{BIND(C)} is a bi-directional FFI, so this process also
+works in reverse. If a Fortran function is defined with an
+interoperable signature, then the C program can access it by
+linking in the Fortran code and declaring a C function with the
+corresponding name and signature.
+
+\paragraph{Java Native Interface}
+\label{jni}
+
+The Java Native Interface (JNI)~\cite{liang99jni} is an FFI from
+Java to C. The JNI makes extensive use of \emph{glue code}, that
+is, code that does not contribute to the core program
+functionality, but rather serves to ``glue'' otherwise
+incompatible code together (see Section~\ref{sec:ffi:glue-code},
+below). In the JNI, glue code is used within C functions to
+provide access to Java object data, and to invoke methods. When it
+is invoked, the C function is passed a special pointer (called
+\texttt{JNIEnv}) that acts as a reference to the JVM. This pointer
+is used by special JNI functions that allow C code to look up
+classes and types by name, instantiate objects, invoke methods,
+and so on. Interaction occurs dynamically, and no static type
+checking is performed. One benefit of this dynamic approach is
+binary compatibility. Because the JNI uses Java's type reflection
+mechanism~\cite{gosling00java} to work with JVM entities by name,
+the C code will not need to be recompiled even if the JVM
+implementation changes.
+
+The JNI uses glue code extensively. Primitive Java types are
+passed by value and mapped to corresponding C primitive types,
+while objects are passed by reference (except arrays, see below).
+The references appear to C as opaque pointers and must be
+manipulated exclusively through glue code. There are two kinds of
+references: local and global. Local references are valid only
+until the C function returns to Java. When control has returned to
+the JVM, locally referenced objects may be garbage collected.
+Global references are never be garbage collected until they are
+explicitly released. This implies that the C code must take care
+to release global references or else incur memory leaks. A global
+reference is created from a local one. Object-type arguments to
+JNI functions are always local.
+
+Because objects are accessed indirectly through references and
+glue code, the garbage collector is free to move objects around in
+memory at any time. The data may even be moved during the C call
+if the garbage collector is running on a separate thread -- the
+JNI standard requires that implementations take this possibility
+into account.
+
+Java arrays are treated specially for performance reasons. Native
+code is able to access arrays directly, circumventing the usual
+glue code. This makes array manipulation fast. But, it means the
+garbage collector must take care not to move the data while the
+native code is accessing it. There are three ways to accomplish
+this task. First, the programmer can ask the JNI to ``pin'' the
+array; this tells the garbage collector to leave it in place until
+the programmer unpins it. This method is effective and easy to
+program, but can significantly complicate the garbage collection
+algorithm. Therefore not all JVM implementations support pinning.
+Second, the JNI can copy the array's contents to a buffer so that
+the C code can work on it locally, and then copy it back. While
+the copied array is being modified, the garbage collector is free
+to relocate the original array. This method works when pinning is
+not available, but large or frequent array copies may be costly.
+Third, the native code can enter a critical region that
+temporarily suspends the Java garbage collection thread. While the
+garbage collector is suspended, the native code can work on the
+array undisturbed. However, within the critical region the native
+code is restricted from blocking.
+
+Extra care must be taken when using arrays in multi-threaded JNI
+programs. For example, consider what would happen if two Java
+threads tried to invoke a native method on the same array
+concurrently, using the method of copying the array to a local
+buffer. The program would contain a race condition -- the first
+method would complete and write the array back to Java, and then
+the second method would complete, and overwrite the first array.
+Or, if instead the program uses the critical region method, it
+must take care that other threads will not exhaust Java's
+available memory while the garbage collector is suspended. The JNI
+enables native code to acquire and release locks via a glue code
+interface to the usual Java synchronization mechanism, but
+otherwise does not provide special support for multi-threaded
+code.
+
+The JNI supports callbacks from C to Java. The C program can use
+glue code to acquire object references, and pass these references
+to a Java method. The method signatures are obtained and invoked
+dynamically, via the \texttt{JNIEnv} data structure.
+
+The JNI allows C code to throw Java exceptions. When an exception
+is thrown from C, the native function exits immediately, control
+returns to Java, and the exception is processed normally. Because
+the JNI allows callbacks, it is possible that an exception thrown
+from a Java method will be encounter a C function on its way up
+the stack. In this case, control returns to C. The exception does
+not interrupt the native code, but is recorded in the
+\texttt{JNIEnv} data structure. Therefore, it is the
+responsibility of the C function to check whether there are any
+pending exceptions after control returns from a callback. If an
+exception is detected, the C function can handle it or else
+re-throw it.
+
+\paragraph{Python Ctypes}
+
+Ctypes~\cite{kloss08ctypes, pythonctypes} is one of several Python
+FFIs to C; it is interesting because it uses dynamic instead of
+static libraries. Dynamic libraries are files containing compiled
+C functions, formatted in such a way that the code can be loaded
+and executed by other programs at runtime. Dynamic libraries
+include a symbol table so that functions can be found by name.
+
+The Ctypes Python module is initialized with a dynamic library,
+and it generates Python wrapper code to expose each function in
+the library as a Python method. Dynamic libraries do not contain
+type information, so the programmer must explicitly set the number
+and types of the arguments as well as the return type for each
+function.
+
+Ctypes knows how to convert simple data representations between C
+and Python. Primitive C types are converted to equivalent Python
+types. Structures in C are converted recursively into Python
+objects. Arrays may be converted if they contain only primitive
+types. Structures and arrays are passed to Python as references to
+the C heap or stack. The references are just pointers, but Python
+is prohibited from manipulating them directly. Instead, Ctypes
+provides Python glue code to manipulate each kind of data
+structure through the pointer.
+
+Ctypes can construct a C function pointer from a Python routine,
+allowing C to call back into Python. The documentation suggests
+that Python objects passed to C should have references held in
+Python, to prevent them from being garbage
+collected~\cite{pythonctypes}.
+
+\paragraph{Matlab MEX files}
+
+The Matlab programming environment provides MEX
+files~\cite{mathworksmexfiles}, a simple but effective FFI that
+allows Matlab to call C, C++, or Fortran functions. MEX foreign
+functions are just C functions, written using the MEX API to
+decode and manipulate Matlab's matrix values. It is the
+programmer's responsibility to ensure that the MEX functions they
+provide conform to Matlab's requirements; for example, failing to
+properly parse an argument list should result in the function
+returning a MEX-specified error. Matlab makes no effort to check
+that the functions conform in these ways.
+
+\paragraph{SML/NJ}
+
+Standard ML of New Jersey (SML/NJ) provides an FFI to C~\cite{huelsbergen96mlffi}. It is an interesting example because the two languages are quite different. The representations even of basic data types are different in SML. In particular, data types in C depend on the compiler, where in SML they are fixed by the standard. The FFI avoids this problem by parameterization, using meta-information about the C compiler. The meta-information includes details such as the size of an integer, byte ordering, calling convention, and so on. The parameterized FFI then exposes a set of types to ML programs representing those used by the C compiler, along with conversion routines to and from common SML types.
+
+SML/NJ manages memory with a garbage collector. As we saw in the JNI, this can cause problematic interactions. For example, a C program using a pointer into the ML heap must ensure that the dereferenced data will not be moved or disposed of. SML/NJ's implementation supports ``pinning'' memory, i.e., explicitly instructing the garbage collector to temporarily leave the data in place. So, C functions that wish to work with ML data directly must pin the data first.
+
+Functions exported to SML from a C file must be marked with a special macro, which enables SML/NJ to look up the function's address by name. Since compiled C function libraries do not include type information, C functions must be registered in SML at runtime, and assigned the appropriate argument and return types. The FFI provides an ML type representing a pointer onto the C heap. It also provides C glue code to manipulate ML data structures via a pointer onto the ML heap. These pointer types allow complex data to pass across the language boundary.
+
+SML/NJ's FFI provides callbacks to ML functions. A callback's arguments and return types are restricted to the C-compatible data types, including pointers to ML data. ML callbacks are created from regular ML functions, i.e., closures. The conversion is accomplished by dynamically registering an ML closure with the FFI -- this creates a ``bundle'' at a fixed address, which contains code to invoke the closure. The bundle's address is presented to C as a function pointer. With this scheme, the closure may be relocated by the garbage collector -- when this happens, the bundle's contents are updated to reflect the closure's new address. The bundle itself remains at its original address, and so the function pointer remains valid in C.
+
+\paragraph{Haskell 98}
+
+The Haskell 98 FFI~\cite{chakravarty03haskellffi} is part of the Haskell 98 standard. The FFI includes some placeholders intended to facilitate calls from Haskell to any external language, but only the binding to C is defined in detail. Haskell presents some interesting challenges to integration with C. Like ML, Haskell features first-class functions, a strong and static type system, and automatic memory management. In addition, it has call-by-need semantics, and distinguishes functions that may cause side effects from so-called ``pure'' functions.
+
+A foreign function is exposed by declaring its type signature in the Haskell source code, along with the keywords \texttt{foreign import}. This tells the Haskell compiler that the function definition will be found in a C library.
+
+The Haskell 98 FFI restricts the type signature of foreign functions to a set of \emph{basic types} that map unambiguously between Haskell and C. Basic types include the usual primitive types, such as integers and floating point numbers. Basic types also include a set of ``raw'' types such as \texttt{Word32}, that are independent of the machine architecture and C compiler. Finally, basic types include several varieties of pointers. First, there are regular pointers to the C heap, parameterized with another basic type describing the dereferenced data. Second, there are C function pointers. Third, there are ``stable'' pointers, which are references to Haskell expressions guaranteed to never be deleted or moved by the garbage collector until they are explicitly released. Stable pointers may be safely stored in C, without worry that they will be invalidated when control returns to Haskell. Finally, there are ``foreign'' pointers, a type representing a pair of a regular pointer onto the C heap along with a function pointer. The function pointer should point to a finalizer function, to be called by the Haskell when the object is garbage collected. Foreign pointers allow C data objects to be memory managed by Haskell.
+
+The Haskell 98 FFI permits callbacks. A Haskell callback must be a function declared with the \texttt{foreign export} keywords, and defined in Haskell. The callback function is always evaluated strictly (not lazily) if invoked from C. To invoke a Haskell callback, the calling C function should be declared ``safe'' using the \texttt{safe} keyword. Safe foreign functions entail some extra overhead to call, but they guarantee that the Haskell runtime will be in a consistent state if a callback is invoked. Unsafe foreign functions are faster, but callback behavior is undefined. Haskell functions used as callbacks should not throw exceptions; the runtime behavior in this case is undefined.
+
+Haskell uses monadic types to represent functions that may cause side effects. Using type inference, the Haskell compiler can (usually) construct this type information from the Haskell code. For foreign functions, however, Haskell cannot infer the type information. So, by default, the FFI must conservatively assume that all foreign functions may cause side effects. The programmer may override this assumption, asserting that an imported foreign function is pure. Pure functions have two benefits. First, the FFI assigns the foreign function a less restrictive type (i.e., it does not wrap the return type in the IO monad). Second, the Haskell runtime is free to memoize invocations of pure function, including pure foreign functions.
+
+\paragraph{GreenCard}
+
+GreenCard~\cite{jones97greencard} is a different approach to designing a Haskell FFI to C. GreenCard focuses on providing an easy way to generate \emph{wrappers}, i.e., layers of code that expose pre-existing libraries of C functions. Usually, such libraries are provided as a pair of files -- one a pre-compiled library of functions; the other a ``header'' file of C declarations, including the names, arguments, and return types of each function. Where the Haskell 98 FFI requires that programmers manually declare foreign function signatures, GreenCard uses the header file to automatically generate appropriate types and glue code for each function.
+
+Ideally, GreenCard could extract all the required information from only the header file. Unfortunately there are ambiguities. For example, C programmers generally use the type \texttt{char *} to represent null-terminated strings. But \texttt{char *} may also represent a pointer to a single character, or to an array of bytes. C does not distinguish between these cases, but Haskell, due to its strict type system, does. To resolve these ambiguities, GreenCard augments the header file with \emph{annotations}. An annotations contains a Haskell type declaration for a C function, and the correspondence between the declared C and Haskell types resolves any mapping ambiguities. GreenCard includes a default mapping of types from C types to Haskell. If the defaults are satisfactory for a particular function, then no annotation is required.
+
+GreenCard uses a type translation mechanism (see Section~\ref{sec:background:typemap}) called ``Data Interface Schemes'' (DIS). DISs are like macros or functions that describe how a type in C is converted to its Haskell equivalent. DISs have a flexible syntax, with common cases handled by simple directives, and uncommon cases with arbitrary code. For example, there is a DIS directive for converting a C \texttt{enum} to an equivalent Haskell variant type.
+
+Another DIS directive is used for C pointer return values. Many C functions that return a pointer will return the value \texttt{NULL} in case of a failure, or else a valid pointer. The DIS maps the pointer type to a Haskell \texttt{Maybe} type. The value will be \texttt{None} in case the pointer is \texttt{NULL}, and \texttt{Just x} otherwise, where \texttt{x} is the dereferenced pointer value.
+
+GreenCard assumes by default that C functions may cause side effects, and wraps them in the \texttt{IO} monad. The programmer may override this assumption if they know the function is pure.
+
+Since its purpose is wrapping existing C libraries, GreenCard restricts itself to calling C from Haskell. So, GreenCard does not include callbacks. It therefore avoids issues with garbage collection and exceptions.
+
+\paragraph{CHASM}
+
+CHASM~\cite{rasmussen01chasm} is a restricted kind of FFI between
+C++ and Fortran 90 (F90). F90 programs have a compiler-dependent
+interface, because the F90 standard leaves many decisions to the
+implementation. CHASM generates wrappers around F90 procedures
+that present a consistent and well-defined interface. This allows
+C++ code to call F90 procedures, without having to modify the
+calls to suit a particular F90 compiler. CHASM's static analysis
+uses the Program Database Toolkit (PDT)~\cite{lindlan00analysis}
+to parse and query Fortran and C++ programs.
+
+There are two important facets of F90's procedure interface that
+are left to the implementation. The first is the way that arrays
+are passed to functions. The F90 standard declares that arrays are
+passed by ``descriptor,'' without specifying the descriptor's
+exact representation. So, depending on the F90 compiler, a
+procedure might expect a simple pointer for a descriptor, or an
+integer handle, or some data structure. The second
+compiler-dependent aspect of F90 is procedure names. Some
+compilers, for example, store F90 procedures names using only
+capital letters, while others precede names with an underscore. If
+a caller does not know the naming convention, it cannot find the
+F90 procedure.
+
+CHASM solves this problem by abstracting each Fortan 90 procedure,
+using a compiler-independent wrapper function. The wrapper uses a
+well-defined, compiler-independent naming scheme for Fortran
+procedures, and within the wrapper it calls the compiler-dependent
+name.
+
+The wrapper function also presents a compiler-independent
+interface for passing arrays to procedures. The wrapper procedure
+has the same number and types of arguments as the wrapped
+procedure and except for arrays, these are passed through
+unchanged. The wrapper replaces each array descriptor argument,
+however, with an integer handle representing the array. This
+handle is an index into a globally-scoped table, maintained by
+CHASM. The table relates integer handles to array references. An
+array only needs to be registered in the table if it passes
+through one of the wrapper functions. Therefore, the wrappers
+contain all the logic needed to maintain the tables.
+
+CHASM also includes a C++ class that encapsulates a Fortran array.
+CHASM will generate stubs for calling F90 procedures in C++ as
+well, and these wrappers automatically convert the integer handle
+to the array class.
+
+
+%%%
+%%% ISSUES
+%%%
+
+\subsubsection{Glue code}
+\label{sec:ffi:glue-code}
+
+The examples in this section have illustrated that we can
+categorize FFI systems according to the way they use \emph{glue
+code}. Glue code is a term for program logic that helps to connect
+or reconcile two different representations of data or code. In
+general, frameworks endeavor to minimize the need for glue code.
+As we have seen, FFIs are rarely able to exclude glue code
+altogether, but there are ways to mitigate the burden this places
+on programmers.
+
+Glue code in FFIs serves to overcome semantic ambiguities where
+the two languages interact. These issues include pinning arrays as
+in the JNI, or registering the appropriate C function type
+signatures at runtime, as seen in SML/NJ and Ctypes. The most
+common use of glue code, though, is to allow the data types of one
+language to be interpreted and manipulated by the other. In the
+JNI, for example, programmers must use an API to pick apart Java
+objects passed to C functions. This kind of glue code is often
+used to address the problem of \emph{type mapping} (see
+Section~\ref{sec:background:typemap}), where the ``natural'' data
+types of one language are mapped to a convenient and/or natural
+analog in the other. For example, many FFIs map between some
+high-level data type for strings and C's \texttt{char *}
+representation.
+
+Many systems that we will examine in
+Sections~\ref{sec:background:typemap} and \ref{embedded}, such
+as~\cite{hirzel07jeannie}, attempt to automatically or
+semi-automatically generate FFI glue code.
+
+FFIs may require glue code in the source language, the target
+language, or occasionally both. The former is useful for
+generating high-level ``wrapper'' functions for existing
+libraries, because the library source code may be inconvenient or
+impossible to modify. This is the approach taken by Haskell
+GreenCard and the Haskell 98 FFI, Ctypes, and SML/NJ. The latter
+option, glue code in the target language, may be preferable when
+foreign functions are written with interoperability in mind. It
+allows low-level functions to work directly on complex, high-level
+data types, possibly avoiding data conversion. This approach is
+taken by the JNI and Matlab's MEX files. Fortran BindC requires
+little glue code because Fortran and C are fairly similar.
+
+\subsubsection{Type safety}
+\label{sec:ffi:safety}
+
+A FFI cannot make strong guarantees about type safety if one of
+its interacting languages is unsafe. In particular, a program in
+an otherwise type-safe language employing a FFI to C is no safer
+than C itself.
+
+Glue code should, in principle, be able to check for some kinds of
+safety violations at runtime. In practice, this does not seem to
+be a popular FFI feature. This is probably because one of the
+foremost benefits of a C FFI is the speed of C code, which runtime
+checks could degrade. None of the FFIs above include runtime
+safety checks.
+
+\subsubsection{Garbage collection}
+\label{sec:ffi:garbage}
+
+Automatic memory management, i.e., a garbage
+collector~\cite{appel98mlcompiler}, in one or both languages
+presents challenges for FFIs. The most common problem is notifying
+a foreign garbage collector that a reference to one of its objects
+is held, so that the object will not be released. Usually, this
+must be done explicitly. Depending on the scheme, the object may
+have to be explicitly deallocated as well.
+
+In addition, garbage collectors may move objects around in memory.
+If the garbage collector runs on a separate thread (e.g., in
+Java), the object could even be moved while the main thread is
+operating on the data in a foreign function. In this case, the
+result would be a disaster -- the data would literally be moved
+out from under the running program.
+
+A seemingly simple solution is to suspend garbage collection for
+the duration of an FFI call. This is insufficient in general.
+Pointers to foreign objects stored across separate FFI invocations
+may still be invalidated (i.e., moved or deallocated) when control
+returns from the FFI invocation. If the FFI includes callbacks,
+the FFI must usually resume garbage collection when the foreign
+function calls back; in this case, even local pointers might be
+invalidated by the time control returns to the foreign code.
+
+A better solution, used in the JNI and SML/NJ, is to ``pin'' data
+objects used by the foreign language. This tells the garbage
+collection algorithm that the data should not be moved or
+deallocated, until the pin is released. Unfortunately, pinning may
+complicate the garbage collector implementation. In cases where
+pinning is not or cannot be implemented, an alternative is to copy
+the data from the source language to a buffer in the target
+language, and then copy it back after the function completes.
+However, the overhead of copying may be substantial for large
+objects, or if it is called frequently. Moreover, copying becomes
+more complicated if the target language stores a pointer to the
+buffer; the FFI must then reconcile the two buffers on every entry
+or exit from the foreign runtime.
+
+\subsubsection{Exceptions}
+\label{sec:ffi:exceptions}
+
+Exceptions are a common feature of high-level languages that can
+be difficult to map properly into low-level language semantics.
+Usually, FFIs connect higher-level languages to lower-level ones,
+so exceptions only cause problems if the FFI permits callbacks. In
+the absence of callbacks, there is no way for a thrown exception
+to reach a foreign function.
+
+If the FFI has callbacks and the high-level language has
+exceptions, there are two approaches. The first, expedient option
+is to declare the program's behavior undefined when an exception
+reaches a foreign function. This approach is used in Ctypes and
+the Haskell 98 FFI. The second option, used for example in the
+JNI, is to set an exception flag when control returns to a foreign
+function. The foreign function must check the flag to see if the
+callback returned normally, or via an exception. If an exception
+was thrown, the foreign function may re-throw the exception. Or it
+may handle it, resetting the flag to indicate the exceptional
+condition was resolved, and returning normally.
+
+\subsubsection{Discussion}
+
+The primary goal of most FFIs is to provide efficient access to C
+from a higher-level language. This goal is practical -- most
+higher-level languages otherwise would sacrifice some or all of
+the low-level capabilities that C offers.
+
+Efficient access to C is generally at the cost of the other
+interoperability goals. Targeting C precludes strong type checking
+and safety guarantees; in fact, use of an FFI will generally
+compromise these properties in a high-level language that features
+them. Furthermore, as we have seen, the programming model for FFIs
+may not be as natural as possible. While function calls seem like
+a good enough abstraction, FFIs frequently require glue code to
+reconcile language differences. This glue code generally obscures
+the main program logic, and ensures that the interoperability is
+not seamless. Finally, it is clear that FFIs are not scalable,
+because by definition an FFI connects exactly two languages.
+
+Another reason to use FFIs is to decompose a program or algorithm
+across two languages, with the programmer writing different parts
+in the language most suited to the task. With the exception of
+using C for performance, as previously discussed, this use of FFIs
+is not seen very often. This may be because the design and
+implementation of an FFI is labor-intensive, and it is easier to
+use C as an intermediate \emph{lingua franca} than to write a
+different FFI for every language.

@@ -1,0 +1,88 @@
+%!TEX root = twig.tex
+
+\subsection{Language Integration}
+\label{embedded}
+
+Integrating two or more languages involves reconciling the syntax and semantics of those languages. The combination may produce an entirely new language, or one language may be entirely expressible in terms of another.
+
+\subsubsection{Examples}
+
+The following systems are examples of systems that achieve language interoperability through an integration.
+
+\paragraph{NLFFI}
+\label{nlffi}
+
+NLFFI embeds C's type system within SML, allowing for data-level interoperability with C code~\cite{blume01nlffi}. It allows SML to call C functions, without the need to map types or marshall data, since ML can just pass the arguments in the representation that C expects. The tradeoff is that, since C's type system is not safe, ML programs that use NLFFI are no longer guaranteed to be safe either.
+
+NLFFI uses a type system ``trick'' (see below) to set up a one-to-one correspondence between types in C and a set of types defined in ML. The ML compiler is modified to generate C code for expressions that have these types. The embedding is rather complicated; here, we give a few examples of the kinds of techniques they use.
+
+NLFFI relies heavily on \emph{phantom types}, which are type constructors used only to construct other types, and not assigned values. Consider the following ML type:
+
+\begin{verbatim}
+sig type bin
+  type binary
+  type 'a dg0
+  type 'a dg1
+end
+\end{verbatim}
+
+These types can be used as a kind of ``type language,'' to construct binary numbers. For example, the type \texttt{binary dg1 dg0 dg0} represents $100_2$, or $4$ in base 10. In NLFFI the technique is only slightly more complex. Specifically, NLFFI uses a decimal number representation instead of binary, and introduces extra type parameters to prohibit leading zeros, which ensures that each number corresponds to a unique type.
+
+For example, to encode C's fixed-size array types, NLFFI uses phantom types in a one-to-one relation to non-negative integers to type fixed-length arrays, by using the phantom type to indicate the array's length. With this scheme, C arrays of the same length will have the same ML type, which conforms to C's typing rules.
+
+As another example, NLFFI encodes C's \texttt{const} pointer type parameter by including a tag in the C pointer type. The tag itself is a phantom type that corresponds to two values, \texttt{const} or non-\texttt{const}. NLFFI provides functions to read and write data from a pointer, and these functions take the pointer type as an argument. While the read function is polymorphic in the \texttt{const} tag, writing is strict. This technique allows ML to statically reject code that attempts to write to a \texttt{const} pointer.
+
+NLFFI does not address some of the usual aspects of multi-language programming. In particular, it does not allow C to access SML's data or functions. NLFFI is therefore a one-way integration.
+
+
+\paragraph{Jeannie}
+
+Jeannie~\cite{hirzel07jeannie} combines the syntax and semantics of C and Java, and allows each to be embedded in the other recursively. Programmers switch between languages using a special operator (Jeannie uses the backtick character to switch from Java to C, or from C to Java). The Jeannie compiler produces two separate programs, one in Java and the other in C, and connects them with automatically generated JNI code (see Section~\ref{jni}).
+
+The complete syntax of each language is supported, but the switch operator must be used explicitly to change from one language to the other. The switch operator may be applied to either statements or expressions. Jeannie adds some extra syntax for convenience, such as synchronized blocks and exception constructs like \texttt{try}, \texttt{throw}, and \texttt{catch} for C, as well as extra functions, such as a version of \texttt{memcpy} that copies a block of memory from Java's heap to C's.
+
+Jeannie statically type checks the separate Java and C code according to their own typing rules. It also adds static checks across language boundaries, which are not normally performed on JNI code. For example, there are cross-language checks to ensure that checked exceptions are either caught locally or declared, and that private and protected Java methods are not called from C. Because it incorporates C, Jeannie is not type safe. Cross-language checks are an improvement over hand-written JNI in this regard, however.
+
+Jeannie uses the same type equivalences defined in the JNI, but also checks that they are used correctly. C constructs like explicit pointers, \texttt{struct}s and \texttt{union}s have no equivalents in Java, and so Jeannie checks to make sure they do not cross over to Java without being explicitly marshalled.
+
+Operators like \texttt{break} and \texttt{continue} cannot divert control flow across language boundaries, since the JNI does not support it. Other control flow operators, such as \texttt{throw}, are able to divert control flow because they have a semantics in C that is defined by the JNI (see Section~\ref{jni}).
+
+
+\paragraph{MLj}
+
+MLj~\cite{benton99interlang} is a Standard ML (SML) compiler that generates Java bytecode. It includes an extension to SML, allowing it to call Java code. The ``semantic gap'' between the two languages is fairly small. Java and SML both have strong typing, similar basic types, and checked bounds. They use similar exception semantics. Both prohibit explicit pointers and have automatic memory management. There are differences, however. Java's objects and inheritance subtyping have no counterpart in ML. Java lacks parametric polymorphism and support for closures.
+
+% TODO: Does Java still lack these?
+
+The goal of MLj's extension is to allow ML to call Java methods and handle Java objects as first-class entities, i.e., store them and use them as arguments and/or return values from ML functions. Furthermore, they allow Java classes to be constructed within MLj, and these classes may use ML objects freely. The complete formal semantics are given in~\cite{benton99interlang}. Here, we highlight some of the interesting points.
+
+MLj extends SML with Java types and terms. Primitive types in Java are equated with their respective ML types. So, in MLj, a ML \texttt{int} and a Java \texttt{int} refer to the same type. Some basic classes, like ML's \texttt{string} and Java's \texttt{java.lang.String} are also equated. Java's package hierarchy is equated with ML's modules, and Java's \texttt{import} syntax is mapped to ML's module \texttt{open}. Conveniently, Java's package syntax and ML's module syntax are identical, and so they work without modification.
+
+Unlike in ML, which requires that values be bound when they are declared, Java allows reference types (i.e., objects) to be null. Therefore, MLj wraps Java object types within an option\footnote{ML's option type is a variant with two constructors: $\mathtt{None}$ or $\mathtt{Just}~\alpha$.} type. In this scheme, a null reference is given the value \texttt{None}, while valid values are constructed with \texttt{Just}. This approach is similar to how the Haskell 98 FFI and GreenCard represent null pointer return values in C.
+
+MLj allows certain implicit \emph{coercions} to make the code more natural. Here, a coercion is an implicit type cast and conversion from one datatype to another. In particular, MLj allows a widening coercion on Java objects that implements Java inheritance rules. Specifically, for Java object types \texttt{T1} and \texttt{T2}, if \texttt{T1 <: T2}\footnote{The notation \texttt{<:} is read ``is a subtype of.''}, then whenever \texttt{T1} is expected, it will be coerced to \texttt{T2}. This coercion is always well-defined for Java objects. Explicit casts, notably downcasts (i.e., a cast from \texttt{T2} to \texttt{T1}, where \texttt{T1 <: T2}), are supported for Java objects. As in Java, an invalid cast will throw an exception.
+
+MLj also permits coercion from an option type $\mathtt{option}~\alpha$ to $\alpha$, which simplifies programming with the null pointer mapping described above. This coercion will throw a Java \texttt{NullPointerException} if the value is $\mathtt{None}$.
+
+Java methods may be ``overloaded,'' i.e., share the same identifier within a single class, and distinguished by their argument types. At an overloaded method call site, the specific method is determined by examining the supplied argument types. Overloading can be ambiguous, however. Consider the following Java class \texttt{A}, with overloaded method \texttt{foo}:
+
+\begin{verbatim}
+class A {
+  void foo(String s) {System.out.println("1");}
+  void foo(Object o) {System.out.println("2");}
+  public static void main(String [] argv) {
+    A a = new A();
+    a.foo("hello");
+  }
+}
+\end{verbatim}
+
+The call to \texttt{foo} in \texttt{main} is ambiguous; the value \texttt{"hello"} can be typed as either a \texttt{String} and an \texttt{Object}, because \texttt{String <: Object}. Java handles this ambiguity by choosing the most specific method with respect to an ordering on types (roughly, the ordering is determined by the inheritance hierarchy, with extra rules for primitives). So, in Java, the example above will output \texttt{1}. Note that a \emph{unique} most specific method may not exist, and in this case the Java compiler will terminate with an error.
+
+Unfortunately, ML's type inference algorithm cannot accommodate the ``most specific'' technique of selecting overloaded methods, and so MLj discards it. The specific overloaded method must be unambiguously selected by the programmer, using ML's type annotation syntax if necessary to disambiguate argument types.
+
+MLj's compiler produces Java bytecode, which is executed within a single Java virtual machine (JVM). Therefore, MLj's ML and Java portions share a garbage collection system, and so the special rules for pinning arrays and so on that we saw in Section~\ref{sec:ffi} are not needed. By the same token, in MLj Java and ML share a call stack, and since ML's \texttt{exn} type and Java's \texttt{java.lang.Exception} type are equated, exceptions may flow freely up the stack from one language to the other.
+
+\subsubsection{Discussion}
+
+Integrated languages are a bit of a catch-all category for systems that achieve interoperability by combining two or more languages. The approach is clearly not scalable, because considerable effort is required even to define the syntax and semantics of a language that combines two other languages, let alone implement a compiler. However, the result can accommodate a very natural programming style. It is especially interesting that the examples in this section are able to go beyond function calls as the main abstraction for interaction. They focus, instead, on expressions. MLj is even able to maintain the type safety guarantees of both ML and Java. Whether or not a given integrated language system is efficient depends on the system in question. Jeannie, for example, generates JNI code, and so is no more efficient than the JNI itself.

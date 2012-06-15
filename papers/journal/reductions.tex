@@ -1,0 +1,227 @@
+%!TEX root = twig.tex
+
+\chapter{User-defined Expression Reductions}
+\label{ch:reductions}
+
+In addition to the code generation and core semantics discussed in
+Chapters~\ref{ch:code-gen} and \ref{ch:semantics}, we have
+outfitted Twig with semantics that allow users to add a customized
+optimization phase. We call this facility \emph{expression
+rewriting} or \emph{expression reduction}.
+
+Expression reductions are an addition to the core semantics of
+Twig, not a necessary feature. Our implementation of Twig can be
+directed to ignore reduction directives.
+
+An expression reduction is defined by a \emph{directive}, written
+like so:
+
+\[
+\mathtt{@reduce}\quad e_1 \;\mathtt{=>}\; e_2
+\]
+
+Where $e_1$ and $e_2$ are Twig expressions (see
+Chapter~\ref{ch:semantics}). Reduction directives can appear
+anywhere within a Twig program.
+
+Informally, the directive above will cause the expression $e_1$ to
+be replaced with the expression $e_2$ anywhere it appears in the
+top level \texttt{main} expression, before the program is
+evaluated on its input. Expression names are substituted with
+their values within the \texttt{main} expression and, for each
+directive, within $e_1$ and $e_2$ before substitution begins.
+Directives are applied in the order in which they appear within
+the program text, and the main expression is transformed
+iteratively.
+
+In order to match expressions for substitution, we need a notion
+of equality among expressions. Unfortunately, in the case of
+primitive rules, this is somewhat tricky. For one, we have only
+defined syntactic equality among the terms in $T(\mathcal{X})$
+used for the input and output patterns. A better solution might
+involve something like alpha-equivalence among terms, allowing us
+to equate patterns like \texttt{foo(X)} with \texttt{foo(Y)}.
+Additionally, we do not define equality among abstract blocks
+because such a notion depends on the target language and thus the
+implementation. 
+
+We sidestep these issues by stipulating that there is no equality
+among primitive rules. That is, each primitive rule that appears
+in the program is assigned a unique identifier (having a
+well-defined notion of equality), and then matched by that
+identifier. This allows users to assign primitive rules to
+expression names, reference those names in reduction directives,
+and have the name stand for the primitive rule in a well-defined
+way. It also means that primitive rules should not appear on the
+left-hand side of reduction directives, since they will be
+assigned a unique identifier distinct from any appearing within
+the program, and thus never matched.
+
+% In pseudocode, given a Twig program called \texttt{p}:
+% 
+% \begin{verbatim}
+% function apply_directives(program p)
+%   expr e := main_expr(p)
+%   foreach directive d in p
+%     e := apply d e
+%   end
+%   main_expr(p) := e
+% end
+% \end{verbatim}
+
+% What about variables in reductions?
+
+\section{Expression Normalization}
+\label{sec:red:expr-norm}
+
+In addition to expression reduction directives provided by the
+user, Twig is able to apply some reductions based on the
+characteristics of its expression semantics. This is known as
+\emph{normalization} of the expression.
+
+The goal of the normalization procedure is to maximize the length
+of sequence expressions. This goal is motivated by our intuition
+that it is relatively easier for people to reason about sequence
+than the other operators, and so most user-defined reductions are
+likely to be in terms of sequences. For example, we have found in
+practice that reduction directives such as
+
+\[
+\mathtt{@reduce}\quad f;g \;\mathtt{=>}\; h
+\]
+
+are quite common in our own work. Therefore, we would like to
+transform the program without otherwise altering its meaning to
+maximize the length of sequences, so that user-defined expression
+reductions based on sequences have the best chance of matching.
+
+To that end, before user-defined reduction directives are applied,
+Twig can attempt to rewrite expression according to some built-in
+rules. Currently, we have identified two expression
+transformations which preserve the meaning of the program while
+rearranging expressions to prefer sequence over other operators.
+
+First, sequence distributes over choice from the left. Stated
+formally:
+
+\[
+\forall f,g,h \in S \;:\; f;(g|h) = (f;g)|(f;h)
+\]
+
+We exploit this identity by rewriting any expression of the form
+$f;(g|h)$ to $(f;g)|(f;h)$, which preserves its meaning but
+creates longer sequences.
+
+Second, congruence distributes over sequence. Stated formally,
+
+\[
+\forall r_1..r_n,s_1..s_n \in S \;:\;
+\{r_1,\ldots,r_n\};\{s_1,\ldots,s_n\} = \{r_1;s_1,\ldots,r_n;s_n\}
+\]
+
+Again, we can exploit this identity by rewriting the left-hand
+side of the equation to the right, which preserves the meaning of
+the expression but gives longer sequences.
+
+We prove these identities in Section~\ref{ch:expr-ids},
+below. Note that these built-in identities could not be expressed
+by a user as reduction directives in the code, because we do not
+allow variables in the expressions. This is an area of future
+work.
+
+\section{Implementation}
+\label{sec:red:impl}
+
+Our current implementation of reduction directives is rather ad
+hoc. We simply export the \texttt{main} expression as a string
+after substituting expression names for their values and primitive
+rules for their unique identifiers, as described above. Then, we
+process the string in a separate term rewriting tool, and import
+it back into Twig's internal expression representation. We have
+used the tool Maude~\cite{maude} successfully for rewriting,
+although there is no particular reason that other tools, such as
+Stratego~\cite{stratego}, could not be used instead.
+
+To perform normalization we use Maude's functional modules. Here
+is a (partial) listing for the functional module we use to rewrite
+expressions of the form $f;(g|h)$ to $(f;g)|(f;h)$:
+
+\begin{verbatim}
+fmod TWIG-EXPR is
+  protecting QID .
+  sort Expr .
+  op rule : Qid -> Expr [ctor] .
+  op _;_ : Expr Expr -> Expr [ctor assoc] .
+  op _|_ : Expr Expr -> Expr [ctor assoc] .
+  vars F G H : Expr .
+  eq F ; (G | H) = (F ; G) | (F ; H) .
+endfm
+\end{verbatim}
+
+As an example, we can export a very simple Twig expression to a
+string, and substituting unique identifiers \texttt{rule('a)},
+\texttt{rule('b)}, and so on for primitive rules as described
+above, yielding something like this:
+
+\begin{verbatim}
+rule('a) ; (rule('b) | rule('c) | rule('d)) .
+\end{verbatim}
+
+After applying the rewriting specified in the Maude module above,
+we get:
+
+\begin{verbatim}
+(rule('a) ; rule('b)) | (rule('a) ; rule('c))
+                      | (rule('a) ; rule('d))
+\end{verbatim}
+
+which we can import back into Twig and evaluate as usual.
+
+One intriguing alternative implementation would use Twig itself to
+rewrite its own expressions. Twig's rules operate on terms, and
+Twig expressions can be represented as terms, so the approach
+would be straightforward to implement. This is a project we plan
+to pursue in the future.
+
+\section{Discussion}
+
+As we will demonstrate in Chapter~\ref{ch:eval}, expression
+reductions are a powerful tool that allows users a high degree of
+control over how Twig evaluates programs. In particular, they
+allow users to introduce domain-specific optimizations for a given
+set of rules. Other tools, such as the Glasgow Haskell Compiler,
+have introduced similar facilities in their tools with promising
+results~\cite{ghc-rewrite}.
+
+As with all powerful tools, however, caution must be exercised
+when using reductions. Because they allow arbitrary, user-defined
+rewriting of expressions, it is easy to introduce errors or even
+rules which will cause non-termination of the Twig tool.
+
+For example, if a user introduces a directive such as
+
+\begin{verbatim}
+@reduce f => f;f
+\end{verbatim}
+
+then Twig will keep rewriting \texttt{f} to \texttt{f;f}, then to
+\texttt{f;f;f;f}, and so on, ad infinitum. Other cases may be more
+subtle, especially when reduction directives interact. For example, the two reduction directives:
+
+\begin{verbatim}
+@reduce a => b;c
+\end{verbatim}
+
+\begin{verbatim}
+@reduce c => a
+\end{verbatim}
+
+are individually harmless but, if they are both introduced in the
+same program, they will cause a chain of infinite expansion.
+
+In general, the set of expression reductions including the rules
+described in Section~\ref{sec:red:expr-norm} and any user-defined
+directives, should be \emph{normalizing} for expressions. That is,
+application of the set of rules should rewrite any expression to a
+unique form, and terminate. For more details on normal forms and
+rewriting, see Section~\ref{sec:background:trs}.

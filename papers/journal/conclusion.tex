@@ -1,0 +1,126 @@
+%!TEX root = twig.tex
+
+\chapter{Conclusion}
+
+We have presented Twig, a language for writing composable
+typemaps. As illustrated in our evaluation, we have found that
+Twig is an interesting and useful system for creating configurable
+domain-specific languages. These languages are based on Twig's
+core semantics, but incorporate primitive rules and expression
+reduction directives that take the domain's structure into
+account.
+
+\section{Summary of results}
+
+Twig is based on Systems S, a core language for term rewriting. We
+have extended System S and equipped it with semantics that allow
+it to generate code. Our model for code generation is abstracted
+from any particular language, allowing Twig to be used to generate
+a variety of target languages.
+
+Twig uses terms to represent types in the target language. A Twig
+expression is a program that transforms one term into another.
+According to how the term transformation takes place, code is
+generated to transform values from and to target language types
+corresponding to the terms. The simplest expressions are primitive
+rules, which include blocks of code to be generated in a
+designated target language. Primitive rules can be combined into
+more complex expressions using Twig's operators and built-in
+expressions.
+
+Twig allows users to customize the meaning of expressions by
+introducing their own expression reduction rules. Expression
+reductions are applied by Twig before the program is evaluated,
+and can cause a given Twig expression to be rewritten into
+another. This can be useful for introducing optimizations and
+other automated reasoning that take advantage of domain-specific
+program structure.
+
+We demonstrated how Twig can be used for multi-language
+programming as well as GPU programming. In both these contexts, we
+introduce domain-specific expression reductions that potentially
+improve the efficiency of the final program. We also compared a
+Twig program with a similar program written in SWIG, a language
+with a similar notion of typemapping, and found that, due to its
+operators and abstract code generation model, Twig's language
+allows greater flexibility, modularity, and reusability than
+SWIG's traditional, monolithic typemaps.
+
+\section{Advantages}
+
+As we discussed in Chapter~\ref{ch:intro}, the primary goal of our
+work was to design a language that allowed high-level,
+domain-specific logic to co-exist with low-level, detail-oriented
+code, with each informing the structure of the other, in a single
+program specification. Twig represents a step in this direction.
+
+The main advantage conferred by Twig is that its simple,
+high-level semantics restrict the kinds of programs that can be
+written. While this advantage is also a limitation (see below), it
+does make the structure of Twig programs easy to reason about. We
+exploited this capability in our multi-language and GPU
+programming examples, using expression reduction directives to
+recognize simple but useful patterns in the code, and then
+rewriting those patterns into more efficient ones. The equivalent
+C or Python code would be very difficult to automatically rewrite
+in a similar fashion, since the patterns are obscured by the
+details of declaring variables, allocating memory, and so on.
+
+Another advantage of Twig is its ability to mix high- and
+low-level code in its primitive rules, and that these rules are
+the only place where such mixing occurs. A corollary of this
+observation is that, once a set of primitive rules are properly
+designed, relatively unsophisticated users can make use of them by
+using them as ``building blocks,'' that is, using a provided set
+of primitive rules by combining them with Twig's operators and
+built-in expressions only. This suggests a possible model of usage
+for Twig: a domain expert first designs and crafts a set of
+primitive rules and expression reduction directives that capture
+the required functionality for a domain, and then less
+sophisticated users can write programs without having to worry
+about writing any low-level code. If the expression reductions are
+well-designed, they may not even have to worry about optimization
+for common cases.
+
+\section{Limitations}
+
+Above, we observed that the simple, somewhat sparse structure of
+Twig's language makes it easy to reason about and to automatically
+rewrite. The dual of this observation is that writing large or
+complex programs in such a basic language can be challenging. This
+may limit Twig's applicability to relatively simple jobs, such as
+small typemaps for multi-language or multi-target programs.
+Writing larger programs cries out for more versatile abstractions
+such as the $\lambda$-calculus or traditional imperative control
+structures, but we think that it is precisely these facilities
+that make traditional programs so difficult to reason about. This
+tension may be inherent to programming language design.
+
+In addition, our current model code generation does not adequately
+address the kinds of real-world problems faced by multi-language
+systems, such as resource management or error handling, discussed
+in Section~\ref{sec:ffi}. We believe it will be challenging to add
+these features while retaining the highly abstract nature of the
+model. Again, intuitively there seems to be a fundamental tension
+here, between the expressivity and fidelity of a code generation
+model on the one hand, and its ability to be adapted to many
+different languages on the other.
+
+\section{Twig in Context}
+
+Twig represents a significant contribution to the state-of-the-art
+for typemapping languages. We believe that Twig's language, or
+something similar, should be adopted by tools that require
+programmers to write small programs to that transform data across
+different domains. In particular, the flexibility afforded by
+Twig's operators and its abstract approach to code generation
+recommend it for this purpose over current, monolithic approaches.
+
+Twig is also an interesting experiment that moves towards
+achieving the goals we presented in the introduction. That is,
+Twig allows programmers to mix high- and low-level code in a way
+that retains the former's ease of development and reasoning, as
+well as the latter's flexibility and power. Our future research
+will determine whether we can resolve the outstanding issues with
+code generation and general usability that we find currently
+hamper Twig as a language for general program development.

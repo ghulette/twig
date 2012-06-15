@@ -1,0 +1,265 @@
+%!TEX root = twig.tex
+
+\section{GPU programming}
+\label{sec:eval:gpu}
+
+In this section we present an example Twig program that targets C
+code interacting with a graphics processing unit (GPU). This style
+of program is known as ``hybrid'' computing, since the program is
+intended to run on a hybrid system, incorporating more than one
+device. Hybrid computing has some interesting features in common
+with multi-language programming, including reasoning about types
+in different contexts.
+
+CUDA~\cite{cuda} is a well-known and relatively simple API for
+interacting with GPUs from C. We use this API in our example
+below. In the interest of clarity, we simplify our code by
+omitting CUDA's setup and teardown logic and assuming that values
+such as \texttt{N\_BLOCKS}, \texttt{BLOCK\_SIZE}, \texttt{SIZE},
+and \texttt{N} are constants defined elsewhere. A real application
+might pass these values within the rules, perhaps using tuples or
+custom data structures.
+
+First, we define two primitive rules for moving data to and from
+the GPU:
+
+\begin{verbatim}
+copyToGPU=[array(float) -> gpu(array(float))] <<<
+  cudaMalloc((void **)&$out,SIZE);
+  cudaMemcpy($out,$in,SIZE,cudaMemcpyHostToDevice);
+>>>
+
+copyFromGPU=[gpu(array(float)) -> array(float)] <<<
+  $out = malloc(SIZE);
+  cudaMemcpy($out,$in,SIZE,cudaMemcpyDeviceToHost);
+>>>
+\end{verbatim}
+
+The rule \texttt{copyToGPU} copies an array of floating point
+numbers from main memory to the GPU's separate memory hierarchy.
+First, it allocates memory on the device, then it invokes the
+appropriate CUDA call to copy the data. In a similar fashion,
+\texttt{copyFromGPU} copies an array of \texttt{float}s from GPU
+back to the system.
+
+Next, we define primitive rules for invoking two different GPU
+\emph{kernels} on the data, after it has been moved to the GPU. A
+kernel is essentially a function on arrays, performed on the GPU.
+
+\begin{verbatim}
+kernelFoo = [gpu(array(float)) -> gpu(array(float))] <<<
+  foo \<\<\<N_BLOCKS,BLOCK_SIZE/>/>/>($in, N);
+  $out = $in;
+>>>
+
+kernelBar = [gpu(array(float)) -> gpu(array(float))] <<<
+  bar \<\<\<N_BLOCKS,BLOCK_SIZE/>/>/>($in, N);
+  $out = $in;
+>>>
+\end{verbatim}
+
+These two rules do almost exactly the same thing, except that
+\texttt{kernelFoo} invokes a kernel called ``foo'' while
+\texttt{kernelBar} invokes a kernel called ``bar.'' The kernel
+names refer to CUDA functions defined elsewhere. Note that we
+needed to escape the triple angle brackets in CUDA's syntax;
+otherwise, they would interfere with Twig's own block syntax.
+
+Next, we can define our main program, using some auxiliary
+expressions.
+
+\begin{verbatim}
+runFoo = copyToGPU;kernelFoo;copyFromGPU
+runBar = copyToGPU;kernelBar;copyFromGPU
+main   = runFoo;runBar
+\end{verbatim}
+
+The expressions \texttt{runFoo} and \texttt{runBar} will perform a
+single logical function on the GPU. Note that these expressions
+will be semantically valid in any context where they appear, since
+they ensure that the data is moved onto the GPU before the kernel
+is executed, and then that the data is copied back. The programmer
+may effectively ignore the fact that \texttt{runFoo} and
+\texttt{runBar} interact with the GPU; they appear to perform a
+function on a local array. This abstraction is considerably
+simpler than that presented by raw CUDA calls.
+
+The \texttt{main} expression is the top level of the program. It
+executes the two kernels \texttt{foo} and \texttt{bar} in
+sequence. As noted above, the invocations of \texttt{runFoo} and
+\texttt{runBar} would normally result in a copy to and from the
+GPU. This is a conservative design, hiding the details of the
+interaction with the GPU from the programmer. 
+
+Evaluating this expression on the input term \texttt{array(float)}
+will output the result term \texttt{array(float)}, along with the
+following generated code:
+
+\begin{verbatim}
+float *twig_gen_fun(float *in) {
+  float *tmp01,*tmp02,*tmp03,*tmp04,*tmp05,*tmp06,*tmp07;
+  tmp01 = in;
+  cudaMalloc((void **)&tmp02,SIZE);
+  cudaMemcpy(tmp02,tmp01,SIZE,cudaMemcpyHostToDevice);
+  foo <<<N_BLOCKS,BLOCK_SIZE>>> (tmp02,N);
+  tmp03 = tmp02;
+  tmp04 = (float *)malloc(SIZE * sizeof(float));
+  cudaMemcpy(tmp04,tmp03,SIZE,cudaMemcpyDeviceToHost);
+  cudaMalloc((void **)&tmp05,SIZE);
+  cudaMemcpy(tmp05,tmp04,SIZE,cudaMemcpyHostToDevice);
+  bar <<<N_BLOCKS,BLOCK_SIZE>>> (tmp05,N);
+  tmp06 = tmp05;
+  tmp07 = (float *)malloc(SIZE * sizeof(float));
+  cudaMemcpy(tmp07,tmp06,SIZE,cudaMemcpyDeviceToHost);
+  return tmp07;
+}\end{verbatim}
+
+The generated function is assigned the unique name \texttt{twig\_gen\_fun}. It
+takes a pointer to an array of floating point numbers somewhere in system
+memory and returns a pointer to the transformed array.
+
+This code is correct, but unfortunately it contains a redundant
+memory copy. That is, the program copies an array from the GPU to
+system memory, and then immediately copies it back to the GPU
+without modification. Copying across devices is a relatively
+expensive operation. For large arrays, or for code in a tight
+loop, this kind of redundancy will significantly reduce
+performance.
+
+To see why the redundant copy is introduced, we substitute the
+names \texttt{runFoo} and \texttt{runBar} with the expressions
+they denote in \texttt{main}. Now we can see that \texttt{main} is
+equivalent to this expression:
+
+\begin{verbatim}
+main = copyToGPU;
+       kernelFoo;
+       copyFromGPU;copyToGPU;
+       kernelBar;
+       copyFromGPU
+\end{verbatim}
+
+Notice that in the middle, the sequence
+\texttt{copyFromGPU;copyToGPU} is unnecessary. It is introduced
+into the program as an artifact of the sequence of \texttt{runFoo}
+with \texttt{runBar}. We can solve this problem using an
+\emph{expression reduction}, as described in
+Chapter~\ref{ch:reductions}. The reduction directive
+
+\begin{verbatim}
+@reduce copyFromGPU;copyToGPU => T
+\end{verbatim}
+
+\noindent instructs Twig to search for the expression
+\texttt{copyFromGPU;copyToGPU} within \texttt{main}, and to
+replace it with \texttt{T}, the identity rule, wherever it occurs.
+In this context \texttt{T} serves essentially as a no-op -- it
+does not generate any code. After the reduction is performed, the
+expanded version of \texttt{main} has had the extra copies removed
+and replaced by \texttt{T}:
+
+\begin{verbatim}
+main = copyToGPU;
+       kernelFoo;
+       T;
+       kerneBar;
+       copyFromGPU
+\end{verbatim}
+
+Based on this expression, Twig will generate the following code:
+
+\begin{verbatim}
+float *twig_gen_fun(float *in) {
+  float *tmp01,*tmp02,*tmp03,*tmp04,*tmp05;
+  tmp01 = in;
+  cudaMalloc((void **)&tmp02,SIZE);
+  cudaMemcpy(tmp02,tmp01,SIZE,cudaMemcpyHostToDevice);
+  foo <<<N_BLOCKS,BLOCK_SIZE>>> (tmp02,N);
+  tmp03 = tmp02;
+  bar <<<N_BLOCKS,BLOCK_SIZE>>> (tmp03,N);
+  tmp04 = tmp03;
+  tmp05 = (float *)malloc(SIZE * sizeof(float));
+  cudaMemcpy(tmp05,tmp04,SIZE,cudaMemcpyDeviceToHost);
+  return tmp05;
+}\end{verbatim}
+
+This code omits the redundant copy, and is therefore more
+efficient. Although this example is simple, it demonstrates the
+power of user-defined expression reductions. The reduction rule
+given here could be paired with the \texttt{copyToGPU} and
+\texttt{copyFromGPU} rules in a module intended for consumption by
+domain programmers, allowing them to perform GPU operations
+without worrying about the design of the rules. Sophisticated
+users, however, could add their own rules or even
+application-specific reductions, enabling very powerful and
+customizable code generation based on domain-specific logic.
+
+\subsection{Integrating Twig in Practice}
+
+The preceding example demonstrates how Twig can be used to generate a block of
+CUDA code. On its own, of course, the block is useless -- it must be
+integrated into a larger program. At the moment, Twig uses a fairly
+rudimentary process to accomplish this. We describe that process in this
+section.
+
+Twig is used to generate a block of code which is then incorporated into a
+larger program that calls it using the language's file inclusion facility.
+First, the programmer provides the Twig program along with an input type to
+the Twig tool. Twig will evaluate the program on the input type, producing (if
+successful) an output type along with a block of code in the target language
+that will transform the input type to the output type. Our Twig implementation
+will optionally wrap the block of code inside a function that takes values
+having the input type(s) as arguments, and returns a value having the output
+type. The block of code may be redirected to a file. A main program may then
+include the generated function, and invoke it within its own functions.
+
+The example above generates a C/CUDA function called \texttt{twig\_gen\_fun},
+which takes a floating point array and produces another floating point array.
+We use Twig to redirect this code to a file called \texttt{twig.cu}. The main
+CUDA program resides in a file called \texttt{main.cu}, and contains the
+following code:
+
+\begin{verbatim}
+#include <stdio.h>
+#include <cuda.h>
+
+const int N = 10;
+const size_t SIZE = N * sizeof(float);
+const int BLOCK_SIZE = 4;
+const int N_BLOCKS = N / BLOCK_SIZE + (N % BLOCK_SIZE == 0 ? 0:1);
+
+__global__ void foo(float *a, int N) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if(idx<N) {
+    a[idx] = a[idx] * a[idx];
+  }
+}
+
+__global__ void bar(float *a, int N) {
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if(idx<N) {
+    a[idx] = a[idx] + 1;
+  }
+}
+
+#include "twig.cu"
+
+int main(void) {
+  float *input, *result;
+  input = (float *)malloc(SIZE);
+  for(int i=0; i < N; i++) {
+    input[i] = (float)i;
+  }
+  result = twig_gen_fun(input);
+  for(int i=0; i < N; i++) {
+    printf("%d -> %f\n", i, result[i]);
+  }
+  return 0;
+}\end{verbatim}
+
+Notice how we include \texttt{twig.cu} in the main file. The include occurs
+only \texttt{after} we have defined the various constructs (such as the
+\texttt{foo} and \texttt{bar} kernels, and constants like
+\texttt{BLOCK\_SIZE}, that are needed within the generated code. Compiling
+\texttt{main.cu} with the regular CUDA compiler (\texttt{nvcc}) will suffice
+to produce an executable program.

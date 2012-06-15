@@ -1,0 +1,18 @@
+%!TEX root = twig.tex
+
+\chapter{Abstract}
+
+Programmers design, write, and understand programs with a high-level structure
+in mind. Existing programming languages are not very good at capturing this
+structure because they must include low-level implementation details. To
+address this problem we introduce Twig, a programming language that allows for
+domain-specific logic to be encoded alongside low-level functionality. Twig's
+language is based on a simple, formal calculus that is amenable to both human
+and machine reasoning. Users may introduce rules that rewrite expressions,
+allowing for user-defined optimizations. Twig can also incorporate procedures
+written in a variety of low-level languages. Our implementation supports C and
+Python, but our abstract model can accommodate other languages as well. We
+present Twig's design and formal semantics, and discuss our implementation. We
+demonstrate Twig's use in two different domains, multi-language programming,
+and GPU programming, and compare Twig against a well-known typemapping system,
+SWIG.

@@ -1,0 +1,156 @@
+%!TEX root = twig.tex
+
+\section{Workflow Programming}
+\label{sec:bg:workflow}
+
+\emph{Workflow programming} refers to a rather broad category of
+languages and tools. Very generally speaking, workflows are
+programs constructed as graphs by connecting the inputs and
+outputs of various \emph{components}. The components act in some
+way on their inputs to produce outputs, and the wiring determines
+the flow of data through the program.
+
+We take special note of workflow programming in Twig because our
+code generation semantics, described in
+Chapter~\ref{ch:code-gen}, are based in part on our own previous
+work in designing the WOOL workflow programming
+language~\cite{wool}. Twig builds upon and expands this
+work, and in particular provides a more robust formalization of
+the programming model.
+
+In this section we review some popular workflow languages and
+systems, including WOOL, and describe how WOOL influenced Twig's
+code generation model.
+
+\subsection{Workflow Languages}
+
+There are many existing languages and tools for describing
+workflows. Most provide complete systems that include languages
+for describing workflows, a way of programming activities, and a
+runtime engine for executing a workflow.
+
+Many earlier workflow systems were designed to address the needs
+of business users, and employed coordinated web services as a
+enactment back-end. Examples of this style of workflow system
+include BPEL4WS~\cite{andrews03bpel} and
+WSFL~\cite{leymann01wsfl}. These languages were designed to
+support and coordinate activities accessed through XML-based web
+services, and so while they are good at describing and enacting
+workflows in this particular domain, they are not very useful for
+abstract workflow representation.
+
+Other workflow systems have focused on scientific workflows. These
+are intended for use by scientists who want to focus on their
+problem domain and leave the low-level details to the workflow
+system. Scientific workflow tools delegate the often-tedious
+programming needed to connect and orchestrate series of
+computational steps to the language and/or runtime system.
+
+Triana~\cite{churches06triana}\cite{majithia04triana} uses a
+visual scientific workflow language that includes both data- and
+control-flow constructs. Triana, like other XML web
+service-oriented workflow systems, has a type system based on XSD
+schema datatypes~\cite{biron04xsd}. XSD datatypes are powerful and
+flexible, but introduce additional complexity.
+
+Taverna~\cite{oinn04taverna}, part of the myGrid project, is a
+scientific workflow system focused on supporting life sciences
+experiments. Activities are implemented either as web services or
+Java classes. Taverna relies on an XML-based language called SCUFL
+for workflow specification. SCUFL has a type system, but data
+types are restricted to MIME-types, names from the myGrid
+bioinformatics ontology, and free form text.
+
+VisTrails~\cite{callahan06vistrails} is another system support
+scientific workflows. It is interesting because it keeps extensive
+provenance information for both the data being processed as well
+as workflows themselves. This allows VisTrails to treat workflows
+as a kind of scientific notebook, documenting the evolving
+scientific process. VisTrail uses a visual workflow language, and
+is focused on workflows intended to be executed immediately and
+interactively.
+
+Kepler~\cite{altintas04kepler} inherits a visual environment and
+the Modeling Markup Language (MoML) from
+Ptolemy~\cite{hylands03ptolemy}, and adds scientific workflow
+features like the ability to test a workflow without needing to
+completely program all its activities, distributed execution with
+a web-services framework or Globus grid~\cite{globus}, database
+access, and other specialized actors.
+
+Other workflow systems are designed to let users easily harness
+the power of grid computing~\cite{foster02grid}. One example is
+WFEE~\cite{yu04tuple}, which uses a relatively simple workflow
+description language (called xWFL) with grid-specific constructs.
+WFEE features support for workflow parameterization using
+filenames, ranges of number, and constants, which is important for
+scientific workflow applications. Another example is
+GSFL~\cite{krishnan02gsfl}, designed for Globus OGSA-based grids.
+
+The Abstract Grid Workflow Language (AGWL)~\cite{fahringer04agwl}
+was designed to specify workflows in a way that balances abstract
+representation with enough information to execute the workflow in
+a real environment. AGWL makes parallelism an explicit construct
+in the language. This allows for a high degree of programmer
+control at the expense of abstractness of the workflow
+specification. Explicit parallelism may also increase the required
+level of sophistication for workflow programmers. AGWL workflows
+are executed on a portable back-end system called
+CGWL~\cite{fahringer05agwl}. CGWL must be ported to a particular
+platform, and acts as an interface between the platform and the
+workflow.
+
+\subsection{WOOL}
+\label{sec:bg:wool}
+
+We designed WOOL~\cite{wool} as a language for specifying
+workflows abstractly, similar in spirit to AGWL. To this end, the
+language deliberately excludes information related to the runtime
+system. WOOL has an intentionally simple syntax and semantic
+interpretation. Workflows are composed of ``activities,'' which
+are basic ``units'' of computation. Each activity has a type which
+assigns it a set of input and output ports and other properties.
+Connections between the ports on activities, from outputs to
+inputs, establish data-flow relationships. WOOL workflows can be
+composed hierarchically, with sub-workflows treated as activity
+types in a higher-level workflow. Activity ports are typed such
+that WOOL can check that the kinds of values flowing across ports
+match up.
+
+WOOL includes a standard library of activity types, available to
+all workflows and providing helpful functionality such as control
+flow primitives. The WOOL language provides syntactic sugar to
+make certain control flow idioms easier to type and read. These
+idioms are normalized at compilation time to the equivalent
+sequence of language primitives.
+
+Truly abstract workflow specifications must avoid making
+assumptions about the architecture(s) where they will be run. As
+such, WOOL adopts a minimal set of assumptions about the semantics
+of its data-flow execution model. In theory, this makes WOOL
+workflows portable to almost any workflow execution system.
+
+In many ways, Twig's code generation scheme (described in
+Chapter~\ref{ch:code-gen}) was inspired and influenced by our work
+on WOOL. Twig's \emph{blocks} are conceptually similar in
+principle to WOOL's \emph{activities} -- they are, essentially,
+functions that transform one or more inputs to one or more
+outputs. In WOOL, inputs and outputs could be ``wired together''
+arbitrarily. In Twig we adopt a more formal model. In particular,
+Twig's blocks are composed via the sequence
+(Section~\ref{sec:code-gen:seq}) and parallel
+(Section~\ref{sec:code-gen:par}) composition operators. This gives
+Twig's blocks more structure than a WOOL workflow, and this is
+motivated by Twig's need to match the semantics of its code
+generation scheme to the semantics of its language based on term
+rewriting.
+
+In WOOL, the meaning of connections between activities was
+somewhat informal. A connection from the output of one activity to
+the input of another implied a dataflow relationship but, in
+keeping with WOOL's abstract focus, the exact meaning was left up
+to the implementation and runtime. Twig adopts a similar approach
+for blocks -- we leave the exact interpretation of blocks and the
+connections between them up to the implementation for a particular
+target language. In this way, we avoid tying ourselves to a
+particular target language.

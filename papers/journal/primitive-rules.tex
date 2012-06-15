@@ -1,0 +1,108 @@
+%!TEX root = twig.tex
+
+\subsection{Primitive Rules}
+\label{sec:semantics:prims}
+
+The simplest Twig expressions are \emph{primitive rules}, which
+describe a single step of a type transformation. Since Twig terms
+represent types in a target language, a primitive rule in Twig
+describes how to transform an instance of one type into an
+instance of another in that language.
+
+The syntax for primitive rules is
+
+\[
+\prim{p_1}{p_2}{m}
+\]
+
+where $p_1,p_2 \in T(\mathcal{X})$, i.e. $p_1$ and $p_2$ are
+non-ground terms potentially having variables, with the condition
+that variables appearing in $p_2$ must also appear in $p_1$. These
+syntactic elements are called the \emph{input pattern} and
+\emph{output pattern} of the rule, respectively. The element $m
+\in M$ is a block representing some code in the target language
+(see Section~\ref{ch:code-gen}). We can write the semantics of
+primitive rules formally with two statements:
+
+\begin{align}
+\label{PRIM1}
+\infer{t \arr{\prim{p_1}{p_2}{m}} (t',m)}{} &
+\quad\mbox{if}\quad \exists \sigma : 
+\sigma(p_1) = t \wedge \sigma(p_2) = t'\\
+\label{PRIM2}
+\infer{t \arr{\prim{p_1}{p_2}{m}} \bot}{} &
+\quad\mbox{if}\quad \not{\exists} \sigma : 
+\sigma(p_1) = t
+\end{align}
+
+The statement in \eqref{PRIM1} says that the rule
+$\prim{p_1}{p_2}{m}$ rewrites $t$ to $(t',m)$ if there exists a
+substitution $sigma$ mapping variables to ground terms such that
+the substitution of $\sigma$ in $p_1$ is $t$ and the substitution
+of $\sigma$ in $p_2$ is $t'$. The statement in \eqref{PRIM2} says
+that the rule $\prim{p_1}{p_2}{m}$ fails if there exists no
+substitution mapping $p_1$ to $t$.
+
+Note that these semantics allow for some relatively sophisticated
+matching tasks. For example, if the same variable appears more
+than once in the input pattern, it must be bound to the same
+sub-term. For example, the input pattern \texttt{foo(X,X)} would
+match \texttt{foo(bar,bar)} but not \texttt{foo(bar,baz)}. This
+can be useful when we want to test that a term has some symmetric
+properties, without necessarily needing to care about the specific
+sub-terms involved. In addition, variables appearing in the input
+pattern need not appear in the output pattern; extraneous
+sub-terms can be matched and eliminated in this way.
+
+Informally, the primitive rule above transforms $t$ to $(t',m)$ if
+and only if
+
+\begin{enumerate}
+
+\item $t$ successfully \emph{matches} the input pattern $p_1$,
+binding terms to variables in $sigma$ and
+
+\item $t'$ is \emph{built}, by substituting the bound values in
+$\sigma$ into the variables of $p_2$;
+
+\end{enumerate}
+
+and otherwise fails.
+
+In our implementation, when a term is \emph{matched} we mean that
+Twig attempts to unify~\cite{baader98rewriting} it with the input
+pattern. In fact, Twig's matching algorithm is simpler than full
+unification, since there is no equational theory and the input
+term may not contain variables (i.e., must be a ground term). If
+unification is successful, variables are bound to their
+corresponding terms in an environment. The environment is then
+used to construct the output term by substitution into the output
+pattern. See \cite{baader98rewriting,system-s} for details on
+unification algorithms.
+
+As an example, consider the following primitive rule. In C it is
+easy to convert an integer value to floating point. Twig's syntax
+for writing this rule is as follows:
+
+\begin{verbatim}
+[int -> float] <<< $out = (float)$in; >>>
+\end{verbatim}
+
+In this example, if the input term matches the input pattern
+\texttt{int}, then the output will be the term \texttt{float}
+along with the code block. If the input term does not match
+\texttt{int} then the output will be $\bot$.
+
+As mentioned, input and output patterns can have \emph{variables}
+in place of terms or sub-terms. For example the rule
+
+\begin{verbatim}
+[ptr(X) -> X] <<< $out = &$in; >>>
+\end{verbatim}
+
+describes a transformation of any C pointer type to its referent.
+The variable \texttt{X} is bound to the corresponding value of the
+matched input on the right, and that value is substituted for the
+variable where it appears on the left. Variables may stand in
+place of a single term only, not constructors; e.g., patterns such
+as \texttt{[X(int)~->~X]} are not allowed.
