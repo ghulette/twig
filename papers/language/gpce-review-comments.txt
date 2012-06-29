@@ -1,15 +1,19 @@
 Dear Geoffrey Hulette,
 
-On behalf of the GPCE 2012 Program Committee, I am delighted to inform you that the following submission was accepted:
+On behalf of the GPCE 2012 Program Committee, I am delighted to inform you that
+the following submission was accepted:
 
 Composing Typemaps in Twig
 
 You will find the reviews of your paper below. Please consider them very
-carefully when preparing your revision. In a separate email you will receive additional information on the camera-ready submission (with a deadline of July 9).
+carefully when preparing your revision. In a separate email you will receive
+additional information on the camera-ready submission (with a deadline of July
+9).
 
 The reviews and comments are attached below.
 
-Congratulations on your fine work. If you have any questions, please feel free to get in touch.
+Congratulations on your fine work. If you have any questions, please feel free
+to get in touch.
 
 
 Best Regards,
@@ -26,21 +30,19 @@ OVERALL RATING: 2 (accept)
 
 Summary
 
-Twig is a recent language for writing typemaps, i.e., transformations
-between types in different languages, as they are necessary in
-multi-language development. This paper provides a formal semantics
-for Twig and defines a code generation model that separates
-language-independent code constructors from language-specific
-mappings.
+Twig is a recent language for writing typemaps, i.e., transformations between
+types in different languages, as they are necessary in multi-language
+development. This paper provides a formal semantics for Twig and defines a code
+generation model that separates language-independent code constructors from
+language-specific mappings.
 
 Assessment
 
-I like this paper a lot! It's held in an unpretentious style
-and might make the impression as if its subject is easy ("trivial")
-but in fact the formulations are the result of proper, well though-out
-abstractions. Granted, typemaps do not belong to today's killerapps
-but form a niche rather. Yet, for every designer of typemaps this paper
-is, I think, a must-read.
+I like this paper a lot! It's held in an unpretentious style and might make the
+impression as if its subject is easy ("trivial") but in fact the formulations
+are the result of proper, well though-out abstractions. Granted, typemaps do not
+belong to today's killerapps but form a niche rather. Yet, for every designer of
+typemaps this paper is, I think, a must-read.
 
 Pro
 - Foundational for future typemap designers
@@ -84,13 +86,23 @@ AUTHORS: Geoffrey Hulette, Matthew Sottile and Allen Malony
 
 OVERALL RATING: 1 (weak accept)
 
-Twig is a nice system that improves on existing work and provides an elegant way of describing typemaps with an accent on functional composition, rather than on code generation. The paper is also well written and accessible.
+Twig is a nice system that improves on existing work and provides an elegant way
+of describing typemaps with an accent on functional composition, rather than on
+code generation. The paper is also well written and accessible.
 
 The paper has some drawbacks that I would like to ask the authors to address.
 
-The numerous allusions to lack of space are a bit annoying given that the authors have chosen a very spatious representation of the formal semantics. Using a more compact representation would really improve the situation, and allow to include all of the semantics.
+The numerous allusions to lack of space are a bit annoying given that the
+authors have chosen a very spatious representation of the formal semantics.
+Using a more compact representation would really improve the situation, and
+allow to include all of the semantics.
 
-Also, it is interesting to (repeatedly) read the claim that Twig supports multiple target languages. This very feature, which is a major discriminator from other tools in the field, is however not implemented, and the reader is left to "just" believe it. The authors should either make the claim less prominent, or provide an implementation (and demonstration thereof) to make it more credible.
+Also, it is interesting to (repeatedly) read the claim that Twig supports
+multiple target languages. This very feature, which is a major discriminator
+from other tools in the field, is however not implemented, and the reader is
+left to "just" believe it. The authors should either make the claim less
+prominent, or provide an implementation (and demonstration thereof) to make it
+more credible.
 
 
 ----------------------- REVIEW 3 ---------------------
@@ -100,14 +112,31 @@ AUTHORS: Geoffrey Hulette, Matthew Sottile and Allen Malony
 
 OVERALL RATING: 0 (borderline paper)
 
-The paper presents Twig, a small DSL for specifying mappings of types in one language to types in another. The claim of novelty is that Twig's typemaps are composable and more concise, unlike those one would write for Swig, a well-known tool for generating glue code between native libraries and scripting languages.
+The paper presents Twig, a small DSL for specifying mappings of types in one
+language to types in another. The claim of novelty is that Twig's typemaps are
+composable and more concise, unlike those one would write for Swig, a well-known
+tool for generating glue code between native libraries and scripting languages.
 
-This is nice work and the tool is undoubtably useful. However, the comparison with related work and the evaluation is a lacking.
+This is nice work and the tool is undoubtably useful. However, the comparison
+with related work and the evaluation is a lacking.
 
-I question whether Twig is really that much more concise than Swig typemaps. Couldn't the common code in Swig typemaps also be factored out into functions to avoid duplication? Showing all the code in one figure rather than spread over half a page would help make the comparison easier.
+I question whether Twig is really that much more concise than Swig typemaps.
+Couldn't the common code in Swig typemaps also be factored out into functions to
+avoid duplication? Showing all the code in one figure rather than spread over
+half a page would help make the comparison easier.
 
-Evaluation on a larger example would be helpful. Small examples are nice in Twig, but they're also quite nice in Swig as well. Showing where Swig starts to break down would help make the point. For instance, how would one write typemaps for a large library with many types like OpenGL or OpenCL or maybe an SMT solver? Showing typemaps for JNI, say, might also be interesting.
+Evaluation on a larger example would be helpful. Small examples are nice in
+Twig, but they're also quite nice in Swig as well. Showing where Swig starts to
+break down would help make the point. For instance, how would one write typemaps
+for a large library with many types like OpenGL or OpenCL or maybe an SMT
+solver? Showing typemaps for JNI, say, might also be interesting.
 
-The work is not put into context well. I am reminded of Nate Foster and Benjamin Pierce et al.'s work on lenses and the Boomerang language. Twig's claims of compositionality are similar, although targeted at a narrower domain. Boomerang is addressing a much more general problem: bidirectional mapping of data, not just type definitions. I think Boomerang could be used to build typemaps and would have more-or-less the same composability properties as Twig. I haven't checked this myself, but this should be addressed in the paper.
+The work is not put into context well. I am reminded of Nate Foster and Benjamin
+Pierce et al.'s work on lenses and the Boomerang language. Twig's claims of
+compositionality are similar, although targeted at a narrower domain. Boomerang
+is addressing a much more general problem: bidirectional mapping of data, not
+just type definitions. I think Boomerang could be used to build typemaps and
+would have more-or-less the same composability properties as Twig. I haven't
+checked this myself, but this should be addressed in the paper.
 
 Fisher et al.'s PADS is also in a similar vein.
