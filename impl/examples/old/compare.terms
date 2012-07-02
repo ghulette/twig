@@ -1,4 +1,0 @@
-compare cmp(z,z)
-compare cmp(s(z),s(z))
-compare cmp(s(s(s(z))),s(s(z)))
-compare cmp(s(s(s(z))),s(s(s(s(s(s(z)))))))

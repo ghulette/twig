@@ -1,9 +1,0 @@
-r1 = [ptr(char) -> string] <<<
-  $out = $in;
->>>
-
-r2 = [string -> double] <<<
-  $out = atof($in);
->>>
-
-toDbl = r1;r2  -- Convert a char* to a string, then to a double

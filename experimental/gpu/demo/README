@@ -1,7 +1,0 @@
-The idea is to provide a processing pipeline that loads an image in Java,
-marshalls it to C, processes it on the GPU, and then unmarshalls it back to
-Java and saves it.
-
-It is important that Twig be able to eliminate some intermediate operations.
-In particular, it would be good to move the image data directly from Java to
-the GPU, skipping the C runtime.
